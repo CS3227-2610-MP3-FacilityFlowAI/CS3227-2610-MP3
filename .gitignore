@@ -1,0 +1,30 @@
+# Gradle and Java
+.gradle/
+build/
+out/
+*.class
+
+# IDEs and operating systems
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+application-local.yml
+application-local.yaml
+*.keystore
+*.jks
+
+# Logs, databases, and generated artifacts
+*.log
+*.db
+*.sqlite
+coverage/
+test-results/
+
+# Frontend dependencies if introduced
+node_modules/
