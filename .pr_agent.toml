@@ -1,0 +1,292 @@
+[config]
+use_repo_settings_file = true
+enable_auto_approval = false
+restricted_mode = true
+
+[pr_reviewer]
+extra_instructions = """
+Review this pull request against FacilityFlow AI's repository specifications,
+especially AGENTS.md, workflow/, workflow/specs/, and relevant requirement
+or traceability documents.
+
+Focus on correctness, bugs and regressions, edge cases, input validation,
+error handling, security, maintainability, unnecessary complexity,
+code quality, and test coverage.
+
+Prioritize actionable findings with:
+- file locations
+- concrete failure scenarios
+- the relevant requirement/specification identifier where available
+- the smallest reasonable fix
+
+Do not invent requirements. Do not treat unresolved TBDs, ideas, or proposed
+behaviour as approved requirements.
+
+SPEC-DRIVEN DEVELOPMENT
+
+Check that implementation follows the approved specification rather than
+introducing behaviour that is not specified.
+
+Where requirement identifiers exist:
+- cite them when reviewing related code
+- check that implementation matches their intent
+- check that corresponding tests exist where appropriate
+
+Flag situations where:
+- implementation changes behaviour without updating the specification
+- tests no longer represent the current specification
+- requirements are ambiguous enough that implementation assumptions are unsafe
+- implementation contradicts an approved requirement
+- documentation claims behaviour not present in the implementation
+
+AI FEATURE REQUIREMENTS
+
+The system must provide at least one LLM-based AI feature for each user role.
+
+For AI-related changes, check:
+- the AI feature is associated with an intended user role
+- input and output are validated
+- LLM failures are handled gracefully
+- malformed responses are handled safely
+- resource/API limits are considered
+- rate limiting is respected where applicable
+- timeouts and retries are bounded
+- users receive sensible errors/fallback behaviour
+- sensitive information is not unnecessarily exposed
+- secrets/API keys are never committed or logged
+
+AI SECURITY
+
+Treat all user-controlled text, retrieved content, prompts, agent messages,
+tool output, and LLM output as untrusted.
+
+Look specifically for:
+- direct prompt injection
+- indirect prompt injection
+- malicious instructions embedded in retrieved/user-provided content
+- instruction hierarchy bypasses
+- prompt leakage
+- data exfiltration
+- insecure handling of model output
+- excessive privileges given to AI features
+- unvalidated tool/action parameters
+- missing authorization around AI-triggered functionality
+- sensitive-data leakage
+- denial-of-service/resource-abuse risks
+
+Check that security features are explicitly tested.
+
+Where AI functionality can cause or propose impactful actions:
+- verify appropriate approval gates exist
+- verify human oversight cannot trivially be bypassed
+- verify authorization is checked independently from the LLM
+- verify the LLM is not trusted as the security boundary
+
+AI AGENT LIMITS
+
+Check that each agent or AI feature has clearly limited responsibilities
+and access.
+
+Flag:
+- unnecessarily broad permissions
+- access to unrelated data
+- agents performing actions outside their defined role
+- model output being treated as automatically trusted
+- missing resource/call limits
+- agents bypassing normal application validation or authorization
+
+BASIC MULTI-AGENT SOFTWARE ENGINEERING
+
+For specialized development agents such as analyst, architect, developer,
+reviewer, tester, or security reviewer, check that:
+- responsibilities are clearly separated
+- important context is passed between agents
+- specifications remain the source of truth
+- downstream agents do not silently reinterpret requirements
+- potentially malicious instructions cannot silently propagate between agents
+- agent outputs leave evidence that can be reviewed by humans
+- important decisions, assumptions, and verification results are recorded
+
+Where one agent produces artifacts consumed by another, look for missing
+validation or trust-boundary checks.
+
+SECURITY AND AUTHORIZATION
+
+Check normal application security independently from AI security.
+
+Pay particular attention to:
+- authentication
+- authorization
+- role restrictions
+- ownership restrictions where relevant
+- session/security-token handling
+- input validation
+- injection vulnerabilities
+- unsafe deserialization
+- insecure direct object references
+- secrets and credentials
+- sensitive logging
+- privilege escalation
+- server-side enforcement of security rules
+
+Never accept UI hiding as sufficient authorization.
+
+ROLE SEPARATION
+
+The project contains separate user roles.
+
+Check that:
+- role-specific functionality is correctly restricted
+- one role cannot access another role's protected operations
+- shared components follow SRP and DRY
+- shared code does not create authorization bypasses
+- UI concerns remain appropriately separated from core business/security logic
+
+TESTING
+
+Check for tests covering relevant cases such as:
+- normal behaviour
+- invalid input
+- boundary cases
+- authentication failures
+- authorization failures
+- role violations
+- malformed LLM responses
+- AI/API failures
+- rate-limit behaviour where relevant
+- prompt-injection attempts
+- approval-gate bypass attempts
+- security controls
+- agent-boundary failures
+- storage/external-service failures
+
+Tests should verify the intent of the specification, not merely reproduce
+its wording.
+
+DEPLOYMENT
+
+Where deployment or configuration files are modified, check:
+- development and production environments remain properly separated
+- production secrets are not committed
+- environment-specific configuration is appropriate
+- deployment automation is reproducible
+- production security settings are not weakened for development convenience
+
+The project must be deployed independently by the team rather than relying
+on prohibited AI build-and-host environments.
+
+DOCUMENTATION AND EVIDENCE
+
+Where relevant, check that changes remain consistent with:
+- docs/UserGuide.md
+- docs/DeveloperGuide.md
+- docs/Reflections.md
+- workflow/
+- logs/
+
+Flag materially inaccurate documentation.
+
+Changes involving AI Security, SDD, or Multi-Agent SE should leave enough
+evidence for later reflection and verification.
+
+REUSE
+
+MP2 code may be reused, but reused work must be identifiable and properly
+acknowledged/quantified.
+
+Flag substantial reused-looking components where the required reuse
+documentation appears to be missing.
+
+CODE QUALITY
+
+Prefer:
+- SRP
+- DRY
+- clear responsibility boundaries
+- minimal necessary abstractions
+- explicit validation
+- deterministic security controls
+
+Flag:
+- speculative complexity
+- unnecessary abstractions
+- unnecessary dependencies
+- duplicated business/security rules
+- very large classes/functions with mixed responsibilities
+
+Do not request broad rewrites when a small targeted fix would solve the
+identified problem.
+"""
+
+[pr_description]
+publish_description_as_comment = true
+
+extra_instructions = """
+Summarize the actual changes in this pull request.
+
+Where available, include relevant specification or requirement identifiers.
+
+Identify which area is affected, such as:
+- user-role feature
+- AI/LLM feature
+- AI security
+- authentication/authorization
+- Spec-Driven Development
+- Multi-Agent SE workflow
+- testing
+- deployment
+- documentation
+- MP2 reuse
+
+Clearly distinguish:
+- implementation actually completed
+- tests actually added
+- tests actually executed
+- verification results reported by the author
+- verification that is still proposed or required
+
+Do not claim that tests passed unless there is evidence that they were run.
+
+For AI-related changes, mention relevant security controls and guardrails.
+
+Do not invent requirement identifiers, test results, security properties,
+or implementation details.
+"""
+
+[pr_code_suggestions]
+extra_instructions = """
+Suggest only small, targeted improvements.
+
+Prioritize:
+- correctness
+- security
+- authorization
+- validation
+- AI security
+- prompt-injection resistance
+- agent boundaries
+- approval gates
+- safe LLM input/output handling
+- resource limits
+- graceful error handling
+- test coverage
+- maintainability
+
+Follow AGENTS.md and workflow/specs/ as the project's source of truth.
+
+Avoid:
+- speculative abstractions
+- unnecessary dependencies
+- broad rewrites
+- unrelated refactors
+- formatting-only changes
+- inventing requirements
+- replacing deterministic security logic with LLM decisions
+
+For AI-related code, never suggest trusting model output without validation.
+
+For security-sensitive operations, prefer deterministic server-side checks
+over prompt instructions.
+
+Leave suggestions for human review; do not automatically apply changes.
+"""

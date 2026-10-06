@@ -28,3 +28,10 @@ test-results/
 
 # Frontend dependencies if introduced
 node_modules/
+
+# Additional local secrets and runtime files (stack-independent)
+*.pem
+*.key
+secrets/
+local-data/
+Thumbs.db

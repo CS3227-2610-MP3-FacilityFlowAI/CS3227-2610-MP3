@@ -34,3 +34,24 @@ be recorded before its pull request is merged.
 | JavaFX interface | Do not reuse |
 | SQLite storage | Reuse schema concepts only; PostgreSQL/Flyway implementation is new |
 | Documentation | Reuse factual domain descriptions with acknowledgement; rewrite for the released web product |
+
+## Current evidence and measurement detail
+
+No MP2 application source/tests are present at scaffold time. Treatment rows
+above are plans, not completed reuse. The cited source commit is unverified in
+this session. Existing planning documents reference MP2 concepts; their exact
+source sections and reused amount need team verification.
+
+Each ledger entry must record component/section, original commit/location,
+target, classification (unchanged, adapted, concept-only or new), actual MP3
+changes, approximate amount with units, justification, acknowledgement and
+comparison evidence. Separate code, test and documentation totals; do not submit
+planned estimates as actual reuse percentages.
+
+| Component / section | Source / location | Target | Classification | Changes for MP3 | Approximate amount / units | Justification | Acknowledgement / evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Initial MP3 scaffolding from the 6 October 2026 setup session | Current user request and existing MP3 guidance; no MP2 files consulted | New scaffolds and documentation additions listed in logs/2026-10-06-repository-scaffolding.md | New | Initial process/placeholders | File inventory in session report; no MP2 copied lines identified | Establish requested workflow | AI-assisted with Codex; human review pending |
+
+Detailed provenance of pre-existing documents and future concept-only reuse:
+TBD after checking MP2. Preserve existing content until comparison supports
+accurate classification.

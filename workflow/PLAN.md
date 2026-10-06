@@ -82,3 +82,27 @@ relevant failure paths.
 - Create architecture and security decision records.
 - Bootstrap the Spring/PostgreSQL walking skeleton only after the specification
   gate passes.
+
+## Development phases and exit gates
+
+Phases describe planned work, not completed implementation. Dated milestones
+above remain the baseline and are not completion evidence.
+
+| Phase | Purpose | Exit evidence | Current status |
+| --- | --- | --- | --- |
+| 0 - Repository and workflow setup | Docs, templates and config audit | Validation and teammate review | Scaffold prepared; review pending |
+| 1 - Requirements/specification | Behavior, IDs, criteria and exclusions | Role owner/teammate approve revisions | Pending |
+| 2 - Architecture and security design | Detail stack, contracts and threats | Design/spec/decision approval | Pending detailed design |
+| 3 - Core application foundation | Approved framework, auth, storage and CI | Tests and independent review | Not implemented |
+| 4 - Role-specific features | Approved three-role workflows | Requirement-linked tests | Not implemented |
+| 5 - AI features | One bounded SoC LLM feature per role | Schema, limit and failure evidence | Not implemented |
+| 6 - AI security hardening | Injection, isolation, output and gate controls | Adversarial tests and fresh verification | Not implemented |
+| 7 - Integration and testing | Cross-role lifecycle and regression | Results, traceability and teammate review | Not implemented |
+| 8 - Deployment | Independent automation and environment separation | Dev smoke tests, human promotion, rollback evidence | Not implemented |
+| 9 - Documentation, reflection and release | Guides, reuse, logs and submission | Reviewed release on master | Pending |
+
+Security work starts before coding and continues through every phase. Production
+deployment is independent of AI coding/build-host environments. Development and
+production remain separate. GitHub Actions/Render are existing planning choices;
+secrets use GitHub/deployment-platform secret storage. No deployment automation
+or live environment is created during phase 0.
