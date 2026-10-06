@@ -53,3 +53,40 @@ storage will not be reused. All reuse must be recorded in
 
 Planning baseline created on 4 October 2026. Implementation must follow the
 specification gates in `workflow/PLAN.md`.
+
+## Development workflow and setup
+
+Start with [AGENTS.md](AGENTS.md) and [workflow/](workflow/README.md). Approved
+[specifications](workflow/specs/README.md) govern implementation; material TBDs
+block coding. Stable IDs connect specs, code, tests, PRs and evidence. Teammate
+review precedes non-trivial merges; fresh verification follows failed-test or
+security fixes.
+
+Current contents are planning documents and scaffold templates. Application
+code, automated application tests and deployment are not implemented. The stack
+is an existing planning choice; build tool, versions, local commands, environment
+variables and detailed technical approval are TBD. Setup instructions follow
+[TECHNICAL-SPEC.md](workflow/specs/TECHNICAL-SPEC.md) approval.
+
+| Additional path | Purpose |
+| --- | --- |
+| `.github/workflows/pr-agent.yml` | Existing PR-Agent automation |
+| `.github/pull_request_template.md` | Requirements/security/evidence checklist |
+| `workflow/agents/` | Bounded development-agent roles |
+| `workflow/templates/` | Requirement, handoff, security-test and log templates |
+| `workflow/decisions/` | Individual architecture/security decisions |
+
+## Documentation
+
+- [User Guide](docs/UserGuide.md): released behavior; currently placeholders.
+- [Developer Guide](docs/DeveloperGuide.md): design/process and implementation TBDs.
+- [Reflections](docs/Reflections.md): evidence prompts, not completed reflections.
+- [AI logs](logs/README.md): sanitized summaries and actual review status.
+
+## AI usage acknowledgement
+
+AI tools assist development/review; humans remain accountable for decisions,
+verification and approvals. Record actual use and accepted/rejected suggestions
+under logs/ without secrets or unnecessary personal data. Application AI must
+use the SoC LLM and remain advisory. PR-Agent development review is separate from
+application AI. See the reuse ledger for MP2 acknowledgements.
