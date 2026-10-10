@@ -38,9 +38,15 @@ authorization.
 
 ## Ownership
 
-- `yooplo`: Requester slice; authentication and access-control foundation.
-- `ngkhengyang`: Technician slice; SoC LLM gateway and AI observability.
-- `yu-sutong`: Facilities Manager slice; persistence, audit, CI/CD, deployment.
+- `yooplo`: primary Requester focus; coordinates authentication and access
+  control.
+- `ngkhengyang`: primary Technician focus; coordinates the SoC LLM gateway and
+  AI observability.
+- `yu-sutong`: primary Facilities Manager focus; coordinates persistence,
+  audit, CI/CD, and deployment.
 
-Each owner is responsible for their interface, service behavior, persistence
-integration, authorization tests, documentation, and reflection evidence.
+These focuses organize the work; they are not exclusive role or code ownership.
+Members may contribute across the application. The contributor to a change is
+responsible for its interface, service behavior, persistence integration,
+authorization tests, documentation, and reflection evidence, and a teammate
+must review non-trivial work.

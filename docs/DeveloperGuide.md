@@ -28,8 +28,10 @@ Entities, relationships, migrations, invariants and concurrency: TBD.
 
 ## Role model
 
-Requester: yooplo; Technician: ngkhengyang; Manager: yu-sutong. Detailed
-permissions, ownership and account lifecycle: TBD in role specs.
+Requester: primary focus coordinated by `yooplo`; Technician: primary focus
+coordinated by `ngkhengyang`; Manager: primary focus coordinated by
+`yu-sutong`. These focuses organize work and are not exclusive code ownership.
+Detailed ordinary permissions and account lifecycle remain TBD in role specs.
 
 ## Security design
 
@@ -38,8 +40,19 @@ writes are required. Detailed controls and implementation evidence: TBD.
 
 ## AI integration
 
-SoC LLM advisory gateway is planned. Contract, model, schemas and environment
-configuration: TBD in INTEGRATION-SPEC.md.
+The planned shared SoC LLM gateway serves three advisory features:
+
+- Smart Report Assistant for Requester draft structure, category, urgency,
+  missing-information questions, and safety advice.
+- Work Plan Assistant for Technician safety checks, diagnostics, tools,
+  requester questions, and evidence to collect.
+- Triage Assistant for Manager category, priority, clarification, and eligible
+  technician recommendations.
+
+Each role has a separate endpoint, typed schema, validator, authorization check,
+and fallback. The gateway has no mutation tools. The model and environment
+configuration, exact limits, and retention remain TBD in
+`INTEGRATION-SPEC.md`.
 
 ## AI security
 
@@ -79,8 +92,10 @@ Provisioning, workflows, backups and rollback remain TBD/unimplemented.
 
 ## MP2 reuse
 
-See ../workflow/REUSE.md; verify source commit before copying. Measure code,
-tests/docs separately and acknowledge every source.
+The team reported lecturer confirmation that MP2 reuse is permitted when MP3 is
+a deployed web application with a production database and documented reuse.
+The source baseline commit is verified in `../workflow/REUSE.md`. Measure code,
+tests, and documentation separately and acknowledge every source before merge.
 
 ## Acknowledgements
 
