@@ -29,8 +29,12 @@ validation design and testable criteria: TBD. See AGENTS.md and AI security spec
 
 ## AI integration
 
-Bounded SoC LLM gateway is planned. Schemas, context retrieval, quotas and
-observability: TBD in INTEGRATION-SPEC.md and AI-SECURITY-SPEC.md.
+A bounded SoC LLM gateway serves the Smart Report, Work Plan, and Triage
+assistants through separate role endpoints and closed output schemas. The
+gateway has no mutation tools. Context scope, validation, advisory boundaries,
+and safe fallback are drafted in `INTEGRATION-SPEC.md` and
+`AI-SECURITY-SPEC.md`; exact SoC LLM configuration, quotas, timeouts, retention,
+and observability implementation remain TBD.
 
 ## Quality and testing
 
