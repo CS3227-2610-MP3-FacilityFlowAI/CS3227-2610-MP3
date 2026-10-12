@@ -18,9 +18,10 @@ logs/: summaries; .github/: PR-Agent/contribution template. No app build exists.
 
 ## Architecture
 
-Existing plan: Java/Spring Boot modular monolith, Thymeleaf/HTMX, Spring
-Security, PostgreSQL and Docker. Detailed design/build tool/versions: TBD
-in ../workflow/specs/TECHNICAL-SPEC.md.
+Existing plan: Java 25/Spring Boot modular monolith, Gradle, Thymeleaf/HTMX,
+Spring Security, PostgreSQL and Docker. Detailed design and the pinned compatible
+Spring Boot/Gradle versions are governed by
+../workflow/specs/TECHNICAL-SPEC.md.
 
 ## Data model
 
@@ -73,9 +74,10 @@ Synthetic development data only. Setup and variable names: TBD; no speculative
 ## Deployment
 
 Team-managed deployment must be independent of AI coding/build-host environments.
-Existing plan uses GitHub Actions, immutable image promotion and Render; humans
-approve production. Secrets use GitHub/deployment-platform mechanisms.
-Provisioning, workflows, backups and rollback remain TBD/unimplemented.
+The approved direction uses GitHub Actions and Vercel Preview/Production;
+humans approve promotion of a smoke-tested Production candidate without a
+rebuild. Secrets use GitHub/deployment-platform mechanisms. Provisioning,
+workflows, backups and rollback remain unimplemented.
 
 ## MP2 reuse
 

@@ -17,8 +17,9 @@ application with guarded SoC LLM assistance for every role.
   every result and perform all business actions through deterministic services.
 - **Stack:** Java, Spring Boot, Thymeleaf/HTMX, PostgreSQL, Spring Security,
   Docker, GitHub Actions, and the SoC LLM.
-- **Deployment:** separate development and production services and databases;
-  production promotes the same tested container image digest.
+- **Deployment:** Vercel Preview and Production use separate databases and
+  secrets; a human promotes the smoke-tested Production candidate without
+  rebuilding it.
 
 ## Repository layout
 
@@ -62,10 +63,10 @@ block coding. Stable IDs connect specs, code, tests, PRs and evidence. Teammate
 review precedes non-trivial merges; fresh verification follows failed-test or
 security fixes.
 
-Current contents are planning documents and scaffold templates. Application
+Current contents are planning documents and specification drafts. Application
 code, automated application tests and deployment are not implemented. The stack
-is an existing planning choice; build tool, versions, local commands, environment
-variables and detailed technical approval are TBD. Setup instructions follow
+and Gradle build are design choices; exact compatible dependency versions, local
+commands and environment values are pinned during the approved scaffold. Setup instructions follow
 [TECHNICAL-SPEC.md](workflow/specs/TECHNICAL-SPEC.md) approval.
 
 | Additional path | Purpose |

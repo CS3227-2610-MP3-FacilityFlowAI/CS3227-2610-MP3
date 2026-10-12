@@ -10,8 +10,9 @@ AI threats. These controls remain deterministic and server-side under
 
 For AI changes, identify assets, context sources, trust boundaries, injection,
 output handling, leakage, limits and failures. The SoC LLM drafts/recommends only;
-humans perform business actions through ordinary authorized services. Exact
-schemas, budgets and timeout values remain TBD in the specifications.
+humans perform business actions through ordinary authorized services. Typed
+schemas and the accepted initial budgets, concurrency, retry and timeout values
+are authoritative in the integration and AI-security specifications.
 
 Use the [security-test template](templates/security-test-template.md) for IDs,
 severity, reproduction, impact, proposed fixes and actual verification. A fresh

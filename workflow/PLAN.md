@@ -15,9 +15,10 @@ The full planning document is stored at
   call mutation tools or perform business actions.
 - Maintain separate development and production services, databases,
   configuration, secrets, and hostnames.
-- Build and test one container image in GitHub Actions, deploy it to development,
-  run smoke tests, and require human approval before promoting the same digest
-  to production.
+- Use Vercel Preview deployments for pull requests. After approved merge and
+  green GitHub Actions checks, create a Production candidate without assigning
+  the production domain, run smoke tests, and require human approval before
+  Vercel promotion assigns the domain without rebuilding.
 
 ## Role ownership
 
@@ -103,6 +104,6 @@ above remain the baseline and are not completion evidence.
 
 Security work starts before coding and continues through every phase. Production
 deployment is independent of AI coding/build-host environments. Development and
-production remain separate. GitHub Actions/Render are existing planning choices;
-secrets use GitHub/deployment-platform secret storage. No deployment automation
-or live environment is created during phase 0.
+production remain separate. GitHub Actions/Vercel are planning choices; secrets
+use GitHub/deployment-platform secret storage. No deployment automation or live
+environment is created during phase 0.

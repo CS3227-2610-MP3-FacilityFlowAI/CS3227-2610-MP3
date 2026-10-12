@@ -35,6 +35,9 @@ authorization.
    secrets and unnecessary personal data.
 8. Record every MP2-derived file or section in `workflow/REUSE.md` as unchanged,
    adapted, concept-only, or new.
+9. For every agent or session transition, follow the shared handoff protocol in
+   `workflow/agents/README.md`; the model invokes `$facilityflow-handoff` to
+   produce temporary context and a durable project handoff record.
 
 ## Ownership
 
