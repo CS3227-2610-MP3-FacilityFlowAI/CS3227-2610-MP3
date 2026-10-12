@@ -1,6 +1,7 @@
 # Developer Guide
 
-Status: pre-implementation placeholder.
+Status: authentication foundation implemented 13 October 2026; teammate review
+pending. This guide distinguishes implemented behavior from approved future work.
 
 This guide will describe the released architecture, data model, security model,
 SoC LLM integration, specification-driven workflow, multi-agent workflow,
@@ -9,24 +10,30 @@ latest release rather than the intended design.
 
 ## Project overview
 
-FacilityFlow AI, CS3227 MP3. Planning/scaffolding only; see README and AGENTS.md.
+FacilityFlow AI, CS3227 MP3. The repository now contains a Java 25/Spring Boot
+web walking skeleton with authentication. See README and AGENTS.md.
 
 ## Repository structure
 
-src/: future code/tests; workflow/: specs/process; docs/: guides/planning;
-logs/: summaries; .github/: PR-Agent/contribution template. No app build exists.
+`src/main/java`: application modules; `src/main/resources`: templates,
+configuration and Flyway migrations; `src/test`: automated tests; `workflow`:
+specs/process; `docs`: guides/planning; `logs`: verified session summaries.
 
 ## Architecture
 
-Existing plan: Java 25/Spring Boot modular monolith, Gradle, Thymeleaf/HTMX,
-Spring Security, PostgreSQL and Docker. Detailed design and the pinned compatible
-Spring Boot/Gradle versions are governed by
-../workflow/specs/TECHNICAL-SPEC.md.
+The implemented foundation pins Java 25, Gradle 9.1.0 and Spring Boot 4.1.1.
+Spring MVC/Thymeleaf serves pages, Spring Security controls authentication,
+Spring Session JDBC persists browser sessions, Flyway owns schema changes, and
+JDBC repositories isolate PostgreSQL access. The approved wider modular-monolith
+design remains in `../workflow/specs/TECHNICAL-SPEC.md`.
 
 ## Data model
 
-The accepted entities, relationships, transaction boundaries, invariants and
-concurrency approach are defined in `../workflow/specs/TECHNICAL-SPEC.md`.
+Migration `V1__create_identity_and_session_tables.sql` owns `user_account`,
+`spring_session` and `spring_session_attributes`. `user_account` includes the
+immutable UUID, original and normalized username, display name, Argon2id hash,
+one role, active flag, session version and timestamps. Later database work must
+extend this migration history rather than editing an applied migration.
 
 ## Role model
 
@@ -37,8 +44,14 @@ Account lifecycle rules are defined in the shared and role specifications.
 
 ## Security design
 
-Deterministic server-side auth, authorization, validation, transitions and
-writes are required. Detailed controls and implementation evidence: TBD.
+Spring Security form login uses one generic invalid-credentials result for an
+unknown username, incorrect password or inactive account. Argon2id parameters
+are configuration-pinned. Every authenticated request reloads active state,
+session version and role from persistence. Role URL rules are backed by
+`IdentityAuthorization` owner/assignment guards at use-case seams; UI hiding is
+not authorization. CSRF remains enabled, logout invalidates the JDBC session,
+and the `SESSION` cookie is HttpOnly, SameSite=Lax, browser-scoped and Secure by
+default. Restrictive CSP, frame, MIME, referrer and HSTS headers are configured.
 
 ## AI integration
 
@@ -59,9 +72,11 @@ configuration, initial limits, retention and typed results are defined in
 
 ## AI security
 
-Prompts/context/output are untrusted. Scope, least privilege, typed validation,
-limits and fallback need design/testing. See AI-SECURITY-SPEC.md and
-../workflow/SECURITY.md. No controls are implemented yet.
+Prompts/context/output are untrusted. `AiAccessGuard` implements the
+authorization-before-context seam required by AI-SEC-001 and is verified to
+construct no protected context and make no model call after denial. Typed
+schemas, limits, transport and assistant endpoints remain unimplemented. See
+AI-SECURITY-SPEC.md and ../workflow/SECURITY.md.
 
 ## SDD workflow
 
@@ -76,9 +91,31 @@ failures/findings. Definitions are not evidence of actual agent invocation.
 
 ## Testing strategy
 
-Derive normal, boundary, failure, authorization, integration and adversarial
-cases from requirements. Tooling/commands: TBD after design approval. Record
-executed tests separately from planned/added tests.
+Run all current tests with:
+
+```sh
+./gradlew test
+```
+
+The wrapper downloads the Java 25 toolchain when it is not installed. Current
+tests run Flyway against an isolated H2 database in PostgreSQL compatibility
+mode and cover login, role routes, CSRF, sessions, password storage,
+persisted-account changes, object authorization and the AI access boundary.
+An actual PostgreSQL integration suite and browser tests remain required before
+release.
+
+For a local application run, create an empty PostgreSQL database and supply:
+
+```text
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/facilityflow
+SPRING_DATASOURCE_USERNAME=<local account>
+SPRING_DATASOURCE_PASSWORD=<local secret>
+SESSION_COOKIE_SECURE=false
+```
+
+Then run `./gradlew bootRun`. Do not commit local values. No demo or production
+account bootstrap is implemented yet, so an approved initializer/account-
+administration slice must provision the first account before interactive use.
 
 ## Development vs production environments
 

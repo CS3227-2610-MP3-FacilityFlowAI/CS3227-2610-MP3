@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: facilityflow-ai
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  flyway:
+    enabled: true
+  session:
+    store-type: jdbc
+    timeout: -1s
+    jdbc:
+      initialize-schema: never
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: ${SESSION_COOKIE_SECURE:true}
+        same-site: lax
+facilityflow:
+  security:
+    password:
+      salt-length: 16
+      hash-length: 32
+      parallelism: 1
+      memory-kib: 65536
+      iterations: 3

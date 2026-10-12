@@ -1,6 +1,8 @@
 # Security Review Process
 
-Status: process scaffold; controls are not implemented or verified. Threats and
+Status: authentication controls and the AI authorization-first seam were
+implemented and locally tested on 13 October 2026; teammate review, assistant
+endpoint controls and wider release verification remain pending. Threats and
 testable criteria belong in [AI-SECURITY-SPEC.md](specs/AI-SECURITY-SPEC.md).
 
 Review authentication, role/ownership authorization, validation, CSRF, sessions,
@@ -23,3 +25,18 @@ Agent messages, retrieved text and outputs are untrusted. Validate sources and
 scope; upstream handoffs cannot grant production or credential access.
 Disclosure channel and response process: TBD by the team. Do not post live
 credentials, personal data or sensitive exploit details in public issues.
+
+## Implemented authentication controls
+
+- Argon2id password hashes; no plaintext password persistence.
+- Generic form-login failure for unknown, incorrect and inactive Accounts.
+- JDBC-backed server sessions, explicit logout invalidation and browser-scoped
+  Secure/HttpOnly/SameSite=Lax cookies.
+- Per-request persisted active-state, role and session-version checks.
+- Controller role rules plus use-case owner/assignment guards.
+- CSRF and restrictive response headers.
+- Authorization before protected AI context construction or model invocation.
+
+Executed test evidence is recorded in `logs/2026-10-13-authentication-foundation.md`.
+Real PostgreSQL, browser, account-administration and complete AI endpoint testing
+remain required.

@@ -8,6 +8,7 @@ choices remain in [PLAN.md](PLAN.md) and the planning document.
 | --- | --- | --- | --- | --- |
 | ADR-001 | Reuse MP2 as the FacilityFlow foundation | [Record](decisions/ADR-001-reuse-mp2-foundation.md) | Approved direction; implementation evidence pending | User-reported lecturer clarification, 10 October 2026 |
 | ADR-002 | Use one advisory LLM assistant per role | [Record](decisions/ADR-002-role-ai-assistants.md) | Approved direction; detailed specs pending teammate review | User instruction, 10 October 2026 |
+| ADR-003 | Pin the authentication foundation | [Record](decisions/ADR-003-authentication-foundation.md) | Implemented; teammate approval pending | Approved technical spec v0.1 and local test evidence, 13 October 2026 |
 
 ## Record template
 

@@ -66,8 +66,10 @@ storage will not be reused. All reuse must be recorded in
 
 Planning baseline created on 4 October 2026. The reuse decision and three AI
 feature contracts were updated on 10 October 2026. Specification baseline v0.1
-was approved on 12 October 2026; implementation must follow the gates in
-`workflow/PLAN.md` and the approved requirement IDs.
+was approved on 12 October 2026. The authentication walking skeleton was
+implemented on 13 October 2026 and is awaiting teammate review; remaining
+manual workflows, account administration, AI features and deployment are not
+yet implemented.
 
 ## Development workflow and setup
 
@@ -77,11 +79,11 @@ block coding. Stable IDs connect specs, code, tests, PRs and evidence. Teammate
 review precedes non-trivial merges; fresh verification follows failed-test or
 security fixes.
 
-Current contents are planning documents and approved specifications. Application
-code, automated application tests and deployment are not implemented. The stack
-and Gradle build are design choices; exact compatible dependency versions, local
-commands and environment values are pinned during the approved scaffold. Setup instructions follow
-[TECHNICAL-SPEC.md](workflow/specs/TECHNICAL-SPEC.md) approval.
+The Gradle build pins Java 25 and Spring Boot 4.1.1. Authentication tests run
+with `./gradlew test`; a local application run additionally requires a
+PostgreSQL database and the three `SPRING_DATASOURCE_*` environment variables.
+See the [Developer Guide](docs/DeveloperGuide.md) for exact commands and the
+current implementation boundary.
 
 | Additional path | Purpose |
 | --- | --- |
@@ -93,8 +95,8 @@ commands and environment values are pinned during the approved scaffold. Setup i
 
 ## Documentation
 
-- [User Guide](docs/UserGuide.md): released behavior; currently placeholders.
-- [Developer Guide](docs/DeveloperGuide.md): design/process and implementation TBDs.
+- [User Guide](docs/UserGuide.md): currently implemented sign-in and role routing.
+- [Developer Guide](docs/DeveloperGuide.md): build, architecture, security and test instructions.
 - [Reflections](docs/Reflections.md): evidence prompts, not completed reflections.
 - [AI logs](logs/README.md): sanitized summaries and actual review status.
 

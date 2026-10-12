@@ -1,6 +1,7 @@
 # User Guide
 
-Status: pre-implementation placeholder.
+Status: authentication foundation implemented 13 October 2026; teammate review
+pending. Maintenance and AI workflows are not yet released.
 
 This guide must be updated continuously to match the deployed product exactly.
 It will document how Requesters, Technicians, and Facilities Managers access,
@@ -8,20 +9,28 @@ test, and use every released feature, including AI fallbacks and limitations.
 
 ## Introduction
 
-Facilities-maintenance application is planned; no released features exist yet.
+The current walking skeleton supports secure sign-in, sign-out and separate
+placeholder workspaces for the three FacilityFlow roles.
 
 ## Accessing the deployed application
 
-URL, browsers, sign-in and support contact: TBD after deployment.
+The deployed URL and support contact remain TBD. On a provisioned environment,
+open `/login`, enter the username and password supplied by a Facilities Manager,
+and select **Sign in**. The form works without JavaScript. The application sends
+the Account directly to its role workspace.
 
 ## Roles
 
-Requester, Technician and Facilities Manager. Provisioning and released
-permissions: TBD; approved role specs will govern behavior.
+Requester, Technician and Facilities Manager are the only roles. Each Account
+can open only its own role workspace. Directly entering another role's URL is
+denied. Account provisioning and password-change screens are not yet available.
 
 ## Features
 
-Verified released workflows, steps and examples: TBD.
+The authenticated header shows display name, username and role. Select
+**Sign out** to end the server-side session. A deactivated Account, a Manager
+password reset represented by a session-version change, or a persisted role
+change takes effect on the next request.
 
 ## AI features
 
@@ -46,4 +55,8 @@ released resource limits and failure behavior: TBD.
 
 ## Troubleshooting
 
-Verified recovery steps for authentication, request and AI failures: TBD.
+`Invalid username or password` intentionally covers an unknown username, wrong
+password and inactive Account. Retry the supplied credentials or contact a
+Facilities Manager; the message does not reveal whether an Account exists. If
+the session is no longer valid, sign in again. Deployment/support details remain
+TBD.

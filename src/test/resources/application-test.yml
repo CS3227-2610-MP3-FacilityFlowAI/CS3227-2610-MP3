@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:facilityflow;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  flyway:
+    enabled: true
+  session:
+    store-type: jdbc
+    jdbc:
+      initialize-schema: never
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: true
+        same-site: lax
