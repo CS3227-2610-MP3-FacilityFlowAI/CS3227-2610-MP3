@@ -1,7 +1,7 @@
 # Requester Specification
 
-Status: draft v0.1, 12 October 2026. Owner: yooplo. Required reviewer: at
-least one teammate. Shared fields, lifecycle, UI and quality rules are in
+Status: approved v0.1, 12 October 2026. Owner: yooplo. Required teammate review
+has been confirmed. Shared fields, lifecycle, UI and quality rules are in
 [PRODUCT-SPEC](PRODUCT-SPEC.md) and are not repeated here.
 
 ## Objective and screens

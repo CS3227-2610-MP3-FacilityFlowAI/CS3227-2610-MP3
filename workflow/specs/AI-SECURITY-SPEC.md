@@ -1,7 +1,7 @@
 # AI Security Specification
 
-Status: draft v0.1, 12 October 2026. Owner: Security Reviewer with ngkhengyang
-for gateway controls. Required approval: all role owners and one fresh reviewer.
+Status: approved v0.1, 12 October 2026. Owner: Security Reviewer with ngkhengyang
+for gateway controls. Required role-owner and fresh-reviewer approval has been confirmed.
 This document defines required controls and planned tests; it does not claim they
 are implemented or verified.
 

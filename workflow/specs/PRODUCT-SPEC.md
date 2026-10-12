@@ -1,7 +1,7 @@
 # Product Specification
 
-Status: draft v0.1, 12 October 2026. Owner: team. Required approval: each role
-owner and at least one teammate through pull-request review.
+Status: approved v0.1, 12 October 2026. Owner: team. Approval by each role
+owner and at least one teammate has been confirmed.
 
 Sources: stakeholder decisions through 12 October 2026; binding group-planning
 document; MP2 behavior at commit
@@ -211,4 +211,5 @@ Release acceptance requires automated lifecycle, validation, authorization,
 transaction and AI-failure tests; isolated PostgreSQL integration tests; focused
 web/keyboard tests for critical workflows; a 50-user performance result; a
 deployment/smoke/promotion record; backup-restore evidence; and a reviewed
-traceability matrix. Requirements remain draft until human approval is recorded.
+traceability matrix. Specification approval does not claim implementation or
+verification; those require the recorded evidence above.

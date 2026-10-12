@@ -1,7 +1,7 @@
 # Technician Specification
 
-Status: draft v0.1, 12 October 2026. Owner: ngkhengyang. Required reviewer:
-at least one teammate. Shared rules are in [PRODUCT-SPEC](PRODUCT-SPEC.md).
+Status: approved v0.1, 12 October 2026. Owner: ngkhengyang. Required teammate
+review has been confirmed. Shared rules are in [PRODUCT-SPEC](PRODUCT-SPEC.md).
 
 ## Objective and screens
 

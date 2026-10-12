@@ -1,9 +1,8 @@
 # Technical Specification
 
-Status: draft v0.1, 12 October 2026. Owner: Architect with shared owners in
-AGENTS.md. Required approval: all role owners and one teammate. This design
-records the accepted Vercel direction and becomes the implementation baseline
-after specification approval.
+Status: approved v0.1, 12 October 2026. Owner: Architect with shared owners in
+AGENTS.md. Required role-owner and teammate approval has been confirmed. This
+design records the accepted Vercel direction and is the implementation baseline.
 
 ## Stack and structure
 

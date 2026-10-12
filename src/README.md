@@ -1,10 +1,10 @@
 # Source Code
 
-Application and test code will be added after the initial specification gate is
-approved. The planned implementation is a Spring Boot modular monolith with
+The initial specification gate passed on 12 October 2026. Application and test
+code may now be added as scoped implementation work under the approved baseline.
+The planned implementation is a Spring Boot modular monolith with
 Thymeleaf/HTMX, PostgreSQL, Spring Security, and a bounded SoC LLM gateway.
 
 No application/test source exists yet. This README keeps src/ tracked; no
-.gitkeep is needed. TECHNICAL-SPEC.md approval still gates implementation even
-though a stack is recorded in the plan. Do not bootstrap frameworks or select
-build tools/dependencies during repository setup.
+.gitkeep is needed. Bootstrap and dependency choices must follow the approved
+TECHNICAL-SPEC.md and record the exact compatible versions selected.
