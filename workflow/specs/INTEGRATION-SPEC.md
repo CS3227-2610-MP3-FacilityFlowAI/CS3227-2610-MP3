@@ -1,47 +1,77 @@
 # Integration Specification
 
-Status: draft scaffold; not approved for implementation. Owner/reviewer: TBD.
+Status: role AI contracts drafted 10 October 2026; SoC LLM endpoint, model,
+credentials, exact limits, and teammate approval remain pending.
 
-Planning context: [PLAN.md](../PLAN.md). Existing planning decisions are preserved;
-behavior, acceptance criteria and detailed design still need approval.
-Material TBDs block implementation. Approval revision, approvers and evidence: TBD.
+## Shared gateway
 
-## Interfaces and owners
+All application AI uses a shared SoC LLM gateway with separate role templates,
+input builders, output schemas, validators, limits, and audit events. The model
+has no application mutation tools. Credentials load from environment or
+deployment secret storage and are never committed or logged.
 
-Role services, persistence, audit and gateway contracts: TBD across owners.
-Ownership follows AGENTS.md.
+## Requester contract
 
-## SoC LLM contract
+- Planned endpoint: `POST /api/ai/request-draft`
+- Authorization: authenticated Requester
+- Input: current unsaved description plus server-side category and urgency
+  allowlists
+- Output: `suggestedTitle`, `suggestedCategory`, `suggestedUrgency`,
+  `urgencyRationale`, `missingInformation`, `safetyAdvice`
+- Mutation: none
 
-Application AI must use the SoC LLM. Endpoint, model, authentication, supported
-schema and documented quotas: TBD. Credentials load from configuration/environment
-and must never be committed or logged.
+## Technician contract
 
-## Typed inputs and outputs
+- Planned endpoint: `POST /api/ai/work-plan/{requestId}`
+- Authorization: authenticated current assignee; request in `ASSIGNED` or
+  `IN_PROGRESS`
+- Input: minimum authorized request fields and approved playbook excerpts with
+  provenance
+- Output: `safetyChecks`, `diagnosticSteps`, `suggestedTools`,
+  `requesterQuestions`, `evidenceToCapture`
+- Mutation: none
 
-Schemas, enums, lengths, unknown-field rejection and invalid-output responses:
-TBD. Model output is untrusted.
+## Facilities Manager contract
 
-## Authorization and context scope
+- Planned endpoint: `POST /api/ai/triage/{requestId}`
+- Authorization: authenticated Facilities Manager; request currently `OPEN`
+- Input: minimum request fields, category and priority allowlists, and eligible
+  technician identifiers with approved skill tags and active-work counts
+- Output: `suggestedCategory`, `suggestedPriority`,
+  `recommendedTechnicianId`, `reasons`, `clarificationRequired`,
+  `clarifyingQuestion`, `confidence`
+- Mutation: none
 
-Authorize before collecting minimal role-scoped context. Exact fields/service
-checks: TBD. The model never receives mutation capabilities.
+## Validation and context scope
 
-## Limits and failures
+Authorize before context construction. Each output uses a closed typed schema
+and rejects unknown fields. Enum values and identifiers must belong to the
+server-supplied set for that request. Rendering escapes model text. The gateway
+does not accept caller-supplied account IDs, technician lists, playbook sources,
+or mutation instructions as trusted context.
 
-Per-user/global budgets, timeouts, concurrency, bounded retries and responses
-to 429, partial output and unavailability: TBD. Preserve core workflow use.
+## Limits and failure behavior
+
+Per-user and global budgets, token/input/output limits, concurrency, timeout,
+and bounded retries require approval before implementation. Handle HTTP 429,
+timeouts, cancellation, partial output, malformed output, and unavailability as
+safe errors. Preserve user-entered form content and the normal non-AI workflow.
 
 ## Persistence and audit
 
-Transactions, version checks, event contracts and safe audit metadata: TBD.
+AI endpoints do not persist business suggestions automatically. Safe audit
+metadata follows `AI-SEC-005`. Any later decision to retain prompt or response
+content requires an explicit data-classification, retention, deletion, and
+access-control decision.
 
-## Environment configuration
+## Environments
 
-Separate development/production data, secrets and configuration. Approved
-variable names, credentials/quotas separation and provisioning: TBD.
+Development and production use separate SoC LLM credentials or quotas where
+available, separate databases, and separate configuration. Tests use stubs or
+approved development access and never call production credentials.
 
-## Integration acceptance and tests
+## Integration tests
 
-Contract, authorization, schema, failure, quota and isolation cases/outcomes:
-TBD. External calls require an approved integration design.
+Contract tests cover schema-valid responses, invalid values, unknown fields,
+authorization and isolation, stale state or assignment, rate limits, timeout,
+malformed and partial output, concurrent requests, and proof of no mutation.

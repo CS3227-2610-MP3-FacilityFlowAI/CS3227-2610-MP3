@@ -1,51 +1,84 @@
 # Product Specification
 
-Status: draft scaffold; not approved for implementation. Owner/reviewer: TBD.
-
-Planning context: [PLAN.md](../PLAN.md). Existing planning decisions are preserved;
-behavior, acceptance criteria and detailed design still need approval.
-Material TBDs block implementation. Approval revision, approvers and evidence: TBD.
+Status: product and AI directions updated 10 October 2026; detailed workflow,
+quality targets, and teammate approval remain pending.
 
 ## Project purpose
 
-Planned facilities-maintenance web application for CS3227 MP3.
-Detailed problem statement and success criteria: TBD.
+FacilityFlow AI is a deployed facilities-maintenance web application for
+reporting, triaging, completing, and auditing maintenance work. It reuses the
+MP2 FacilityFlow domain where recorded in the reuse ledger and adds a web
+architecture, PostgreSQL, deployment, and one advisory SoC LLM feature per
+role.
 
-## Actors / roles
+## Actors and coordination
 
-Requester, Technician and Facilities Manager are established in AGENTS.md.
-Detailed responsibility/access definitions: TBD in role specs.
+- Requester
+- Technician
+- Facilities Manager
 
-## Shared concepts
+The role-specific planning focuses in `AGENTS.md` organize work but do not
+restrict members to one role or code area.
 
-Glossary, lifecycle definitions and invariants: TBD. Existing planning describes
-requests and a lifecycle; exact eligibility/transition rules require approval.
+## Shared lifecycle
 
-## Core workflows
+The planned MP2 baseline is:
 
-Preconditions, actions, outcomes and failure paths: TBD in role specifications.
+`OPEN -> ASSIGNED -> IN_PROGRESS -> COMPLETED -> CLOSED`
 
-## Functional requirements
+`CANCELLED` is a terminal alternative. Reassignment, return for rework,
+reopening, corrections, and cancellation eligibility require explicit web
+requirements before implementation.
 
-Actual requirement entries/IDs: TBD. Use the requirement template; do not infer
-permissions or eligibility from a planning summary.
+## Core product rules
+
+- Authentication, authorization, ownership, validation, transitions, and writes
+  are deterministic server-side operations.
+- Each role has a separate web interface and can complete its core workflow
+  when the SoC LLM is unavailable.
+- AI endpoints return advisory suggestions and do not share mutation code paths.
+- Development and production use separate services, databases, configuration,
+  secrets, and hostnames.
+- Reused MP2 material is identified and quantified before merge and release.
+
+## Role AI requirements
+
+- `REQ-RQ-001`: Smart Report Assistant, defined in `ROLE-REQUESTER.md`.
+- `REQ-TECH-001`: Work Plan Assistant, defined in `ROLE-TECHNICIAN.md`.
+- `REQ-MGR-001`: Triage Assistant, defined in `ROLE-MANAGER.md`.
+
+## Shared AI requirements
+
+### REQ-AI-001 Advisory boundary
+
+AI generation must not create or update a request, work log, assignment,
+priority, account, audit transition, or workflow state. Users act through
+separate ordinary endpoints that repeat all applicable checks.
+
+### REQ-AI-002 Core workflow fallback
+
+Every role can complete its normal workflow after an AI timeout, rate limit,
+malformed response, unavailable service, or user decision to skip AI. Existing
+form input and authorized records remain unchanged by the failure.
+
+## MVP exclusions
+
+- Arbitrary web browsing or retrieval from unapproved documents.
+- Model tool access or autonomous business actions.
+- Image analysis, email ingestion, real-time chat, inventory, invoicing,
+  payments, maps, and push notifications.
+- Automatic grading of safety, urgency, technician performance, or user
+  behavior.
 
 ## Non-functional requirements
 
-Assignment calls for a production-level secured web application. Measurable
-security, reliability, accessibility, performance and operational targets: TBD.
-
-## Acceptance criteria
-
-Actor, preconditions, action, observable result, forbidden result and relevant
-failure paths per requirement: TBD. No criteria are approved yet.
-
-## Out-of-scope items
-
-Confirm and reference MVP boundaries in the existing planning document.
-Detailed approved exclusions and rationale: TBD.
+The application must be secured, production-level, deployed, and supported by
+testable AI-security, SDD, and multi-agent evidence. Measurable availability,
+performance, accessibility, retention, recovery, and operational targets remain
+pending in the technical specification.
 
 ## Unresolved questions
 
-TBD: fields, categories/priorities, eligibility, visibility, account lifecycle,
-retention and measurable quality targets.
+Approve the complete authorization matrix, account lifecycle, all ordinary
+workflow fields and transitions, quality targets, retention, support contact,
+and exact AI limits and failure responses.

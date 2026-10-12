@@ -5,14 +5,20 @@ maintenance application. MP3 preserves the proven Requester, Technician, and
 Facilities Manager workflow while rebuilding the product as a deployed web
 application with guarded SoC LLM assistance for every role.
 
+The team reported a lecturer clarification on 10 October 2026: MP2 may be
+reused, provided MP3 is delivered as a web application with a production
+database and deployment, includes the required LLM features, and documents the
+reused material. The clarification is recorded in
+[`ADR-001`](workflow/decisions/ADR-001-reuse-mp2-foundation.md).
+
 ## Project direction
 
-- **Requester:** report assistant for structured drafts, category suggestions,
-  missing information, and explained urgency suggestions.
-- **Technician:** work-plan assistant for diagnostics, safety warnings,
-  evidence collection, and clarification questions.
-- **Facilities Manager:** triage assistant for category, priority,
-  clarification, and technician-skill recommendations.
+- **Requester:** Smart Report Assistant for structured drafts, category and
+  urgency suggestions, missing information, and safety advice.
+- **Technician:** Work Plan Assistant for diagnostic steps, safety checks,
+  suggested tools, requester questions, and evidence to collect.
+- **Facilities Manager:** Triage Assistant for category and priority
+  suggestions, clarification needs, and an eligible technician recommendation.
 - **AI boundary:** AI drafts and recommends only. Authenticated users review
   every result and perform all business actions through deterministic services.
 - **Stack:** Java, Spring Boot, Thymeleaf/HTMX, PostgreSQL, Spring Security,
@@ -35,15 +41,20 @@ The full first group-planning document is in
 
 ## Team
 
-| GitHub user | Role slice | Team-level responsibility |
+| GitHub user | Primary role focus | Shared delivery area coordinated by member |
 | --- | --- | --- |
 | `yooplo` | Requester | Authentication, sessions, role routing, CSRF, and account access controls |
 | `ngkhengyang` | Technician | SoC LLM gateway, rate limiting, typed AI output, and AI observability |
 | `yu-sutong` | Facilities Manager | PostgreSQL migrations, audit model, CI/CD, and deployment |
 
+These are coordination focuses rather than exclusive boundaries. Members may
+work across role and shared features; each non-trivial change still requires
+teammate review.
+
 ## MP2 reuse
 
-The assignment permits MP2 reuse when it is quantified and acknowledged.
+The assignment and the reported lecturer clarification permit MP2 reuse when it
+is quantified and acknowledged.
 FacilityFlow AI will reuse selected domain rules, role permissions, models,
 validation, and test scenarios from MP2. The JavaFX interface and SQLite
 storage will not be reused. All reuse must be recorded in
@@ -51,8 +62,10 @@ storage will not be reused. All reuse must be recorded in
 
 ## Status
 
-Planning baseline created on 4 October 2026. Implementation must follow the
-specification gates in `workflow/PLAN.md`.
+Planning baseline created on 4 October 2026. The reuse decision and three AI
+feature contracts were updated on 10 October 2026. Detailed specifications
+remain drafts until teammate review; implementation must follow the gates in
+`workflow/PLAN.md`.
 
 ## Development workflow and setup
 

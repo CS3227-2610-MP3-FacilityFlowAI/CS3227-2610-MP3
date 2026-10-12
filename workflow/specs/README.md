@@ -29,8 +29,10 @@ and obtain team review before implementation.
 
 Allocate sequential unique numbers per prefix only for real drafted requirements.
 Keep IDs across revisions; never reuse retired IDs. Document any new subcategory
-here before use. A draft ID does not imply approval; these examples are not
-approved requirements.
+here before use. The role AI contracts allocate `REQ-RQ-001`, `REQ-TECH-001`,
+and `REQ-MGR-001`; shared AI and security requirements allocate `REQ-AI-001`
+through `REQ-AI-002` and `AI-SEC-001` through `AI-SEC-005`. These remain drafts
+until teammate approval.
 
 ## Requirement and approval workflow
 

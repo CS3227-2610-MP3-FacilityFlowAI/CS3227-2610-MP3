@@ -3,10 +3,14 @@
 ## Baseline
 
 - Source repository: `CS3227-2610-MP2-FacilityFlow/CS3227-2610-MP2`
-- Planned source commit: `cbfeb8f` (29 September 2026)
+- Verified source commit: `cbfeb8fec339d2708c15eae1884fbc9b69063908`
+  (29 September 2026, `Prepare clean reproducible v1.0.1 release`)
 - Target repository: `CS3227-2610-MP3-FacilityFlowAI/CS3227-2610-MP3`
 
-The source commit must be verified before reuse begins. Every reused item must
+The team reported on 10 October 2026 that the lecturer confirmed MP2 reuse is
+allowed when the result is a deployed web application with a production
+database and the team documents its reuse. See
+[`ADR-001`](decisions/ADR-001-reuse-mp2-foundation.md). Every reused item must
 be recorded before its pull request is merged.
 
 ## Classifications
@@ -37,10 +41,11 @@ be recorded before its pull request is merged.
 
 ## Current evidence and measurement detail
 
-No MP2 application source/tests are present at scaffold time. Treatment rows
-above are plans, not completed reuse. The cited source commit is unverified in
-this session. Existing planning documents reference MP2 concepts; their exact
-source sections and reused amount need team verification.
+No MP2 application source or tests are present in this repository yet.
+Treatment rows above are plans, not completed reuse. The source commit was
+verified locally on 10 October 2026. Existing planning documents reference MP2
+concepts; their exact source sections and reused amount still need team
+verification.
 
 Each ledger entry must record component/section, original commit/location,
 target, classification (unchanged, adapted, concept-only or new), actual MP3
