@@ -2,7 +2,7 @@
 
 - Decision ID: ADR-002
 - Date: 2026-10-10
-- Status: approved direction; draft specifications pending teammate review
+- Status: approved; governing specifications approved 12 October 2026
 - Related requirements: `REQ-RQ-012` through `REQ-RQ-017`, `REQ-TECH-012`
   through `REQ-TECH-017`, `REQ-MGR-020` through `REQ-MGR-025`, `REQ-AI-001`
   through `REQ-AI-010`, and the `AI-SEC` requirements

@@ -1,7 +1,7 @@
 # Integration Specification
 
-Status: draft v0.1, 12 October 2026. Owner: ngkhengyang. Required reviewers:
-Security Reviewer, one role owner, and one teammate. Business eligibility remains
+Status: approved v0.1, 12 October 2026. Owner: ngkhengyang. Required Security
+Reviewer, role-owner, and teammate reviews have been confirmed. Business eligibility remains
 in role specifications; this document owns transport and typed contracts.
 
 ## SoCLaaS transport

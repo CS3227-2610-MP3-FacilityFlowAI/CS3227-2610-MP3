@@ -1,6 +1,6 @@
 # FacilityFlow AI Specification Index
 
-Status: draft baseline v0.1, 12 October 2026. Human approval is pending.
+Status: approved baseline v0.1, 12 October 2026. Human approval is recorded.
 
 This directory is the behavioral and design source of truth. A planning document
 explains intent; an approved requirement here controls implementation. If sources

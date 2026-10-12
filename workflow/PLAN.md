@@ -1,8 +1,8 @@
 # FacilityFlow AI MP3 Plan
 
-Status: planning baseline updated 10 October 2026. The product direction, MP2
-reuse permission, and role-specific AI concepts are confirmed by the user; the
-detailed specifications still require teammate review.
+Status: approved planning and specification baseline, updated 12 October 2026.
+The product direction, MP2 reuse permission, role-specific AI concepts, and
+detailed specifications have completed the required human review.
 
 The full planning document is stored at
 [`../docs/planning/MP3_First_Group_Planning_Document.docx`](../docs/planning/MP3_First_Group_Planning_Document.docx).
@@ -39,9 +39,9 @@ Members may contribute across roles and shared features, but each owner remains
 accountable for completing their assigned role slice. Contribution evidence
 must record the work actually completed and reviewed.
 
-## Specification gate
+## Specification gate (passed 12 October 2026)
 
-Before feature implementation, create and approve:
+The following implementation-governing artifacts are approved:
 
 - `workflow/specs/PRODUCT-SPEC.md`
 - `workflow/specs/ROLE-REQUESTER.md`
@@ -89,17 +89,14 @@ relevant failure paths.
 
 ## Immediate next tasks
 
-- Obtain teammate approval for the updated role AI contracts and shared AI
-  security requirements.
 - Add the first reused MP2 files to the ledger before merging them into MP3.
 - Validate the accepted initial SoC LLM quotas, timeout, retry policy and
   retention against the available service before implementation; revise the
   specification through review if provider constraints require a change.
 - Approve maintenance playbook sources before any excerpt is included in model
   context.
-- Approve the remaining product, architecture, data, and deployment details.
-- Bootstrap the Spring/PostgreSQL walking skeleton only after the specification
-  gate passes.
+- Bootstrap the Spring/PostgreSQL walking skeleton under the approved technical
+  specification.
 
 ## Development phases and exit gates
 
@@ -108,9 +105,9 @@ above remain the baseline and are not completion evidence.
 
 | Phase | Purpose | Exit evidence | Current status |
 | --- | --- | --- | --- |
-| 0 - Repository and workflow setup | Docs, templates and config audit | Validation and teammate review | Scaffold prepared; review pending |
-| 1 - Requirements/specification | Behavior, IDs, criteria and exclusions | Role owner/teammate approve revisions | Pending |
-| 2 - Architecture and security design | Detail stack, contracts and threats | Design/spec/decision approval | Pending detailed design |
+| 0 - Repository and workflow setup | Docs, templates and config audit | Validation and teammate review | Approved baseline |
+| 1 - Requirements/specification | Behavior, IDs, criteria and exclusions | Role owner/teammate approve revisions | Approved v0.1 |
+| 2 - Architecture and security design | Detail stack, contracts and threats | Design/spec/decision approval | Approved v0.1 |
 | 3 - Core application foundation | Approved framework, auth, storage and CI | Tests and independent review | Not implemented |
 | 4 - Role-specific features | Approved three-role workflows | Requirement-linked tests | Not implemented |
 | 5 - AI features | One bounded SoC LLM feature per role | Schema, limit and failure evidence | Not implemented |

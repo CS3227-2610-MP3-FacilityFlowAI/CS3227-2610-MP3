@@ -65,9 +65,9 @@ storage will not be reused. All reuse must be recorded in
 ## Status
 
 Planning baseline created on 4 October 2026. The reuse decision and three AI
-feature contracts were updated on 10 October 2026. Detailed specifications
-remain drafts until teammate review; implementation must follow the gates in
-`workflow/PLAN.md`.
+feature contracts were updated on 10 October 2026. Specification baseline v0.1
+was approved on 12 October 2026; implementation must follow the gates in
+`workflow/PLAN.md` and the approved requirement IDs.
 
 ## Development workflow and setup
 
@@ -77,7 +77,7 @@ block coding. Stable IDs connect specs, code, tests, PRs and evidence. Teammate
 review precedes non-trivial merges; fresh verification follows failed-test or
 security fixes.
 
-Current contents are planning documents and specification drafts. Application
+Current contents are planning documents and approved specifications. Application
 code, automated application tests and deployment are not implemented. The stack
 and Gradle build are design choices; exact compatible dependency versions, local
 commands and environment values are pinned during the approved scaffold. Setup instructions follow
