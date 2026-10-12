@@ -109,7 +109,9 @@ CLOSED reopen operation.
   or inactive Account shall use the same message and reveal no account existence.
 - **REQ-SH-004:** Logout, account deactivation, and Manager password reset shall
   invalidate affected sessions. Own-password and eligible role changes retain
-  the current session, but the next request uses the persisted role.
+  the current session, but the next request uses the persisted role. A Technician
+  with ASSIGNED or IN_PROGRESS Requests cannot be deactivated until every active
+  Request is reassigned or cancelled.
 - **REQ-SH-005:** There is no inactivity timeout. Authentication uses a
   browser-session cookie that is Secure in HTTPS, HttpOnly, SameSite=Lax, and
   absent after browser-session end or explicit logout.

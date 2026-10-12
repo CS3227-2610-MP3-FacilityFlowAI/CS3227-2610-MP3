@@ -35,7 +35,9 @@ Catalogue/Technician skills, audit viewer, change password, and Triage Assistant
   Technician and reason.
 - **REQ-MGR-009:** A Manager may correct title, description, location, category,
   reported urgency and Manager priority in any state without changing ownership,
-  status, history, assignment history, completion data, IDs or timestamps.
+  status, history, assignment history, completion data, IDs or historical
+  timestamps. A successful correction advances the system-managed `updatedAt`
+  timestamp and records an Audit Event; callers cannot set timestamps directly.
 - **REQ-MGR-010:** The overview shows counts by status and priority and each active
   Technician's workload, defined as ASSIGNED plus IN_PROGRESS Requests.
 - **REQ-MGR-011:** The audit viewer supports Request, actor, action and date-range
@@ -52,10 +54,9 @@ Catalogue/Technician skills, audit viewer, change password, and Triage Assistant
   current Account, reset their own password through the Manager reset operation,
   or leave zero active Managers.
 - **REQ-MGR-015:** A Technician with ASSIGNED or IN_PROGRESS work cannot be
-  changed to another role until the work is reassigned/cancelled. Deactivation
-  is allowed, but the inactive Technician cannot receive a new assignment and
-  existing active work remains visible to Managers for reassignment or
-  cancellation. Non-Technician Accounts cannot receive assignments.
+  deactivated or changed to another role until every active Request is reassigned
+  or cancelled. An inactive Technician cannot receive or retain an active
+  assignment. Non-Technician Accounts cannot receive assignments.
 
 ## Category and skill administration
 
