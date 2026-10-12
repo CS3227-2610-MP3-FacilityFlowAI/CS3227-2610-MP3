@@ -47,3 +47,5 @@ authorization.
 
 Each owner is responsible for their interface, service behavior, persistence
 integration, authorization tests, documentation, and reflection evidence.
+Members may contribute across slices, but cross-role work does not transfer the
+assigned owner's accountability. A teammate must review non-trivial work.

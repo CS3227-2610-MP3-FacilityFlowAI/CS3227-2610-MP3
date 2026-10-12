@@ -25,12 +25,15 @@ Spring Boot/Gradle versions are governed by
 
 ## Data model
 
-Entities, relationships, migrations, invariants and concurrency: TBD.
+The accepted entities, relationships, transaction boundaries, invariants and
+concurrency approach are defined in `../workflow/specs/TECHNICAL-SPEC.md`.
 
 ## Role model
 
-Requester: yooplo; Technician: ngkhengyang; Manager: yu-sutong. Detailed
-permissions, ownership and account lifecycle: TBD in role specs.
+Requester owner: `yooplo`; Technician owner: `ngkhengyang`; Facilities Manager
+owner: `yu-sutong`. Members may contribute across slices, but each owner remains
+accountable for completing their role features. Detailed permissions and
+Account lifecycle rules are defined in the shared and role specifications.
 
 ## Security design
 
@@ -39,8 +42,20 @@ writes are required. Detailed controls and implementation evidence: TBD.
 
 ## AI integration
 
-SoC LLM advisory gateway is planned. Contract, model, schemas and environment
-configuration: TBD in INTEGRATION-SPEC.md.
+The planned shared SoC LLM gateway serves three advisory features:
+
+- Smart Report Assistant for Requester draft structure, category, urgency, and
+  missing-information questions.
+- Work Plan Assistant for Technician safety checks, diagnostics, tools,
+  requester questions, and evidence to collect.
+- Triage Assistant for Manager category, priority, clarification, and skill-tag
+  suggestions; the application ranks eligible Technicians deterministically.
+
+Each role has a separate endpoint, typed schema, validator, authorization check,
+and fallback. The gateway has no mutation tools. The model, environment
+configuration, initial limits, retention and typed results are defined in
+`../workflow/specs/INTEGRATION-SPEC.md` and
+`../workflow/specs/AI-SECURITY-SPEC.md`.
 
 ## AI security
 
@@ -67,9 +82,10 @@ executed tests separately from planned/added tests.
 
 ## Development vs production environments
 
-Separate services, databases, hostnames, config and secrets are planned.
-Synthetic development data only. Setup and variable names: TBD; no speculative
-.env.example is introduced.
+Separate services, databases, hostnames, config and secrets are planned. Use
+synthetic development data only. Configuration variable names and development/
+demo seeding rules are defined in the technical and integration specifications;
+no secret values belong in documentation or source control.
 
 ## Deployment
 
@@ -81,8 +97,10 @@ workflows, backups and rollback remain unimplemented.
 
 ## MP2 reuse
 
-See ../workflow/REUSE.md; verify source commit before copying. Measure code,
-tests/docs separately and acknowledge every source.
+The team reported lecturer confirmation that MP2 reuse is permitted when MP3 is
+a deployed web application with a production database and documented reuse.
+The source baseline commit is verified in `../workflow/REUSE.md`. Measure code,
+tests, and documentation separately and acknowledge every source before merge.
 
 ## Acknowledgements
 

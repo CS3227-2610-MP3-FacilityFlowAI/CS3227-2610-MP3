@@ -25,8 +25,19 @@ Verified released workflows, steps and examples: TBD.
 
 ## AI features
 
-One bounded SoC LLM assistant per role is planned. Steps, human review and
-fallback guidance: TBD after verification.
+Three bounded SoC LLM assistants are planned:
+
+- Requesters may ask the Smart Report Assistant for an editable structured
+  draft, category and urgency suggestions, and missing-information questions.
+- Technicians may ask the Work Plan Assistant for an advisory diagnostic and
+  evidence-collection plan for an assigned request.
+- Facilities Managers may ask the Triage Assistant for explained category,
+  priority, clarification, and skill-tag suggestions. The application then
+  ranks eligible Technicians using deterministic rules.
+
+No assistant performs a business action. Users review suggestions and use the
+ordinary workflow. Exact steps and screenshots will be added only after the
+features are implemented and verified.
 
 ## Limitations
 

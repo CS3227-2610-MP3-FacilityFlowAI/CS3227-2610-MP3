@@ -1,6 +1,8 @@
 # FacilityFlow AI MP3 Plan
 
-Status: approved planning baseline, 4 October 2026.
+Status: planning baseline updated 10 October 2026. The product direction, MP2
+reuse permission, and role-specific AI concepts are confirmed by the user; the
+detailed specifications still require teammate review.
 
 The full planning document is stored at
 [`../docs/planning/MP3_First_Group_Planning_Document.docx`](../docs/planning/MP3_First_Group_Planning_Document.docx).
@@ -11,8 +13,13 @@ The full planning document is stored at
   Thymeleaf/HTMX, PostgreSQL, Spring Security, and Docker.
 - Preserve the MP2 Requester, Technician, and Facilities Manager domain and
   lifecycle while replacing JavaFX and SQLite.
-- Provide one guarded SoC LLM feature per role. AI output is advisory and cannot
-  call mutation tools or perform business actions.
+- Reuse is permitted under the lecturer clarification reported by the team on
+  10 October 2026. Record every reused component and quantify final reuse.
+- Provide a Smart Report Assistant for Requesters, a Work Plan Assistant for
+  Technicians, and a Triage Assistant for Facilities Managers.
+- AI output is advisory and cannot call mutation tools or perform business
+  actions. Each user reviews suggestions before using ordinary authorized
+  services.
 - Maintain separate development and production services, databases,
   configuration, secrets, and hostnames.
 - Use Vercel Preview deployments for pull requests. After approved merge and
@@ -24,9 +31,13 @@ The full planning document is stored at
 
 | Owner | Role | AI feature | Shared responsibility |
 | --- | --- | --- | --- |
-| `yooplo` | Requester | Report Assistant | Authentication, sessions, role routing, CSRF, account access |
+| `yooplo` | Requester | Smart Report Assistant | Authentication, sessions, role routing, CSRF, account access |
 | `ngkhengyang` | Technician | Work Plan Assistant | SoC LLM gateway, rate limiting, typed output, observability |
 | `yu-sutong` | Facilities Manager | Triage Assistant | PostgreSQL migrations, audit model, CI/CD, deployment |
+
+Members may contribute across roles and shared features, but each owner remains
+accountable for completing their assigned role slice. Contribution evidence
+must record the work actually completed and reviewed.
 
 ## Specification gate
 
@@ -78,9 +89,15 @@ relevant failure paths.
 
 ## Immediate next tasks
 
-- Approve the seven specification documents and traceability format.
-- Record the MP2 baseline commit and initialize the reuse comparison process.
-- Create architecture and security decision records.
+- Obtain teammate approval for the updated role AI contracts and shared AI
+  security requirements.
+- Add the first reused MP2 files to the ledger before merging them into MP3.
+- Validate the accepted initial SoC LLM quotas, timeout, retry policy and
+  retention against the available service before implementation; revise the
+  specification through review if provider constraints require a change.
+- Approve maintenance playbook sources before any excerpt is included in model
+  context.
+- Approve the remaining product, architecture, data, and deployment details.
 - Bootstrap the Spring/PostgreSQL walking skeleton only after the specification
   gate passes.
 

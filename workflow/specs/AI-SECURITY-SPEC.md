@@ -136,6 +136,21 @@ evidence of safety.
   findings. Tests are not weakened to make a result pass; a human records risk
   acceptance.
 
+## Response freshness and leakage controls
+
+- **AI-SEC-028:** After the provider returns and before any suggestion is sent
+  to the browser, the server rechecks the Account's active state and role plus
+  current object-level access. If access changed during the call, the entire
+  result is discarded and no protected content is returned.
+- **AI-SEC-029:** Browser AI invocations use POST with valid CSRF protection.
+  Authentication, role/object authorization, CSRF, input-size and local
+  rate/concurrency checks complete before context loading or any provider call.
+- **AI-SEC-030:** Schema-valid output still passes a fail-closed disclosure
+  check before display. Reject the entire result if it contains known secret
+  material, prompt-template delimiters or protected identifiers/content outside
+  the feature's response allowlist. Tests place unique canaries in system-only
+  and unauthorized context and require rejection if any canary is returned.
+
 ## Planned security test matrix
 
 | Case | Attack/control | Expected allowed result | Expected forbidden result |
@@ -155,6 +170,9 @@ evidence of safety.
 | AIS-T13 | forged accepted/result/role client fields | normal authorization/validation | approval bypass |
 | AIS-T14 | logs, audit, handoff inspection | safe metadata only | secret/raw prompt/output/full text |
 | AIS-T15 | malicious handoff/document instruction | scope remains authoritative | permission expansion |
+| AIS-T16 | Account/object access revoked while provider call is in flight | result discarded after fresh authorization | stale protected result displayed |
+| AIS-T17 | missing/invalid CSRF or local limit failure on AI POST | local rejection before context/provider | provider call or protected context load |
+| AIS-T18 | schema-valid output repeats hidden/unauthorized canary | entire result rejected and safely logged | leaked content displayed or retained |
 
 Execute with synthetic data in an authorized non-production environment and
 record actual results using the security-test template. Planned cases are not
