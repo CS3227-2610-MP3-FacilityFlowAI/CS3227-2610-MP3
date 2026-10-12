@@ -35,18 +35,17 @@ authorization.
    secrets and unnecessary personal data.
 8. Record every MP2-derived file or section in `workflow/REUSE.md` as unchanged,
    adapted, concept-only, or new.
+9. For every agent or session transition, follow the shared handoff protocol in
+   `workflow/agents/README.md`; the model invokes `$facilityflow-handoff` to
+   produce temporary context and a durable project handoff record.
 
 ## Ownership
 
-- `yooplo`: primary Requester focus; coordinates authentication and access
-  control.
-- `ngkhengyang`: primary Technician focus; coordinates the SoC LLM gateway and
-  AI observability.
-- `yu-sutong`: primary Facilities Manager focus; coordinates persistence,
-  audit, CI/CD, and deployment.
+- `yooplo`: Requester slice; authentication and access-control foundation.
+- `ngkhengyang`: Technician slice; SoC LLM gateway and AI observability.
+- `yu-sutong`: Facilities Manager slice; persistence, audit, CI/CD, deployment.
 
-These focuses organize the work; they are not exclusive role or code ownership.
-Members may contribute across the application. The contributor to a change is
-responsible for its interface, service behavior, persistence integration,
-authorization tests, documentation, and reflection evidence, and a teammate
-must review non-trivial work.
+Each owner is responsible for their interface, service behavior, persistence
+integration, authorization tests, documentation, and reflection evidence.
+Members may contribute across slices, but cross-role work does not transfer the
+assigned owner's accountability. A teammate must review non-trivial work.

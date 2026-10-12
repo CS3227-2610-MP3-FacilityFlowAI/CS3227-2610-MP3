@@ -18,20 +18,22 @@ logs/: summaries; .github/: PR-Agent/contribution template. No app build exists.
 
 ## Architecture
 
-Existing plan: Java/Spring Boot modular monolith, Thymeleaf/HTMX, Spring
-Security, PostgreSQL and Docker. Detailed design/build tool/versions: TBD
-in ../workflow/specs/TECHNICAL-SPEC.md.
+Existing plan: Java 25/Spring Boot modular monolith, Gradle, Thymeleaf/HTMX,
+Spring Security, PostgreSQL and Docker. Detailed design and the pinned compatible
+Spring Boot/Gradle versions are governed by
+../workflow/specs/TECHNICAL-SPEC.md.
 
 ## Data model
 
-Entities, relationships, migrations, invariants and concurrency: TBD.
+The accepted entities, relationships, transaction boundaries, invariants and
+concurrency approach are defined in `../workflow/specs/TECHNICAL-SPEC.md`.
 
 ## Role model
 
-Requester: primary focus coordinated by `yooplo`; Technician: primary focus
-coordinated by `ngkhengyang`; Manager: primary focus coordinated by
-`yu-sutong`. These focuses organize work and are not exclusive code ownership.
-Detailed ordinary permissions and account lifecycle remain TBD in role specs.
+Requester owner: `yooplo`; Technician owner: `ngkhengyang`; Facilities Manager
+owner: `yu-sutong`. Members may contribute across slices, but each owner remains
+accountable for completing their role features. Detailed permissions and
+Account lifecycle rules are defined in the shared and role specifications.
 
 ## Security design
 
@@ -42,17 +44,18 @@ writes are required. Detailed controls and implementation evidence: TBD.
 
 The planned shared SoC LLM gateway serves three advisory features:
 
-- Smart Report Assistant for Requester draft structure, category, urgency,
-  missing-information questions, and safety advice.
+- Smart Report Assistant for Requester draft structure, category, urgency, and
+  missing-information questions.
 - Work Plan Assistant for Technician safety checks, diagnostics, tools,
   requester questions, and evidence to collect.
-- Triage Assistant for Manager category, priority, clarification, and eligible
-  technician recommendations.
+- Triage Assistant for Manager category, priority, clarification, and skill-tag
+  suggestions; the application ranks eligible Technicians deterministically.
 
 Each role has a separate endpoint, typed schema, validator, authorization check,
-and fallback. The gateway has no mutation tools. The model and environment
-configuration, exact limits, and retention remain TBD in
-`INTEGRATION-SPEC.md`.
+and fallback. The gateway has no mutation tools. The model, environment
+configuration, initial limits, retention and typed results are defined in
+`../workflow/specs/INTEGRATION-SPEC.md` and
+`../workflow/specs/AI-SECURITY-SPEC.md`.
 
 ## AI security
 
@@ -79,16 +82,18 @@ executed tests separately from planned/added tests.
 
 ## Development vs production environments
 
-Separate services, databases, hostnames, config and secrets are planned.
-Synthetic development data only. Setup and variable names: TBD; no speculative
-.env.example is introduced.
+Separate services, databases, hostnames, config and secrets are planned. Use
+synthetic development data only. Configuration variable names and development/
+demo seeding rules are defined in the technical and integration specifications;
+no secret values belong in documentation or source control.
 
 ## Deployment
 
 Team-managed deployment must be independent of AI coding/build-host environments.
-Existing plan uses GitHub Actions, immutable image promotion and Render; humans
-approve production. Secrets use GitHub/deployment-platform mechanisms.
-Provisioning, workflows, backups and rollback remain TBD/unimplemented.
+The approved direction uses GitHub Actions and Vercel Preview/Production;
+humans approve promotion of a smoke-tested Production candidate without a
+rebuild. Secrets use GitHub/deployment-platform mechanisms. Provisioning,
+workflows, backups and rollback remain unimplemented.
 
 ## MP2 reuse
 

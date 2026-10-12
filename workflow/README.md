@@ -11,7 +11,11 @@ No application features or security controls are implemented yet.
 5. Developer implements approved scope and records affected IDs.
 6. Tester verifies normal, boundary, failure and adversarial cases. A fresh
    verifier checks fixes after failed tests or security findings.
-7. Teammate reviews before non-trivial merges; update evidence and documentation.
+7. Spec/Docs Verifier checks requirement, implementation, guide, reuse and
+   traceability consistency.
+8. Integration/Release Verifier checks the exact candidate's cross-role,
+   environment and release evidence.
+9. Teammate reviews before non-trivial merges; update evidence and documentation.
 
 See [agents](agents/README.md), [handoffs](templates/agent-handoff-template.md),
 [traceability](TRACEABILITY.md), [security](SECURITY.md), [reuse](REUSE.md) and

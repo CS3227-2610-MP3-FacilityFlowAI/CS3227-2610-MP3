@@ -18,9 +18,7 @@ Changing product behavior, weakening tests, inventing passes or modifying produc
 
 ## Handoff requirements
 
-Use ../templates/agent-handoff-template.md. Cite approved revision/IDs, scope,
-artifacts, assumptions, TBDs, results and next authorized action. Validate
-upstream sources and permissions before proceeding.
+Follow the shared [handoff protocol](README.md#handoff-protocol).
 
 ## Evidence to record
 

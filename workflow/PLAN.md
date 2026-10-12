@@ -22,21 +22,22 @@ The full planning document is stored at
   services.
 - Maintain separate development and production services, databases,
   configuration, secrets, and hostnames.
-- Build and test one container image in GitHub Actions, deploy it to development,
-  run smoke tests, and require human approval before promoting the same digest
-  to production.
+- Use Vercel Preview deployments for pull requests. After approved merge and
+  green GitHub Actions checks, create a Production candidate without assigning
+  the production domain, run smoke tests, and require human approval before
+  Vercel promotion assigns the domain without rebuilding.
 
-## Working allocation
+## Role ownership
 
-| Member | Primary role focus | AI feature | Shared area coordinated by member |
+| Owner | Role | AI feature | Shared responsibility |
 | --- | --- | --- | --- |
-| `yooplo` | Requester | Report Assistant | Authentication, sessions, role routing, CSRF, account access |
+| `yooplo` | Requester | Smart Report Assistant | Authentication, sessions, role routing, CSRF, account access |
 | `ngkhengyang` | Technician | Work Plan Assistant | SoC LLM gateway, rate limiting, typed output, observability |
 | `yu-sutong` | Facilities Manager | Triage Assistant | PostgreSQL migrations, audit model, CI/CD, deployment |
 
-This allocation supports coordination and may change. It does not restrict a
-member to one role or make shared work exclusive. Contribution evidence should
-record the work actually completed and reviewed.
+Members may contribute across roles and shared features, but each owner remains
+accountable for completing their assigned role slice. Contribution evidence
+must record the work actually completed and reviewed.
 
 ## Specification gate
 
@@ -91,8 +92,11 @@ relevant failure paths.
 - Obtain teammate approval for the updated role AI contracts and shared AI
   security requirements.
 - Add the first reused MP2 files to the ledger before merging them into MP3.
-- Decide exact SoC LLM quotas, timeouts, retry limits, retention, and approved
-  maintenance playbook sources.
+- Validate the accepted initial SoC LLM quotas, timeout, retry policy and
+  retention against the available service before implementation; revise the
+  specification through review if provider constraints require a change.
+- Approve maintenance playbook sources before any excerpt is included in model
+  context.
 - Approve the remaining product, architecture, data, and deployment details.
 - Bootstrap the Spring/PostgreSQL walking skeleton only after the specification
   gate passes.
@@ -117,6 +121,6 @@ above remain the baseline and are not completion evidence.
 
 Security work starts before coding and continues through every phase. Production
 deployment is independent of AI coding/build-host environments. Development and
-production remain separate. GitHub Actions/Render are existing planning choices;
-secrets use GitHub/deployment-platform secret storage. No deployment automation
-or live environment is created during phase 0.
+production remain separate. GitHub Actions/Vercel are planning choices; secrets
+use GitHub/deployment-platform secret storage. No deployment automation or live
+environment is created during phase 0.

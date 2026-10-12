@@ -1,5 +1,10 @@
 # Reuse and AI Feature Decision
 
+Historical note: this record captures the 10 October draft. The stakeholder-
+confirmed 12 October specifications supersede its detailed output contracts,
+role-accountability wording and MP2 baseline; `AGENTS.md`, `workflow/specs/`
+and `workflow/REUSE.md` are authoritative.
+
 ## Goal
 
 Update the MP3 repository after the team reported lecturer confirmation that
