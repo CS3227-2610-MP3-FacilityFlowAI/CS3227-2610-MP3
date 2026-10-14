@@ -22,3 +22,16 @@ See [agents](agents/README.md), [handoffs](templates/agent-handoff-template.md),
 [logs](../logs/README.md). Human review is required for specifications, security
 exceptions, merges and production promotion. No SDD toolkit or autonomous agent
 framework is installed. Development agents have no implicit production access.
+
+## Shared database skills
+
+The project-local `supabase` and `supabase-postgres-best-practices` skills under
+`.agents/skills/` are development references from `supabase/agent-skills`.
+`skills-lock.json` records their upstream paths and installed-content hashes.
+These files add no application dependency or autonomous agent runtime.
+
+Approved specifications and repository instructions take precedence over generic
+skill guidance (NFR-DOC-001, AI-SEC-025). FacilityFlow continues to use Flyway
+migrations and private JDBC access as documented in the database guides; these
+skills do not authorize Supabase Auth adoption, cloud writes, messages, feedback
+submissions, or any expansion of the current task's permissions.
