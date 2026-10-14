@@ -1,6 +1,35 @@
 # Developer Guide
 
-Status: pre-implementation placeholder.
+Status: Build scaffold and database foundation implemented; V1 application and
+permissions evidenced by user screenshots. Product features remain pending.
+
+Part 2b supplies the private identity/audit/session schema, restricted-role
+provisioning and isolated PostgreSQL migration tests. See
+[DatabaseMigrations](DatabaseMigrations.md) for applying the development schema
+with separate migration/runtime identities. User-reported connectivity succeeded;
+user screenshots confirm V1/table metadata and four permission restrictions;
+runtime connection succeeded as reported by the user. No independent hosted
+query was performed.
+
+## Local scaffold (Part 1)
+
+Install JDK 25 and run the committed Gradle wrapper from the repository root.
+The first build requires network access to obtain Gradle and Maven dependencies;
+automated tests need no real database or SoCLaaS credentials. Running the
+application now requires the database variables in [Supabase setup](SupabaseSetup.md).
+
+```powershell
+.\gradlew.bat test bootJar
+java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.profiles.active=database-check
+```
+
+On macOS/Linux, use `sh ./gradlew test bootJar`. The current non-web scaffold
+connects for the explicit smoke check and exits; there is no page to open yet.
+Set the documented database environment before running the JAR. Test reports are under
+`build/reports/tests/test/`. The source configuration is
+`src/main/resources/application.yml`; do not edit generated `bin/` or `build/`
+copies. Builds use Java 25, Spring Boot 4.1.1, Gradle 9.1.0 and JUnit 5.13.4;
+see [ADR-003](../workflow/decisions/ADR-003-build-baseline.md).
 
 This guide will describe the released architecture, data model, security model,
 SoC LLM integration, specification-driven workflow, multi-agent workflow,
@@ -14,7 +43,8 @@ FacilityFlow AI, CS3227 MP3. Planning/scaffolding only; see README and AGENTS.md
 ## Repository structure
 
 src/: future code/tests; workflow/: specs/process; docs/: guides/planning;
-logs/: summaries; .github/: PR-Agent/contribution template. No app build exists.
+logs/: summaries; .github/: PR-Agent/contribution template. The Gradle build
+packages the minimal application; feature modules are pending.
 
 ## Architecture
 
@@ -24,6 +54,13 @@ Spring Boot/Gradle versions are governed by
 ../workflow/specs/TECHNICAL-SPEC.md.
 
 ## Data model
+
+Supabase is the user-selected PostgreSQL provider. JDBC uses environment-backed
+credentials, certificate verification and a two-connection development pool;
+SQL initialization is disabled. The `database-check` profile performs a read-only
+connectivity probe. Part 2b now supplies versioned identity/audit/session storage;
+the `database-migrate` profile explicitly enables Flyway. No Supabase Auth
+integration was added. Request data and live session behavior remain pending.
 
 The accepted entities, relationships, transaction boundaries, invariants and
 concurrency approach are defined in `../workflow/specs/TECHNICAL-SPEC.md`.

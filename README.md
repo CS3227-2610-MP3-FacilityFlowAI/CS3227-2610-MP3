@@ -77,11 +77,15 @@ block coding. Stable IDs connect specs, code, tests, PRs and evidence. Teammate
 review precedes non-trivial merges; fresh verification follows failed-test or
 security fixes.
 
-Current contents are planning documents and approved specifications. Application
-code, automated application tests and deployment are not implemented. The stack
-and Gradle build are design choices; exact compatible dependency versions, local
-commands and environment values are pinned during the approved scaffold. Setup instructions follow
-[TECHNICAL-SPEC.md](workflow/specs/TECHNICAL-SPEC.md) approval.
+Part 1 adds the Java 25/Spring Boot 4.1.1 build scaffold, Gradle 9.1.0 wrapper
+and a passing startup test. Part 2a adds Supabase JDBC configuration and a
+read-only connection checker; [Supabase setup](docs/SupabaseSetup.md) is required
+before a live check. Part 2b supplies tested identity/audit/session migrations;
+see [DatabaseMigrations](docs/DatabaseMigrations.md). Authentication, remaining
+database schema, role features, AI and
+deployment remain pending. See the [Developer Guide](docs/DeveloperGuide.md)
+for local build/run commands and [Requester plan](workflow/REQUESTER-PLAN.md)
+for the implementation sequence.
 
 | Additional path | Purpose |
 | --- | --- |

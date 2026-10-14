@@ -11,6 +11,15 @@ choices remain in [PLAN.md](PLAN.md) and the planning document.
 
 ## Record template
 
+Database foundation: [ADR-005](decisions/ADR-005-database-foundation.md),
+implemented against the approved technical baseline; teammate review pending.
+
+Supabase provider selection: [ADR-004](decisions/ADR-004-supabase-postgresql.md),
+authorized by the user; live connection and teammate implementation review pending.
+
+Part 1 version selection: [ADR-003](decisions/ADR-003-build-baseline.md),
+implemented under the approved technical baseline; teammate review pending.
+
 - Decision ID: ADR-NNN (allocate once; never reuse).
 - Date: YYYY-MM-DD.
 - Status: proposed / approved / superseded.

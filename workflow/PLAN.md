@@ -29,6 +29,11 @@ The full planning document is stored at
 
 ## Role ownership
 
+The proposed [Requester execution plan](REQUESTER-PLAN.md) sequences the
+Requester slice and shared identity responsibilities. The user authorized
+implementation in small parts on 14 October 2026; Part 1 build scaffold is
+implemented/tested, while the full foundation and product features remain pending.
+
 | Owner | Role | AI feature | Shared responsibility |
 | --- | --- | --- | --- |
 | `yooplo` | Requester | Smart Report Assistant | Authentication, sessions, role routing, CSRF, account access |

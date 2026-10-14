@@ -10,7 +10,15 @@ review evidence.
 
 | Requirement IDs | Authoritative section | Implementation | Test/evidence | Status |
 | --- | --- | --- | --- | --- |
-| REQ-SH-001–018 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | pending | product acceptance pending | approved |
+| REQ-SH-001 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 account role constraint; routing pending | DatabaseMigrationTest account constraints; Part 2b log | partial |
+| REQ-SH-002–003 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | pending | service authorization/login acceptance pending | approved |
+| REQ-SH-004 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 session/version storage; invalidation service pending | DatabaseMigrationTest session cascade; Part 2b log | partial |
+| REQ-SH-005 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 session storage; cookie/timeout behavior pending | schema migration tested; browser acceptance pending | partial |
+| REQ-SH-006 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 audit storage/grants; event-producing services pending | DatabaseMigrationTest runtime permissions; Part 2b log | partial |
+| REQ-SH-007 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 Account/audit delete denied; remaining entities/UI pending | DatabaseMigrationTest runtime permissions; Part 2b log | partial |
+| REQ-SH-008–013 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | pending | product acceptance pending | approved |
+| REQ-SH-014 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 transactional storage; business service transaction scope pending | DatabaseMigrationTest rollback; Part 2b log | partial |
+| REQ-SH-015–018 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | pending | product acceptance pending | approved |
 | NFR-SEC-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | security evidence pending | approved |
 | NFR-PERF-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | 50-user performance result pending | approved |
 | NFR-A11Y-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | Chrome/accessibility checks pending | approved |
@@ -33,6 +41,27 @@ review evidence.
 | AI-SEC-028–030 | [Response freshness and leakage controls](specs/AI-SECURITY-SPEC.md#response-freshness-and-leakage-controls) | pending | AIS-T16–T18 pending | approved |
 
 ## Update rule
+
+Part 2b exact artifacts: `src/main/resources/db/migration/V1__identity_audit_sessions.sql`,
+`workflow/database/bootstrap-roles.sql`, `application-database-migrate.yml` and
+`src/test/java/sg/edu/nus/facilityflow/database/DatabaseMigrationTest.java`.
+Executed evidence: `logs/2026-10-14-requester-part-2b-database-foundation.md`.
+Partial rows describe database prerequisites only; hosted migrations and actual
+authentication/Requester services remain unverified/unimplemented.
+
+Part 2a supports the TECHNICAL-SPEC database configuration prerequisite with
+`src/main/resources/application.yml`, PostgreSQL/JDBC dependencies,
+`operations/DatabaseConnectionCheck.java` and isolated configuration/check tests.
+See `logs/2026-10-14-requester-part-2a-supabase.md`. TLS configuration binding and
+safe read-only check behavior were unit-tested; no hosted database, certificate,
+schema, migrations, sessions or full NFR was verified.
+
+Part 1 supports the TECHNICAL-SPEC stack/structure prerequisite only:
+`build.gradle`, `settings.gradle`, Gradle wrapper, `FacilityFlowApplication`,
+source `application.yml` and `FacilityFlowApplicationTest`. See
+`logs/2026-10-14-requester-part-1-build.md` for executed startup/build evidence.
+No functional requirement or complete quality requirement is marked verified
+by this scaffold; the table above retains those pending statuses.
 
 The implementing pull request replaces pending with exact source/test paths for
 its IDs, records the approved specification commit, and leaves unrelated rows

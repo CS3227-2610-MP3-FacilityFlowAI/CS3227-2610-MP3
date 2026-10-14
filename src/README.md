@@ -5,6 +5,10 @@ code may now be added as scoped implementation work under the approved baseline.
 The planned implementation is a Spring Boot modular monolith with
 Thymeleaf/HTMX, PostgreSQL, Spring Security, and a bounded SoC LLM gateway.
 
-No application/test source exists yet. This README keeps src/ tracked; no
-.gitkeep is needed. Bootstrap and dependency choices must follow the approved
-TECHNICAL-SPEC.md and record the exact compatible versions selected.
+Part 1 adds the application entry point, source configuration and a startup
+test. Part 2a adds PostgreSQL JDBC configuration and a read-only connection checker;
+user-reported Supabase runtime connectivity succeeded. This scaffold has no HTTP
+server, authentication, business operations or AI features. Part 2b supplies
+versioned account/audit/session storage and isolated migration tests; follow
+docs/DatabaseMigrations.md to apply it to the development database.
+See the Developer Guide for commands and ADR-003 for pinned versions.
