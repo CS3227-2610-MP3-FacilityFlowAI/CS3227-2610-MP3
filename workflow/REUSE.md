@@ -22,7 +22,8 @@ The source commit was verified against the MP2 `master` branch on 12 October
 
 | MP2 source | MP3 destination | Classification | Reused lines | Changed/new lines | Reason and acknowledgement | Pull request |
 | --- | --- | --- | ---: | ---: | --- | --- |
-| _Add entries before merging reused work_ | | | | | | |
+| `gradlew`, `gradlew.bat`, `gradle/wrapper/*` at verified MP2 commit | same wrapper paths | Unchanged | 349 text lines plus one binary wrapper JAR | 0 | Reuse the checksum-pinned Gradle 9.1.0 bootstrap already used by the team; no application behavior reused | `feat/authentication-foundation` (review pending) |
+| `specs/components/authentication-authorization.md` at verified MP2 commit | MP3 identity/web/AI guard behavior and tests under `src/` | Concept only | 0 copied code lines | 1,149 new source/resource/test lines | Adapt account, generic-login-failure, role, ownership, assignment and deactivation scenarios to Spring Security/JDBC/PostgreSQL; JavaFX session implementation not copied | `feat/authentication-foundation` (review pending) |
 
 ## Planned treatment
 
@@ -52,6 +53,8 @@ planned estimates as actual reuse percentages.
 | Component / section | Source / location | Target | Classification | Changes for MP3 | Approximate amount / units | Justification | Acknowledgement / evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Initial MP3 scaffolding from the 6 October 2026 setup session | Current user request and existing MP3 guidance; no MP2 files consulted | New scaffolds and documentation additions listed in logs/2026-10-06-repository-scaffolding.md | New | Initial process/placeholders | File inventory in session report; no MP2 copied lines identified | Establish requested workflow | AI-assisted with Codex; human review pending |
+| Authentication/authorization behavior | MP2 `specs/components/authentication-authorization.md`, verified source commit above | `src/main/java/sg/edu/nus/facilityflow/identity`, `src/main/java/sg/edu/nus/facilityflow/web`, `src/main/java/sg/edu/nus/facilityflow/ai/AiAccessGuard.java`, and related tests | Concept only | 0 copied code lines; 1,149 new source/resource/test lines | Replace JavaFX/in-memory sessions with Spring Security, JDBC sessions, PostgreSQL/Flyway contracts and authorization-before-AI; reuse named scenarios and invariants only | AI-assisted implementation; `git diff`/line count and test log dated 13 October 2026; teammate review pending |
+| Gradle wrapper bootstrap | MP2 `gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.jar`, `gradle-wrapper.properties`, verified source commit above | Same MP3 paths | Unchanged | 349 text lines and one binary JAR unchanged | Preserve checksum-pinned Gradle 9.1.0 wrapper; dependency/build definitions in `build.gradle` and `settings.gradle` are new | File hashes/diff available on review branch; teammate review pending |
 
 Detailed provenance of pre-existing documents and future concept-only reuse:
 TBD after checking MP2. Preserve existing content until comparison supports
