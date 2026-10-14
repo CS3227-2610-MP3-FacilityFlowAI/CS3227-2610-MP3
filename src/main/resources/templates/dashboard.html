@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' · FacilityFlow AI'">FacilityFlow AI</title>
+</head>
+<body>
+<header>
+    <strong th:text="${displayName}">Display name</strong>
+    <span th:text="${username}">username</span>
+    <span th:text="${role}">ROLE</span>
+    <form method="post" th:action="@{/logout}">
+        <button type="submit">Sign out</button>
+    </form>
+</header>
+<main>
+    <h1 th:text="${title}">Workspace</h1>
+    <p>The authenticated foundation is ready for this role's workflow.</p>
+</main>
+</body>
+</html>

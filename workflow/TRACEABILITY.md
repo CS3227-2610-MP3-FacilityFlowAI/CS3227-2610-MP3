@@ -10,10 +10,10 @@ review evidence.
 
 | Requirement IDs | Authoritative section | Implementation | Test/evidence | Status |
 | --- | --- | --- | --- | --- |
-| REQ-SH-001 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 account role constraint; routing pending | DatabaseMigrationTest account constraints; Part 2b log | partial |
-| REQ-SH-002–003 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | pending | service authorization/login acceptance pending | approved |
-| REQ-SH-004 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 session/version storage; invalidation service pending | DatabaseMigrationTest session cascade; Part 2b log | partial |
-| REQ-SH-005 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 session storage; cookie/timeout behavior pending | schema migration tested; browser acceptance pending | partial |
+| REQ-SH-001 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | private V1 account roles; identity/web login and role routes | DatabaseMigrationTest and SecurityIntegrationTest; merge log | integrated; merge validation recorded below; teammate review pending |
+| REQ-SH-002?003 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | IdentityAuthorization, SecurityConfiguration, private JdbcAccountRepository and delegating password verifier | IdentityAuthorizationTest, SecurityIntegrationTest including legacy PBKDF2 login, PostgreSQL repository regression | integrated; teammate review pending |
+| REQ-SH-004 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 session/version storage, logout and persisted-account revalidation | DatabaseMigrationTest session cascade and SecurityIntegrationTest invalidation | partial; account-change use cases pending |
+| REQ-SH-005 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 private JDBC sessions and secure browser-scoped cookie configuration | SecurityIntegrationTest cookie/session assertions; browser checks pending | integrated; teammate review pending |
 | REQ-SH-006 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 audit storage/grants; event-producing services pending | DatabaseMigrationTest runtime permissions; Part 2b log | partial |
 | REQ-SH-007 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 Account/audit delete denied; remaining entities/UI pending | DatabaseMigrationTest runtime permissions; Part 2b log | partial |
 | REQ-SH-008–013 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | pending | product acceptance pending | approved |
@@ -21,7 +21,7 @@ review evidence.
 | REQ-SH-015 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | DatabaseInitializer explicit demo mode | DatabaseInitializerTest seed/rollback/idempotence; Part 3 log | locally verified; hosted pending |
 | REQ-SH-016 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | DatabaseInitializer default Manager bootstrap | DatabaseInitializerTest bootstrap/concurrency/profile/no overwrite; Part 3 log | locally verified; hosted pending |
 | REQ-SH-017 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | bootstrap/demo exceptions supplied; ordinary account authorization pending | initialization tests only | partial |
-| REQ-SH-018 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | pending | AI endpoint acceptance pending | approved |
+| REQ-SH-018 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | AiAccessGuard authorization-before-context seam | AiAccessGuardTest; assistant endpoints pending | partial |
 | NFR-SEC-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | security evidence pending | approved |
 | NFR-PERF-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | 50-user performance result pending | approved |
 | NFR-A11Y-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | Chrome/accessibility checks pending | approved |
@@ -80,3 +80,13 @@ The implementing pull request replaces pending with exact source/test paths for
 its IDs, records the approved specification commit, and leaves unrelated rows
 unchanged. Verification records the environment, command, date, result and
 reviewer; a test file without an executed result is implemented, not verified.
+
+## Master/database merge integration
+
+REQ-SH-001-005, NFR-SEC-001-002 and AI-SEC-001 also have the authentication
+implementation brought from master: `identity/`, `web/`, role templates,
+`SecurityIntegrationTest`, `IdentityAuthorizationTest` and `AiAccessGuardTest`.
+Private-schema queries and prefixed PBKDF2 verification preserve the V1-V3
+storage/initialization artifacts above; the competing V1 is a test-only H2 fixture.
+Merge validation evidence is recorded in `logs/2026-10-15-master-database-merge.md`.
+Teammate review and browser/hosted release verification remain pending.

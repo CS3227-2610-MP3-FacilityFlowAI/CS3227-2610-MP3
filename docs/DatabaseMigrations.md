@@ -72,7 +72,7 @@ Replace `YOUR_PROJECT_REF`; shared pooler usernames use `role.PROJECT_REF`.
 $env:SPRING_DATASOURCE_USERNAME = 'facilityflow_migrator.YOUR_PROJECT_REF'
 $env:SPRING_DATASOURCE_PASSWORD = [Net.NetworkCredential]::new('', (Read-Host 'Migration role password' -AsSecureString)).Password
 .\gradlew.bat test bootJar
-java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.profiles.active=database-migrate
+java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --spring.profiles.active=database-migrate
 Remove-Item Env:\SPRING_DATASOURCE_PASSWORD
 ```
 
@@ -91,7 +91,7 @@ has no role/database administration privileges and must not be app runtime ident
 ```powershell
 $env:SPRING_DATASOURCE_USERNAME = 'facilityflow_app.YOUR_PROJECT_REF'
 $env:SPRING_DATASOURCE_PASSWORD = [Net.NetworkCredential]::new('', (Read-Host 'Application role password' -AsSecureString)).Password
-java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.profiles.active=database-check
+java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --spring.profiles.active=database-check
 Remove-Item Env:\SPRING_DATASOURCE_PASSWORD
 ```
 

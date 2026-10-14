@@ -57,6 +57,21 @@ class DatabaseMigrationTest {
         return source;
     }
 
+    @Test
+    @DisplayName("REQ-SH-001/003: auth repository reads private schema with restricted PostgreSQL role")
+    void readsPersistedAccountThroughAuthenticationRepository() {
+        var id = newAccount("REQUESTER");
+        var repository = new sg.edu.nus.facilityflow.identity.JdbcAccountRepository(
+                new org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate(app));
+        var account = repository.findById(id).orElseThrow();
+        assertEquals(id, account.id());
+        assertNotNull(account.createdAt());
+        assertNotNull(account.updatedAt());
+        assertEquals(id, repository.findByNormalizedUsername(account.username().toLowerCase(java.util.Locale.ROOT))
+                .orElseThrow().id());
+        assertTrue(repository.findById(UUID.randomUUID()).isEmpty());
+    }
+
     @AfterAll
     static void closeDatabase() throws Exception {
         if (postgres != null) {

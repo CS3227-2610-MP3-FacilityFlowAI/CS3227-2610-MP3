@@ -26,3 +26,23 @@ spring:
     baseline-on-migrate: false
     validate-on-migrate: true
     ignore-migration-patterns: ''
+  session:
+    timeout: -1s
+    jdbc:
+      initialize-schema: never
+      table-name: facilityflow.spring_session
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: ${SESSION_COOKIE_SECURE:true}
+        same-site: lax
+facilityflow:
+  security:
+    password:
+      salt-length: 16
+      hash-length: 32
+      parallelism: 1
+      memory-kib: 65536
+      iterations: 3

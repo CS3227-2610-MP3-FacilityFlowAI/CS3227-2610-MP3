@@ -22,11 +22,14 @@ application now requires the database variables in [Supabase setup](SupabaseSetu
 
 ```powershell
 .\gradlew.bat test bootJar
-java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.profiles.active=database-check
+java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --spring.profiles.active=database-check
 ```
 
-On macOS/Linux, use `sh ./gradlew test bootJar`. The current non-web scaffold
-connects for the explicit smoke check and exits; there is no page to open yet.
+On macOS/Linux, use `sh ./gradlew test bootJar`. Database commands run
+without an HTTP server: add `--spring.main.web-application-type=none` to the
+`database-check`, `database-migrate` and `database-initialize` Java commands.
+Ordinary startup serves `/login` and role workspaces. For local HTTP only,
+set `SESSION_COOKIE_SECURE=false`; retain secure cookies for HTTPS.
 Set the documented database environment before running the JAR. Test reports are under
 `build/reports/tests/test/`. The source configuration is
 `src/main/resources/application.yml`; do not edit generated `bin/` or `build/`
@@ -40,20 +43,22 @@ latest release rather than the intended design.
 
 ## Project overview
 
-FacilityFlow AI, CS3227 MP3. Planning/scaffolding only; see README and AGENTS.md.
+FacilityFlow AI, CS3227 MP3. Database and authentication foundations integrated;
+role business workflows remain pending. See README and AGENTS.md.
 
 ## Repository structure
 
-src/: future code/tests; workflow/: specs/process; docs/: guides/planning;
+src/: application code/tests; workflow/: specs/process; docs/: guides/planning;
 logs/: summaries; .github/: PR-Agent/contribution template. The Gradle build
 packages the minimal application; feature modules are pending.
 
 ## Architecture
 
-Existing plan: Java 25/Spring Boot modular monolith, Gradle, Thymeleaf/HTMX,
-Spring Security, PostgreSQL and Docker. Detailed design and the pinned compatible
-Spring Boot/Gradle versions are governed by
-../workflow/specs/TECHNICAL-SPEC.md.
+The implemented foundation pins Java 25, Gradle 9.1.0 and Spring Boot 4.1.1.
+Spring MVC/Thymeleaf serves pages, Spring Security controls authentication,
+Spring Session JDBC persists browser sessions, Flyway owns schema changes through the explicit migration profile, and
+JDBC repositories isolate PostgreSQL access. The approved wider modular-monolith
+design remains in `../workflow/specs/TECHNICAL-SPEC.md`.
 
 ## Data model
 
@@ -62,7 +67,7 @@ credentials, certificate verification and a two-connection development pool;
 SQL initialization is disabled. The `database-check` profile performs a read-only
 connectivity probe. Part 2b now supplies versioned identity/audit/session storage;
 the `database-migrate` profile explicitly enables Flyway. No Supabase Auth
-integration was added. Request data and live session behavior remain pending.
+integration was added. Authentication and JDBC sessions now use the private schema.
 
 V2/V3 now supply the remaining maintenance/catalogue/history/skills/AI/limit tables.
 The `database-initialize` profile performs explicit first setup using app credentials,
@@ -73,9 +78,9 @@ pre-existing business/catalogue changes prevent fresh initialization.
 Password storage is Boot-managed Spring Security crypto 7.1.1, PBKDF2 v5.8 defaults,
 16-byte random salt, 310,000 SHA-256 iterations and 256-bit output. Stored hashes
 carry `{pbkdf2@SpringSecurity_v5_8}` and are verified in tests with Spring's
-delegating encoder. Ordinary password/login services must use a compatible verifier.
-Business authorization/lifecycle/AI limits and real Session routing/cookies remain
-pending application integration; migrations alone do not implement those controls.
+delegating encoder. Login accepts this format through a delegating encoder; new passwords use
+`{argon2}` and the pinned parameters below. Business lifecycle and AI limits
+remain pending application integration; migrations alone do not implement those controls.
 
 The accepted entities, relationships, transaction boundaries, invariants and
 concurrency approach are defined in `../workflow/specs/TECHNICAL-SPEC.md`.
@@ -89,8 +94,14 @@ Account lifecycle rules are defined in the shared and role specifications.
 
 ## Security design
 
-Deterministic server-side auth, authorization, validation, transitions and
-writes are required. Detailed controls and implementation evidence: TBD.
+Spring Security form login uses one generic invalid-credentials result for an
+unknown username, incorrect password or inactive account. Argon2id parameters
+are configuration-pinned; existing prefixed PBKDF2 hashes remain valid. Every authenticated request reloads active state,
+session version and role from persistence. Role URL rules are backed by
+`IdentityAuthorization` owner/assignment guards at use-case seams; UI hiding is
+not authorization. CSRF remains enabled, logout invalidates the JDBC session,
+and the `SESSION` cookie is HttpOnly, SameSite=Lax, browser-scoped and Secure by
+default. Restrictive CSP, frame, MIME, referrer and HSTS headers are configured.
 
 ## AI integration
 
@@ -111,9 +122,11 @@ configuration, initial limits, retention and typed results are defined in
 
 ## AI security
 
-Prompts/context/output are untrusted. Scope, least privilege, typed validation,
-limits and fallback need design/testing. See AI-SECURITY-SPEC.md and
-../workflow/SECURITY.md. No controls are implemented yet.
+Prompts/context/output are untrusted. `AiAccessGuard` implements the
+authorization-before-context seam required by AI-SEC-001 and is verified to
+construct no protected context and make no model call after denial. Typed
+schemas, limits, transport and assistant endpoints remain unimplemented. See
+AI-SECURITY-SPEC.md and ../workflow/SECURITY.md.
 
 ## SDD workflow
 
@@ -128,9 +141,15 @@ failures/findings. Definitions are not evidence of actual agent invocation.
 
 ## Testing strategy
 
-Derive normal, boundary, failure, authorization, integration and adversarial
-cases from requirements. Tooling/commands: TBD after design approval. Record
-executed tests separately from planned/added tests.
+Run `./gradlew test bootJar`. Storage and initialization tests use disposable
+PostgreSQL, including restricted-role repository reads and timestamps. Web tests
+use an isolated H2 fixture under `src/test/resources/db/authentication`, separate
+from applied production migrations, and cover seeded PBKDF2 login as well as
+Argon2, session invalidation, role denial and CSRF. Browser/hosted checks remain
+required before release; local tests do not connect to Supabase.
+
+Follow the database guides for setup. Ordinary startup does not migrate or seed;
+use the app role for `./gradlew bootRun`, then open `/login`.
 
 ## Development vs production environments
 

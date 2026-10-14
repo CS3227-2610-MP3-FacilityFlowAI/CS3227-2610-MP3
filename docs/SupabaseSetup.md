@@ -77,7 +77,7 @@ $env:SUPABASE_SSL_ROOT_CERT = 'C:/Users/your-name/.postgresql/supabase-dev.crt'
 $env:SPRING_DATASOURCE_PASSWORD = [Net.NetworkCredential]::new('', (Read-Host 'Development database password' -AsSecureString)).Password
 
 .\gradlew.bat test bootJar
-java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.profiles.active=database-check
+java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --spring.profiles.active=database-check
 
 Remove-Item Env:\SPRING_DATASOURCE_PASSWORD
 ```

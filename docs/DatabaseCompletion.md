@@ -48,7 +48,7 @@ $env:SPRING_DATASOURCE_USERNAME = 'facilityflow_migrator.YOUR_PROJECT_REF'
 $env:SPRING_DATASOURCE_PASSWORD = [Net.NetworkCredential]::new('', (Read-Host 'Migration role password' -AsSecureString)).Password
 
 .\gradlew.bat test bootJar
-java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.profiles.active=database-migrate
+java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --spring.profiles.active=database-migrate
 Remove-Item Env:\SPRING_DATASOURCE_PASSWORD
 ```
 
@@ -67,7 +67,7 @@ data only for the initialization command:
 $env:SPRING_DATASOURCE_USERNAME = 'facilityflow_app.YOUR_PROJECT_REF'
 $env:SPRING_DATASOURCE_PASSWORD = [Net.NetworkCredential]::new('', (Read-Host 'Application role password' -AsSecureString)).Password
 $env:DEMO_DATA_ENABLED = 'true'
-java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.profiles.active=database-initialize
+java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --spring.profiles.active=database-initialize
 Remove-Item Env:\DEMO_DATA_ENABLED
 Remove-Item Env:\SPRING_DATASOURCE_PASSWORD
 ```

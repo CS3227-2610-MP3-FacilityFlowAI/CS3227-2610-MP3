@@ -84,8 +84,8 @@ before a live check. Part 3 supplies the remaining shared schema and opt-in
 hashed account initialization; see [DatabaseCompletion](docs/DatabaseCompletion.md).
 V1 is evidenced on Supabase; the user reports matching hosted upgrade/demo
 initialization results. No independent hosted query was performed.
-Authentication, role features, AI and
-deployment remain pending. See the [Developer Guide](docs/DeveloperGuide.md)
+Authentication from master is integrated with the private schema and existing
+seeded accounts. Role business features, AI and deployment remain pending. See the [Developer Guide](docs/DeveloperGuide.md)
 for local build/run commands and [Requester plan](workflow/REQUESTER-PLAN.md)
 for the implementation sequence.
 
