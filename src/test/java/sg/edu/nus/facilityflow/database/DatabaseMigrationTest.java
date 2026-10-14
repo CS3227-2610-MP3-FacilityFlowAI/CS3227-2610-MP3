@@ -39,10 +39,12 @@ class DatabaseMigrationTest {
         // Trust authentication is confined to this disposable loopback test instance.
         admin.execute("ALTER ROLE facilityflow_migrator LOGIN");
         admin.execute("ALTER ROLE facilityflow_app LOGIN");
-        flyway = Flyway.configure().dataSource(dataSource("facilityflow_migrator"))
+        var configuration = Flyway.configure().dataSource(dataSource("facilityflow_migrator"))
                 .schemas("facilityflow").defaultSchema("facilityflow")
-                .cleanDisabled(true).ignoreMigrationPatterns(new String[0]).load();
-        assertEquals(1, flyway.migrate().migrationsExecuted);
+                .cleanDisabled(true).ignoreMigrationPatterns(new String[0]);
+        assertEquals(1, configuration.target("1").load().migrate().migrationsExecuted);
+        flyway = configuration.target("3").load();
+        assertEquals(2, flyway.migrate().migrationsExecuted);
         app = new JdbcTemplate(dataSource("facilityflow_app"));
     }
 
@@ -185,5 +187,153 @@ class DatabaseMigrationTest {
                 "--spring.flyway.password=synthetic")) {
             assertTrue(context.getBean(Flyway.class).validateWithResult().validationSuccessful);
         }
+    }
+
+    private UUID newAccount(String role) {
+        return insertAccount("fixture" + UUID.randomUUID().toString().substring(0, 12), "Synthetic Account", role);
+    }
+
+    private UUID createRequest(UUID owner, UUID recorder) {
+        return app.queryForObject("INSERT INTO facilityflow.maintenance_request "
+                        + "(requester_id, recorded_by, title, description, location, category_id, reported_urgency) "
+                        + "VALUES (?, ?, ?, ?, 'Block A', (SELECT id FROM facilityflow.category WHERE name = 'Electrical'), 'NORMAL') RETURNING id",
+                UUID.class, owner, recorder, "😀".repeat(5), "First line\nSecond line");
+    }
+
+    @Test
+    @DisplayName("REQ-RQ-002 / REQ-MGR-003: database-generated OPEN Request preserves owner and Recording Actor")
+    void generatesRequestIdentity() {
+        var owner = newAccount("REQUESTER");
+        var manager = newAccount("FACILITIES_MANAGER");
+        var request = createRequest(owner, manager);
+        var row = app.queryForMap("SELECT * FROM facilityflow.maintenance_request WHERE id = ?", request);
+        assertEquals(owner, row.get("requester_id"));
+        assertEquals(manager, row.get("recorded_by"));
+        assertEquals("OPEN", row.get("status"));
+        assertNull(row.get("assigned_technician_id"));
+        assertNull(row.get("manager_priority"));
+        assertTrue(row.get("display_id").toString().matches("FF-[0-9]{6}"));
+        assertEquals("First line\nSecond line", row.get("description"));
+        assertSqlState("42501", () -> app.update("UPDATE facilityflow.maintenance_request SET requester_id = ? WHERE id = ?", manager, request));
+        assertSqlState("428C9", () -> app.update("UPDATE facilityflow.maintenance_request SET display_number = 7 WHERE id = ?", request));
+        assertSqlState("42501", () -> app.update("UPDATE facilityflow.maintenance_request SET created_at = CURRENT_TIMESTAMP WHERE id = ?", request));
+        assertSqlState("23514", () -> app.update("UPDATE facilityflow.maintenance_request SET title = 'abcd' WHERE id = ?", request));
+        assertSqlState("23514", () -> app.update("UPDATE facilityflow.maintenance_request SET title = ? WHERE id = ?", "😀".repeat(101), request));
+        assertSqlState("23514", () -> app.update("UPDATE facilityflow.maintenance_request SET reported_urgency = 'CRITICAL' WHERE id = ?", request));
+        assertSqlState("23503", () -> app.update("UPDATE facilityflow.maintenance_request SET category_id = ? WHERE id = ?", UUID.randomUUID(), request));
+    }
+
+    @Test
+    @DisplayName("TECHNICAL-SPEC / PRODUCT-SPEC: display ID overflow fails without wrapping")
+    void rejectsDisplayNumberOverflow() {
+        var owner = newAccount("REQUESTER");
+        var sequence = admin.queryForMap("SELECT last_value, is_called FROM facilityflow.request_display_number_seq");
+        try {
+            admin.queryForObject("SELECT setval('facilityflow.request_display_number_seq', 999998, true)", Long.class);
+            var last = createRequest(owner, owner);
+            assertEquals("FF-999999", app.queryForObject("SELECT display_id FROM facilityflow.maintenance_request WHERE id = ?", String.class, last));
+            var count = app.queryForObject("SELECT count(*) FROM facilityflow.maintenance_request", Long.class);
+            assertSqlState("2200H", () -> createRequest(owner, owner));
+            assertEquals(count, app.queryForObject("SELECT count(*) FROM facilityflow.maintenance_request", Long.class));
+        } finally {
+            admin.queryForObject("SELECT setval('facilityflow.request_display_number_seq', ?, ?)", Long.class,
+                    sequence.get("last_value"), sequence.get("is_called"));
+        }
+    }
+
+    @Test
+    @DisplayName("REQ-MGR-004 / REQ-TECH-007: assignment/completion shapes and history survive reopening")
+    void preservesWorkAndCompletionRecords() {
+        var owner = newAccount("REQUESTER");
+        var technician = newAccount("TECHNICIAN");
+        var request = createRequest(owner, owner);
+        assertSqlState("23514", () -> app.update("UPDATE facilityflow.maintenance_request SET status = 'ASSIGNED' WHERE id = ?", request));
+        app.update("UPDATE facilityflow.maintenance_request SET status = 'IN_PROGRESS', "
+                + "manager_priority = 'HIGH', assigned_technician_id = ?, assigned_at = CURRENT_TIMESTAMP WHERE id = ?", technician, request);
+        var log = app.queryForObject("INSERT INTO facilityflow.work_log (request_id, author_id, note, minutes) VALUES (?, ?, 'Checked safely', 15) RETURNING id", UUID.class, request, technician);
+        assertSqlState("23514", () -> app.update("INSERT INTO facilityflow.work_log (request_id, author_id, note, minutes) VALUES (?, ?, 'Invalid duration', 0)", request, technician));
+        assertSqlState("23514", () -> app.update("UPDATE facilityflow.maintenance_request SET status = 'COMPLETED' WHERE id = ?", request));
+        app.update("INSERT INTO facilityflow.request_completion_history (request_id, technician_id, resolution_summary) VALUES (?, ?, 'Resolved and checked safely')", request, technician);
+        app.update("UPDATE facilityflow.maintenance_request SET status = 'COMPLETED', resolution_summary = 'Resolved and checked safely', "
+                + "completed_by = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ?", technician, request);
+        app.update("UPDATE facilityflow.maintenance_request SET status = 'CLOSED' WHERE id = ?", request);
+        app.update("UPDATE facilityflow.maintenance_request SET status = 'ASSIGNED' WHERE id = ?", request);
+        assertEquals(1, app.queryForObject("SELECT count(*) FROM facilityflow.request_completion_history WHERE request_id = ?", Integer.class, request));
+        assertEquals(1, app.queryForObject("SELECT count(*) FROM facilityflow.work_log WHERE id = ?", Integer.class, log));
+        assertSqlState("42501", () -> app.update("UPDATE facilityflow.work_log SET minutes = 20 WHERE id = ?", log));
+        assertSqlState("42501", () -> app.update("DELETE FROM facilityflow.request_completion_history WHERE request_id = ?", request));
+        assertSqlState("42501", () -> app.update("DELETE FROM facilityflow.maintenance_request WHERE id = ?", request));
+    }
+
+    @Test
+    @DisplayName("REQ-RQ-008 / REQ-SH-007: Requester Updates are bounded append-only records")
+    void preservesRequesterUpdates() {
+        var owner = newAccount("REQUESTER");
+        var request = createRequest(owner, owner);
+        var update = app.queryForObject("INSERT INTO facilityflow.requester_update (request_id, author_id, note) VALUES (?, ?, ?) RETURNING id", UUID.class, request, owner, "😀".repeat(1000));
+        assertSqlState("23514", () -> app.update("INSERT INTO facilityflow.requester_update (request_id, author_id, note) VALUES (?, ?, ?)", request, owner, "😀".repeat(1001)));
+        assertSqlState("42501", () -> app.update("UPDATE facilityflow.requester_update SET note = 'Changed' WHERE id = ?", update));
+        assertSqlState("42501", () -> app.update("DELETE FROM facilityflow.requester_update WHERE id = ?", update));
+    }
+
+    @Test
+    @DisplayName("REQ-MGR-016–019: catalogue uniqueness, skill links and historical tag identity")
+    void maintainsCataloguesAndSkills() {
+        assertEquals(7, app.queryForObject("SELECT count(*) FROM facilityflow.category", Integer.class));
+        assertSqlState("23505", () -> app.update("INSERT INTO facilityflow.category (name) VALUES ('electrical')"));
+        var tag = app.queryForObject("INSERT INTO facilityflow.skill_tag (name) VALUES ('Electrical Safety') RETURNING id", UUID.class);
+        var technician = newAccount("TECHNICIAN");
+        app.update("INSERT INTO facilityflow.technician_skill (technician_id, skill_tag_id) VALUES (?, ?)", technician, tag);
+        assertSqlState("23505", () -> app.update("INSERT INTO facilityflow.technician_skill (technician_id, skill_tag_id) VALUES (?, ?)", technician, tag));
+        assertSqlState("23505", () -> app.update("INSERT INTO facilityflow.skill_tag (name) VALUES ('electrical safety')"));
+        app.update("UPDATE facilityflow.skill_tag SET active = false WHERE id = ?", tag);
+        assertEquals(tag, app.queryForObject("SELECT skill_tag_id FROM facilityflow.technician_skill WHERE technician_id = ?", UUID.class, technician));
+        app.update("DELETE FROM facilityflow.technician_skill WHERE technician_id = ? AND skill_tag_id = ?", technician, tag);
+        assertSqlState("42501", () -> app.update("DELETE FROM facilityflow.skill_tag WHERE id = ?", tag));
+        assertSqlState("42501", () -> app.update("DELETE FROM facilityflow.category WHERE name = 'Other'"));
+    }
+
+    @Test
+    @DisplayName("REQ-AI-007–010 / AI-SEC-017: typed AI metadata without raw output or invented usage")
+    void storesOnlyAiMetadata() {
+        var actor = newAccount("REQUESTER");
+        var invocation = app.queryForObject("INSERT INTO facilityflow.ai_invocation "
+                        + "(actor_id, correlation_id, feature, model, template_version, status, latency_ms, retry_count) "
+                        + "VALUES (?, ?, 'SMART_REPORT', 'synthetic-model', 'v1', 'AI_TIMEOUT', 30000, 0) RETURNING id",
+                UUID.class, actor, UUID.randomUUID());
+        assertNull(app.queryForObject("SELECT total_tokens FROM facilityflow.ai_invocation WHERE id = ?", Long.class, invocation));
+        assertSqlState("23514", () -> app.update("INSERT INTO facilityflow.ai_invocation "
+                + "(actor_id, correlation_id, feature, template_version, status, latency_ms, retry_count) "
+                + "VALUES (?, ?, 'SMART_REPORT', 'v1', 'AI_TIMEOUT', 1, 2)", actor, UUID.randomUUID()));
+        assertSqlState("42501", () -> app.update("DELETE FROM facilityflow.ai_invocation WHERE id = ?", invocation));
+        assertSqlState("42501", () -> app.update("UPDATE facilityflow.ai_invocation SET status = 'SUCCEEDED' WHERE id = ?", invocation));
+        var columns = admin.queryForList("SELECT column_name FROM information_schema.columns WHERE table_schema = 'facilityflow' AND table_name = 'ai_invocation'", String.class);
+        assertFalse(columns.contains("prompt"));
+        assertFalse(columns.contains("output"));
+        assertFalse(columns.contains("metadata"));
+    }
+
+    @Test
+    @DisplayName("AI-SEC-008/021: rolling-window storage and optimistic global-slot claims")
+    void supportsAtomicLimitStorage() {
+        var actor = newAccount("REQUESTER");
+        app.update("INSERT INTO facilityflow.rate_limit_bucket (scope, account_id) VALUES ('ACCOUNT_RATE', ?)", actor);
+        app.update("UPDATE facilityflow.rate_limit_bucket SET invocation_times = ARRAY[CURRENT_TIMESTAMP] WHERE account_id = ?", actor);
+        assertEquals(1, app.queryForObject("SELECT cardinality(invocation_times) FROM facilityflow.rate_limit_bucket WHERE account_id = ?", Integer.class, actor));
+        assertSqlState("23514", () -> app.update("UPDATE facilityflow.rate_limit_bucket SET invocation_times = array_fill(CURRENT_TIMESTAMP, ARRAY[31]) WHERE account_id = ?", actor));
+        assertSqlState("23505", () -> app.update("INSERT INTO facilityflow.rate_limit_bucket (scope, account_id) VALUES ('ACCOUNT_RATE', ?)", actor));
+        assertEquals(5, app.queryForObject("SELECT count(*) FROM facilityflow.rate_limit_bucket WHERE scope = 'GLOBAL_SLOT'", Integer.class));
+        var version = app.queryForObject("SELECT version FROM facilityflow.rate_limit_bucket WHERE slot = 1", Long.class);
+        var claim = "UPDATE facilityflow.rate_limit_bucket SET lease_expires_at = CURRENT_TIMESTAMP + interval '30 seconds', version = version + 1 WHERE slot = 1 AND version = ?";
+        assertEquals(1, app.update(claim, version));
+        assertEquals(0, app.update(claim, version));
+    }
+
+    @Test
+    @DisplayName("NFR-SEC-001: every application table has RLS and all schema objects are migration-owned")
+    void verifiesPrivateSchemaCoverage() {
+        assertEquals(0, admin.queryForObject("SELECT count(*) FROM pg_tables WHERE schemaname = 'facilityflow' AND tablename <> 'flyway_schema_history' AND NOT rowsecurity", Integer.class));
+        assertEquals(0, admin.queryForObject("SELECT count(*) FROM pg_tables WHERE schemaname = 'facilityflow' AND tableowner <> 'facilityflow_migrator'", Integer.class));
+        assertEquals(14, admin.queryForObject("SELECT count(*) FROM pg_tables WHERE schemaname = 'facilityflow'", Integer.class));
     }
 }

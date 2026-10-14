@@ -1,5 +1,10 @@
 # Database foundation: Part 2b
 
+V1 is now evidenced on the hosted development project. For the remaining V2/V3
+schema and explicit account initialization, use [DatabaseCompletion](DatabaseCompletion.md).
+The original V1 steps below are retained for fresh project setup; do not rerun
+role provisioning or edit V1 in an already-initialized project.
+
 Prepared 14 October 2026; hosted evidence received 15 October. Tested on
 disposable PostgreSQL 17.7. User-provided screenshots show successful V1 and all
 five expected tables, plus four denied runtime permissions. User also reported
@@ -121,9 +126,9 @@ exact SQLSTATEs for constraints/permission failures, RLS denial, transaction
 rollback, session deletion, migration reruns/newer-version rejection and the
 actual Spring migration profile. This is not hosted-permission or auth evidence.
 
-Next: Request/category/update/work-log/completion schema and grants, coordinated
-with the persistence owner; then identity services, audited initialization and
-Spring Security/Session integration. No browser login exists yet.
+The remaining schema and initialization command are supplied in Part 3;
+see DatabaseCompletion for application and verification steps. Identity services
+and Spring Security/Session integration remain next. No browser login exists yet.
 
 Acknowledgement: session DDL adapted from Spring Session JDBC 4.1.1
 `schema-postgresql.sql` (Apache-2.0). Schema qualification/security is new MP3 work.

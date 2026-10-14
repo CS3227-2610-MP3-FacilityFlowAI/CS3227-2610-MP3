@@ -11,6 +11,9 @@ choices remain in [PLAN.md](PLAN.md) and the planning document.
 
 ## Record template
 
+Shared database completion: [ADR-006](decisions/ADR-006-complete-database-storage.md),
+implemented against approved requirements; hosted application/teammate review pending.
+
 Database foundation: [ADR-005](decisions/ADR-005-database-foundation.md),
 implemented against the approved technical baseline; teammate review pending.
 

@@ -1,0 +1,139 @@
+# Complete development database setup (V2/V3 and initialization)
+
+Prepared 15 October 2026. V1 is already applied, as shown in the user's screenshots.
+Update: the user reported successful hosted initialization with six Accounts,
+six Requests, two Accounts per role and one Request per state. These are
+user-reported outcomes; no independent hosted query was performed.
+Keep Data API disabled and use the existing private
+schema, certificate and restricted roles. Do not edit V1 or rerun role provisioning.
+
+## Schema supplied for the team
+
+| Migration | Tables / data |
+| --- | --- |
+| V1 (already applied) | user_account, audit_event, spring_session, spring_session_attributes, Flyway history |
+| V2 | category (seven required initial categories), maintenance_request, requester_update, work_log, request_completion_history |
+| V3 | skill_tag, technician_skill, ai_invocation, rate_limit_bucket (five initial global slots) |
+
+After V3 there are **14 tables**, including Flyway history. UUID identities,
+foreign keys, UTC-capable timestamps, catalogue uniqueness, Unicode character
+limits and relevant lookup indexes are supplied. Display IDs are database-generated
+FF-000001 through FF-999999; overflow fails and never wraps. Runtime cannot alter
+Request owner/Recording Actor/IDs/creation times, hard-delete business history,
+or overwrite work logs, updates, completions and AI invocation evidence.
+
+All application tables have RLS restricted to the trusted JDBC server identity;
+the schema is not exposed to browser Data API roles. Product role authorization,
+active catalogue/Technician eligibility, named lifecycle transitions, Work Log
+requirements, priority decisions and atomic audit writes still belong in use-case
+services. The database checks valid shapes; it is not an authorization service.
+
+AI invocation storage has typed metadata only, with nullable provider usage and
+no raw prompt/output/advice fields. Rate-limit storage supports rolling call
+timestamps, atomic version checks and expiring global slot leases. The gateway
+must implement pruning, deadline-safe leases, claim/release and actual 5/minute,
+30/hour and five-in-flight enforcement; the table alone does not enforce quotas.
+Skill deactivation retains immutable tag records; services record historical
+tag ID/label snapshots in safe structured audits where required.
+
+## 1. Upgrade the development database
+
+Open a PowerShell terminal at the repository root. Re-enter the development
+settings if the previous terminal closed. Use the exact existing certificate path:
+
+```powershell
+$env:SPRING_DATASOURCE_URL = 'jdbc:postgresql://YOUR_SESSION_POOLER_HOST:5432/postgres'
+$env:SUPABASE_SSL_ROOT_CERT = 'C:/path/to/your/supabase-certificate.crt'
+$env:SPRING_DATASOURCE_USERNAME = 'facilityflow_migrator.YOUR_PROJECT_REF'
+$env:SPRING_DATASOURCE_PASSWORD = [Net.NetworkCredential]::new('', (Read-Host 'Migration role password' -AsSecureString)).Password
+
+.\gradlew.bat test bootJar
+java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.profiles.active=database-migrate
+Remove-Item Env:\SPRING_DATASOURCE_PASSWORD
+```
+
+Run the Java command only after a successful build. Expected: V1 validates,
+V2/V3 apply successfully and the database reaches **version 3**. No Accounts or
+demo Requests are created by Flyway. Repeating migration reports up-to-date.
+Never clear Flyway history, edit applied scripts, baseline around errors or clean
+the database to fix a failure. Report a safe error category if it fails.
+
+## 2. Initialize development data explicitly
+
+On this fresh **development** project, use the application role and enable demo
+data only for the initialization command:
+
+```powershell
+$env:SPRING_DATASOURCE_USERNAME = 'facilityflow_app.YOUR_PROJECT_REF'
+$env:SPRING_DATASOURCE_PASSWORD = [Net.NetworkCredential]::new('', (Read-Host 'Application role password' -AsSecureString)).Password
+$env:DEMO_DATA_ENABLED = 'true'
+java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.profiles.active=database-initialize
+Remove-Item Env:\DEMO_DATA_ENABLED
+Remove-Item Env:\SPRING_DATASOURCE_PASSWORD
+```
+
+Expected: **Database initialization complete.** This atomically adds requester1/2,
+technician1/2 and manager1/2 with development-only password **Welcome123**, six
+Requests covering all six states, work/completion evidence and Audit Events.
+Hashes use independently salted PBKDF2-HMAC-SHA256 via Spring Security's v5.8
+defaults (16-byte salt, 310,000 iterations, 256-bit output), with the delegating
+`{pbkdf2@SpringSecurity_v5_8}` format. Login integration must verify that format.
+
+These are synthetic fixture accounts, not production credentials. Ordinary startup
+never initializes data: it requires the explicit `database-initialize` profile.
+Existing Accounts make initialization a no-op; other pre-existing business data
+with no Accounts makes it fail. A database advisory transaction lock serializes
+concurrent initializers, and any failure rolls back all inserted business/audit rows.
+Consumed display-number gaps after rollback are allowed. No rows are deleted/reseeded.
+
+## 3. Verify in Supabase SQL Editor
+
+Run these separately to view each result; they expose metadata and counts only:
+
+```sql
+SELECT version, description, success FROM facilityflow.flyway_schema_history
+WHERE version IS NOT NULL ORDER BY installed_rank;
+```
+
+Expected: successful versions **1, 2, 3**.
+
+```sql
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'facilityflow' ORDER BY table_name;
+```
+
+Expected: the **14 tables** listed above.
+
+```sql
+SELECT role, count(*) FROM facilityflow.user_account GROUP BY role ORDER BY role;
+SELECT status, count(*) FROM facilityflow.maintenance_request GROUP BY status ORDER BY status;
+```
+
+For a fresh demo seed: two Accounts per role, one Request per state. Run the two
+count queries separately if the editor shows only the last result. Do not display
+password_hash or session attribute contents in screenshots/logs.
+
+```sql
+SELECT tablename FROM pg_tables
+WHERE schemaname = 'facilityflow'
+  AND tablename <> 'flyway_schema_history' AND NOT rowsecurity;
+```
+
+Expected: zero rows. Repeat the Part 2b runtime permission checks; they should
+remain false. Finally run `database-check` with app credentials to verify connectivity.
+
+## Production initialization, later
+
+Use a separate production project and secrets. Apply migrations with its migration
+identity, then initialize with its app identity. Leave DEMO_DATA_ENABLED absent/false
+and supply BOOTSTRAP_MANAGER_USERNAME, BOOTSTRAP_MANAGER_DISPLAY_NAME and
+BOOTSTRAP_MANAGER_PASSWORD from deployment secrets. Password: 8–24 Unicode code
+points; username: 3–32 permitted characters; display name: 2–80 after trimming.
+The same initialization profile creates only one Manager and its Audit Event;
+no demo Accounts or Requests. Remove/rotate the bootstrap password after success.
+There is no ordinary self-registration endpoint.
+
+Production deployment, backups/restore, session/cookie behavior, runtime schema
+version validation and application role workflows remain separate release work.
+Current runtime still has no HTTP endpoints; complete those controls before
+exposing business operations. Database readiness does not establish product readiness.

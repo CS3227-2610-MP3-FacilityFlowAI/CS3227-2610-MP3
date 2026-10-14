@@ -18,7 +18,10 @@ review evidence.
 | REQ-SH-007 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 Account/audit delete denied; remaining entities/UI pending | DatabaseMigrationTest runtime permissions; Part 2b log | partial |
 | REQ-SH-008–013 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | pending | product acceptance pending | approved |
 | REQ-SH-014 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 transactional storage; business service transaction scope pending | DatabaseMigrationTest rollback; Part 2b log | partial |
-| REQ-SH-015–018 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | pending | product acceptance pending | approved |
+| REQ-SH-015 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | DatabaseInitializer explicit demo mode | DatabaseInitializerTest seed/rollback/idempotence; Part 3 log | locally verified; hosted pending |
+| REQ-SH-016 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | DatabaseInitializer default Manager bootstrap | DatabaseInitializerTest bootstrap/concurrency/profile/no overwrite; Part 3 log | locally verified; hosted pending |
+| REQ-SH-017 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | bootstrap/demo exceptions supplied; ordinary account authorization pending | initialization tests only | partial |
+| REQ-SH-018 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | pending | AI endpoint acceptance pending | approved |
 | NFR-SEC-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | security evidence pending | approved |
 | NFR-PERF-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | 50-user performance result pending | approved |
 | NFR-A11Y-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | Chrome/accessibility checks pending | approved |
@@ -41,6 +44,16 @@ review evidence.
 | AI-SEC-028–030 | [Response freshness and leakage controls](specs/AI-SECURITY-SPEC.md#response-freshness-and-leakage-controls) | pending | AIS-T16–T18 pending | approved |
 
 ## Update rule
+
+Part 3 storage prerequisites: `V2__maintenance_records.sql`,
+`V3__skills_ai_storage.sql`, `identity/DatabaseInitializer.java`,
+`DatabaseMigrationTest` and `identity/DatabaseInitializerTest`. V2 supports
+REQ-RQ-002/008, REQ-TECH-006/007, REQ-MGR-016/017 and shared history/UTC/transaction
+storage; V3 supports REQ-MGR-018/019/023, REQ-AI-007–010 and AI-SEC-008/017/021.
+Role endpoints, eligible actors/assignments, accepted AI tags, telemetry handling
+and actual limit algorithms remain pending; their full requirements are not
+marked implemented from table creation. See Part 3 log for precise executed
+evidence and independent failed-test verification. The source specs remain v0.1.
 
 Part 2b exact artifacts: `src/main/resources/db/migration/V1__identity_audit_sessions.sql`,
 `workflow/database/bootstrap-roles.sql`, `application-database-migrate.yml` and

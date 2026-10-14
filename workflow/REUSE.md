@@ -38,6 +38,14 @@ The source commit was verified against the MP2 `master` branch on 12 October
 
 ## Current evidence and measurement detail
 
+Part 3 V2/V3, initialization source/tests, database test extensions and completion
+guide/ADR-006 are **new** MP3 code/documentation, not MP2-derived. Demo usernames,
+development-only password and lifecycle scenarios are **concept-only** reuse
+already retained in approved PRODUCT/TECHNICAL specs; new Java/SQL implements them.
+No MP2 source consulted/copied this session. Spring Security's PBKDF2 API supplies
+hashing; no third-party implementation source copied. V1/upstream session DDL is
+unchanged. Exact final reuse measurement remains release work.
+
 Part 2b identity/audit constraints, role provisioning, RLS/grants, Flyway profiles,
 DatabaseMigrationTest and DatabaseMigrations guide are **new** MP3 work; no MP2
 files copied. The session-table section of V1 adapts **upstream Spring Session

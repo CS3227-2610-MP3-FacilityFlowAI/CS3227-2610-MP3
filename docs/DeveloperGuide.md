@@ -1,7 +1,9 @@
 # Developer Guide
 
-Status: Build scaffold and database foundation implemented; V1 application and
-permissions evidenced by user screenshots. Product features remain pending.
+Status: Shared database schema and explicit initialization supplied; V1 application
+and permissions evidenced by user screenshots. Hosted V2/V3/demo results are
+reported matching by the user; independent hosted queries and product features
+remain pending. Follow [DatabaseCompletion](DatabaseCompletion.md).
 
 Part 2b supplies the private identity/audit/session schema, restricted-role
 provisioning and isolated PostgreSQL migration tests. See
@@ -61,6 +63,19 @@ SQL initialization is disabled. The `database-check` profile performs a read-onl
 connectivity probe. Part 2b now supplies versioned identity/audit/session storage;
 the `database-migrate` profile explicitly enables Flyway. No Supabase Auth
 integration was added. Request data and live session behavior remain pending.
+
+V2/V3 now supply the remaining maintenance/catalogue/history/skills/AI/limit tables.
+The `database-initialize` profile performs explicit first setup using app credentials,
+with DEMO_DATA_ENABLED false by default. Development demo and production Manager
+bootstrap are transactional, audited and idempotent. Existing Accounts skip seed;
+pre-existing business/catalogue changes prevent fresh initialization.
+
+Password storage is Boot-managed Spring Security crypto 7.1.1, PBKDF2 v5.8 defaults,
+16-byte random salt, 310,000 SHA-256 iterations and 256-bit output. Stored hashes
+carry `{pbkdf2@SpringSecurity_v5_8}` and are verified in tests with Spring's
+delegating encoder. Ordinary password/login services must use a compatible verifier.
+Business authorization/lifecycle/AI limits and real Session routing/cookies remain
+pending application integration; migrations alone do not implement those controls.
 
 The accepted entities, relationships, transaction boundaries, invariants and
 concurrency approach are defined in `../workflow/specs/TECHNICAL-SPEC.md`.

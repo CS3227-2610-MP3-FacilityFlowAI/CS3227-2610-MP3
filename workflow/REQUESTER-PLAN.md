@@ -11,6 +11,12 @@ succeeded and authorized resuming database implementation. Part 2b supplies
 tested account/audit/session schema and role setup; hosted migration pending.
 Follow `docs/DatabaseMigrations.md`. This does not complete the full step 2 gate.
 
+15 October update: V1 hosted metadata/permissions evidenced in user screenshots;
+runtime connection success is user-reported. Part 3 supplies remaining schema
+and opt-in demo/bootstrap initialization. Apply/verify via DatabaseCompletion.md.
+The full step 2 exit still needs CI, hosted verification and deployment evidence;
+authentication/Requester services remain pending. User .gitignore edits preserved.
+
 This plan sequences existing requirements; it does not change them. The user
 authorized implementation in small parts on 14 October 2026, after the original
 planning-only request. Report completed work, remaining work and the next part

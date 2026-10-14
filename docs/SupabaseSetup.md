@@ -5,8 +5,9 @@ project provisioning and a live connection check are pending user setup.
 Update: the user reported the connection succeeded. Part 2b adds the tested
 foundation; use [DatabaseMigrations](DatabaseMigrations.md) for restricted roles
 and Flyway application. Hosted migration remains unverified.
-Authentication and Requester operations remain unimplemented; Part 2b supplies
-account/audit/session migrations, awaiting hosted application.
+Authentication and Requester operations remain unimplemented. V1 application is
+evidenced by the user's screenshots; [DatabaseCompletion](DatabaseCompletion.md)
+supplies the V2/V3 upgrade and explicit first-account initialization steps.
 
 ## 1. Create the development project
 
