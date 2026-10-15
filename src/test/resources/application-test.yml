@@ -5,10 +5,12 @@ spring:
     password: ""
   flyway:
     enabled: true
+    locations: classpath:db/authentication
   session:
     store-type: jdbc
     jdbc:
       initialize-schema: never
+      table-name: facilityflow.spring_session
 server:
   servlet:
     session:

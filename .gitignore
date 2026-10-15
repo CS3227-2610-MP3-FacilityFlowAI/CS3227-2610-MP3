@@ -2,7 +2,11 @@
 .gradle/
 build/
 out/
+/bin/
 *.class
+
+# Local assignment reference documents; never part of the submission commit
+/MP3 instructions/
 
 # IDEs and operating systems
 .idea/

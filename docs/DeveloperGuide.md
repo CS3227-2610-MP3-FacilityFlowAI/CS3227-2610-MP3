@@ -1,7 +1,40 @@
 # Developer Guide
 
-Status: authentication foundation implemented 13 October 2026; teammate review
-pending. This guide distinguishes implemented behavior from approved future work.
+Status: Shared database schema and explicit initialization supplied; V1 application
+and permissions evidenced by user screenshots. Hosted V2/V3/demo results are
+reported matching by the user; independent hosted queries and product features
+remain pending. Follow [DatabaseCompletion](DatabaseCompletion.md).
+
+Part 2b supplies the private identity/audit/session schema, restricted-role
+provisioning and isolated PostgreSQL migration tests. See
+[DatabaseMigrations](DatabaseMigrations.md) for applying the development schema
+with separate migration/runtime identities. User-reported connectivity succeeded;
+user screenshots confirm V1/table metadata and four permission restrictions;
+runtime connection succeeded as reported by the user. No independent hosted
+query was performed.
+
+## Local scaffold (Part 1)
+
+Install JDK 25 and run the committed Gradle wrapper from the repository root.
+The first build requires network access to obtain Gradle and Maven dependencies;
+automated tests need no real database or SoCLaaS credentials. Running the
+application now requires the database variables in [Supabase setup](SupabaseSetup.md).
+
+```powershell
+.\gradlew.bat test bootJar
+java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --spring.profiles.active=database-check
+```
+
+On macOS/Linux, use `sh ./gradlew test bootJar`. Database commands run
+without an HTTP server: add `--spring.main.web-application-type=none` to the
+`database-check`, `database-migrate` and `database-initialize` Java commands.
+Ordinary startup serves `/login` and role workspaces. For local HTTP only,
+set `SESSION_COOKIE_SECURE=false`; retain secure cookies for HTTPS.
+Set the documented database environment before running the JAR. Test reports are under
+`build/reports/tests/test/`. The source configuration is
+`src/main/resources/application.yml`; do not edit generated `bin/` or `build/`
+copies. Builds use Java 25, Spring Boot 4.1.1, Gradle 9.1.0 and JUnit 5.13.4;
+see [ADR-003](../workflow/decisions/ADR-003-build-baseline.md).
 
 This guide will describe the released architecture, data model, security model,
 SoC LLM integration, specification-driven workflow, multi-agent workflow,
@@ -10,30 +43,47 @@ latest release rather than the intended design.
 
 ## Project overview
 
-FacilityFlow AI, CS3227 MP3. The repository now contains a Java 25/Spring Boot
-web walking skeleton with authentication. See README and AGENTS.md.
+FacilityFlow AI, CS3227 MP3. Database and authentication foundations integrated;
+role business workflows remain pending. See README and AGENTS.md.
 
 ## Repository structure
 
-`src/main/java`: application modules; `src/main/resources`: templates,
-configuration and Flyway migrations; `src/test`: automated tests; `workflow`:
-specs/process; `docs`: guides/planning; `logs`: verified session summaries.
+src/: application code/tests; workflow/: specs/process; docs/: guides/planning;
+logs/: summaries; .github/: PR-Agent/contribution template. The Gradle build
+packages the minimal application; feature modules are pending.
 
 ## Architecture
 
 The implemented foundation pins Java 25, Gradle 9.1.0 and Spring Boot 4.1.1.
 Spring MVC/Thymeleaf serves pages, Spring Security controls authentication,
-Spring Session JDBC persists browser sessions, Flyway owns schema changes, and
+Spring Session JDBC persists browser sessions, Flyway owns schema changes through the explicit migration profile, and
 JDBC repositories isolate PostgreSQL access. The approved wider modular-monolith
 design remains in `../workflow/specs/TECHNICAL-SPEC.md`.
 
 ## Data model
 
-Migration `V1__create_identity_and_session_tables.sql` owns `user_account`,
-`spring_session` and `spring_session_attributes`. `user_account` includes the
-immutable UUID, original and normalized username, display name, Argon2id hash,
-one role, active flag, session version and timestamps. Later database work must
-extend this migration history rather than editing an applied migration.
+Supabase is the user-selected PostgreSQL provider. JDBC uses environment-backed
+credentials, certificate verification and a two-connection development pool;
+SQL initialization is disabled. The `database-check` profile performs a read-only
+connectivity probe. Part 2b now supplies versioned identity/audit/session storage;
+the `database-migrate` profile explicitly enables Flyway. No Supabase Auth
+integration was added. Authentication and JDBC sessions now use the private schema.
+
+V2/V3 now supply the remaining maintenance/catalogue/history/skills/AI/limit tables.
+The `database-initialize` profile performs explicit first setup using app credentials,
+with DEMO_DATA_ENABLED false by default. Development demo and production Manager
+bootstrap are transactional, audited and idempotent. Existing Accounts skip seed;
+pre-existing business/catalogue changes prevent fresh initialization.
+
+Password storage is Boot-managed Spring Security crypto 7.1.1, PBKDF2 v5.8 defaults,
+16-byte random salt, 310,000 SHA-256 iterations and 256-bit output. Stored hashes
+carry `{pbkdf2@SpringSecurity_v5_8}` and are verified in tests with Spring's
+delegating encoder. Login accepts this format through a delegating encoder; new passwords use
+`{argon2}` and the pinned parameters below. Business lifecycle and AI limits
+remain pending application integration; migrations alone do not implement those controls.
+
+The accepted entities, relationships, transaction boundaries, invariants and
+concurrency approach are defined in `../workflow/specs/TECHNICAL-SPEC.md`.
 
 ## Role model
 
@@ -46,7 +96,7 @@ Account lifecycle rules are defined in the shared and role specifications.
 
 Spring Security form login uses one generic invalid-credentials result for an
 unknown username, incorrect password or inactive account. Argon2id parameters
-are configuration-pinned. Every authenticated request reloads active state,
+are configuration-pinned; existing prefixed PBKDF2 hashes remain valid. Every authenticated request reloads active state,
 session version and role from persistence. Role URL rules are backed by
 `IdentityAuthorization` owner/assignment guards at use-case seams; UI hiding is
 not authorization. CSRF remains enabled, logout invalidates the JDBC session,
@@ -91,31 +141,15 @@ failures/findings. Definitions are not evidence of actual agent invocation.
 
 ## Testing strategy
 
-Run all current tests with:
+Run `./gradlew test bootJar`. Storage and initialization tests use disposable
+PostgreSQL, including restricted-role repository reads and timestamps. Web tests
+use an isolated H2 fixture under `src/test/resources/db/authentication`, separate
+from applied production migrations, and cover seeded PBKDF2 login as well as
+Argon2, session invalidation, role denial and CSRF. Browser/hosted checks remain
+required before release; local tests do not connect to Supabase.
 
-```sh
-./gradlew test
-```
-
-The wrapper downloads the Java 25 toolchain when it is not installed. Current
-tests run Flyway against an isolated H2 database in PostgreSQL compatibility
-mode and cover login, role routes, CSRF, sessions, password storage,
-persisted-account changes, object authorization and the AI access boundary.
-An actual PostgreSQL integration suite and browser tests remain required before
-release.
-
-For a local application run, create an empty PostgreSQL database and supply:
-
-```text
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/facilityflow
-SPRING_DATASOURCE_USERNAME=<local account>
-SPRING_DATASOURCE_PASSWORD=<local secret>
-SESSION_COOKIE_SECURE=false
-```
-
-Then run `./gradlew bootRun`. Do not commit local values. No demo or production
-account bootstrap is implemented yet, so an approved initializer/account-
-administration slice must provision the first account before interactive use.
+Follow the database guides for setup. Ordinary startup does not migrate or seed;
+use the app role for `./gradlew bootRun`, then open `/login`.
 
 ## Development vs production environments
 

@@ -5,13 +5,32 @@ spring:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      maximum-pool-size: 2
+      minimum-idle: 0
+      connection-timeout: 10000
+      data-source-properties:
+        sslmode: verify-full
+        sslrootcert: ${SUPABASE_SSL_ROOT_CERT}
+        connectTimeout: 10
+        socketTimeout: 30
+  sql:
+    init:
+      mode: never
   flyway:
-    enabled: true
+    # shortcut: runtime schema validation is deferred, add before enabling business endpoints.
+    enabled: false
+    schemas: facilityflow
+    default-schema: facilityflow
+    clean-disabled: true
+    baseline-on-migrate: false
+    validate-on-migrate: true
+    ignore-migration-patterns: ''
   session:
-    store-type: jdbc
     timeout: -1s
     jdbc:
       initialize-schema: never
+      table-name: facilityflow.spring_session
 server:
   servlet:
     session:

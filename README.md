@@ -66,10 +66,8 @@ storage will not be reused. All reuse must be recorded in
 
 Planning baseline created on 4 October 2026. The reuse decision and three AI
 feature contracts were updated on 10 October 2026. Specification baseline v0.1
-was approved on 12 October 2026. The authentication walking skeleton was
-implemented on 13 October 2026 and is awaiting teammate review; remaining
-manual workflows, account administration, AI features and deployment are not
-yet implemented.
+was approved on 12 October 2026; implementation must follow the gates in
+`workflow/PLAN.md` and the approved requirement IDs.
 
 ## Development workflow and setup
 
@@ -79,11 +77,17 @@ block coding. Stable IDs connect specs, code, tests, PRs and evidence. Teammate
 review precedes non-trivial merges; fresh verification follows failed-test or
 security fixes.
 
-The Gradle build pins Java 25 and Spring Boot 4.1.1. Authentication tests run
-with `./gradlew test`; a local application run additionally requires a
-PostgreSQL database and the three `SPRING_DATASOURCE_*` environment variables.
-See the [Developer Guide](docs/DeveloperGuide.md) for exact commands and the
-current implementation boundary.
+Part 1 adds the Java 25/Spring Boot 4.1.1 build scaffold, Gradle 9.1.0 wrapper
+and a passing startup test. Part 2a adds Supabase JDBC configuration and a
+read-only connection checker; [Supabase setup](docs/SupabaseSetup.md) is required
+before a live check. Part 3 supplies the remaining shared schema and opt-in
+hashed account initialization; see [DatabaseCompletion](docs/DatabaseCompletion.md).
+V1 is evidenced on Supabase; the user reports matching hosted upgrade/demo
+initialization results. No independent hosted query was performed.
+Authentication from master is integrated with the private schema and existing
+seeded accounts. Role business features, AI and deployment remain pending. See the [Developer Guide](docs/DeveloperGuide.md)
+for local build/run commands and [Requester plan](workflow/REQUESTER-PLAN.md)
+for the implementation sequence.
 
 | Additional path | Purpose |
 | --- | --- |
@@ -95,8 +99,8 @@ current implementation boundary.
 
 ## Documentation
 
-- [User Guide](docs/UserGuide.md): currently implemented sign-in and role routing.
-- [Developer Guide](docs/DeveloperGuide.md): build, architecture, security and test instructions.
+- [User Guide](docs/UserGuide.md): released behavior; currently placeholders.
+- [Developer Guide](docs/DeveloperGuide.md): design/process and implementation TBDs.
 - [Reflections](docs/Reflections.md): evidence prompts, not completed reflections.
 - [AI logs](logs/README.md): sanitized summaries and actual review status.
 

@@ -102,6 +102,12 @@ reseeded.
 
 ## Configuration
 
+Provider selection (user decision, 14 October 2026): use Supabase-hosted
+PostgreSQL. This does not replace the approved Spring identity/session model.
+`SUPABASE_SSL_ROOT_CERT` points to the downloaded CA for JDBC certificate
+verification. Setup and connection modes are recorded in `docs/SupabaseSetup.md`
+and ADR-004. Account/request schema and deployment acceptance remain unchanged.
+
 Required environment groups are:
 
 - database: SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME,

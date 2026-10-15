@@ -2,7 +2,6 @@ package sg.edu.nus.facilityflow.identity;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,7 +14,7 @@ public class JdbcAccountRepository implements AccountRepository {
     private static final String SELECT_ACCOUNT = """
             SELECT id, username, display_name, password_hash, role, active,
                    session_version, created_at, updated_at
-              FROM user_account
+              FROM facilityflow.user_account
             """;
 
     private final NamedParameterJdbcTemplate jdbc;
@@ -27,7 +26,7 @@ public class JdbcAccountRepository implements AccountRepository {
     @Override
     public Optional<Account> findByNormalizedUsername(String normalizedUsername) {
         return jdbc.query(
-                        SELECT_ACCOUNT + " WHERE normalized_username = :username",
+                        SELECT_ACCOUNT + " WHERE lower(username) = :username",
                         Map.of("username", normalizedUsername),
                         JdbcAccountRepository::mapAccount)
                 .stream()
@@ -53,7 +52,7 @@ public class JdbcAccountRepository implements AccountRepository {
                 AccountRole.valueOf(resultSet.getString("role")),
                 resultSet.getBoolean("active"),
                 resultSet.getLong("session_version"),
-                resultSet.getObject("created_at", Instant.class),
-                resultSet.getObject("updated_at", Instant.class));
+                resultSet.getObject("created_at", java.time.OffsetDateTime.class).toInstant(),
+                resultSet.getObject("updated_at", java.time.OffsetDateTime.class).toInstant());
     }
 }

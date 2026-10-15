@@ -58,3 +58,16 @@ and browser verification remain release requirements.
 The implementation follows approved specification revision `0778d6e`. Local
 test evidence is recorded in the authentication session log. A teammate must
 review and approve this decision and implementation before merge.
+
+## Database branch integration (15 October 2026)
+
+The applied private-schema V1-V3 remain authoritative; the alternate identity V1
+is retained only as an isolated H2 test fixture. Login uses schema-qualified
+queries and `lower(username)`, matching the existing unique index. A delegating
+encoder uses the Argon2 parameters above for new hashes and accepts the existing
+`{pbkdf2@SpringSecurity_v5_8}` initializer hashes without changing stored accounts.
+Session tables are qualified with `facilityflow`; ordinary startup never applies
+migrations. Database profiles run explicitly with web application type `none`.
+The specification's JUnit 5 pin is retained: web tests build MockMvc directly
+with both Spring Session and Spring Security filters instead of using the
+Spring 7 JUnit 6 extension. See the merge log for actual validation results.

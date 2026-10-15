@@ -1,0 +1,4 @@
+# TECHNICAL-SPEC: invoke explicitly with the migration role, never runtime credentials.
+spring:
+  flyway:
+    enabled: true
