@@ -36,8 +36,13 @@ public class DatabaseInitializer implements ApplicationRunner {
     }
 
     boolean initialize() {
+        boolean demoEnabled = environment.getProperty("DEMO_DATA_ENABLED", Boolean.class, false);
+        if (demoEnabled && !environment.matchesProfiles("development & !production & !prod")) {
+            throw new IllegalStateException("Demo initialization requires the development profile and no production profile.");
+        }
         return Boolean.TRUE.equals(transaction.execute(status -> {
-            // Serialize competing initializers across application instances.
+            // Bound competing initializer waits without changing pooled session settings.
+            jdbc.execute("SET LOCAL lock_timeout = '5s'");
             jdbc.queryForObject("SELECT pg_advisory_xact_lock(322726100003)", Object.class);
             if (jdbc.queryForObject("SELECT count(*) FROM facilityflow.user_account", Long.class) != 0) {
                 return false;
@@ -50,7 +55,7 @@ public class DatabaseInitializer implements ApplicationRunner {
                     + "OR name NOT IN ('Electrical', 'Plumbing', 'HVAC', 'Structural', 'Cleaning', 'Safety', 'Other'))", Long.class) != 0) {
                 throw new IllegalStateException("Existing application data prevents initialization.");
             }
-            if (environment.getProperty("DEMO_DATA_ENABLED", Boolean.class, false)) {
+            if (demoEnabled) {
                 seedDemo();
             } else {
                 var manager = createAccount(required("BOOTSTRAP_MANAGER_USERNAME"), required("BOOTSTRAP_MANAGER_DISPLAY_NAME"),

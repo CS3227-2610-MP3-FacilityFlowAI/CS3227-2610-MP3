@@ -1,4 +1,4 @@
-# Complete development database setup (V2/V3 and initialization)
+# Complete development database setup (V2-V4 and initialization)
 
 Prepared 15 October 2026. V1 is already applied, as shown in the user's screenshots.
 Update: the user reported successful hosted initialization with six Accounts,
@@ -14,6 +14,7 @@ schema, certificate and restricted roles. Do not edit V1 or rerun role provision
 | V1 (already applied) | user_account, audit_event, spring_session, spring_session_attributes, Flyway history |
 | V2 | category (seven required initial categories), maintenance_request, requester_update, work_log, request_completion_history |
 | V3 | skill_tag, technician_skill, ai_invocation, rate_limit_bucket (five initial global slots) |
+| V4 | Require timestamps on new assignments while preserving existing migrated unknown times; no new tables |
 
 After V3 there are **14 tables**, including Flyway history. UUID identities,
 foreign keys, UTC-capable timestamps, catalogue uniqueness, Unicode character
@@ -53,7 +54,7 @@ Remove-Item Env:\SPRING_DATASOURCE_PASSWORD
 ```
 
 Run the Java command only after a successful build. Expected: V1 validates,
-V2/V3 apply successfully and the database reaches **version 3**. No Accounts or
+Pending V2-V4 apply successfully and the database reaches **version 4**. No Accounts or
 demo Requests are created by Flyway. Repeating migration reports up-to-date.
 Never clear Flyway history, edit applied scripts, baseline around errors or clean
 the database to fix a failure. Report a safe error category if it fails.
@@ -67,7 +68,7 @@ data only for the initialization command:
 $env:SPRING_DATASOURCE_USERNAME = 'facilityflow_app.YOUR_PROJECT_REF'
 $env:SPRING_DATASOURCE_PASSWORD = [Net.NetworkCredential]::new('', (Read-Host 'Application role password' -AsSecureString)).Password
 $env:DEMO_DATA_ENABLED = 'true'
-java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --spring.profiles.active=database-initialize
+java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --spring.profiles.active=database-initialize,development
 Remove-Item Env:\DEMO_DATA_ENABLED
 Remove-Item Env:\SPRING_DATASOURCE_PASSWORD
 ```
@@ -95,7 +96,7 @@ SELECT version, description, success FROM facilityflow.flyway_schema_history
 WHERE version IS NOT NULL ORDER BY installed_rank;
 ```
 
-Expected: successful versions **1, 2, 3**.
+Expected after upgrading: successful versions **1, 2, 3, 4**.
 
 ```sql
 SELECT table_name FROM information_schema.tables
@@ -137,3 +138,32 @@ Production deployment, backups/restore, session/cookie behavior, runtime schema
 version validation and application role workflows remain separate release work.
 Current runtime still has no HTTP endpoints; complete those controls before
 exposing business operations. Database readiness does not establish product readiness.
+
+## V4 assignment integrity upgrade (16 October 2026)
+
+An existing V3 database uses the usual `database-migrate` command above with
+migrator credentials. V1-V3 remain unchanged; do not reinitialize or reseed.
+
+V4 preserves existing migrated assignments with unknown times (REQ-TECH-003).
+Their metadata and progress may still change with the same Technician. New
+assigned records, reassignment, and return/reopen to ASSIGNED require a timestamp;
+a known timestamp cannot be cleared while retaining an assignment. A timestamp
+without a Technician is rejected. No timestamps are invented or backfilled.
+
+This follows the user's confirmed legacy policy. Hosted V4 has not been applied
+or verified in this session. Investigate any existing timestamp-without-Technician
+records against audit history if migration rejects them; do not clear history.
+
+## Initializer safeguards (16 October review)
+
+Demo initialization requires both `DEMO_DATA_ENABLED=true` and the explicit
+`development` profile. A `production` or `prod` profile rejects demo seeding even
+when combined with `development`. Production Manager bootstrap continues to use
+only `database-initialize`, without demo mode. Profiles are operator-supplied
+configuration, so keep development and production credentials/projects separate.
+
+Initialization waits at most five seconds per lock acquisition using transaction-
+local `lock_timeout`. On contention it fails and rolls back; retry after the other
+initializer finishes. This setting does not alter pooled connection defaults.
+Completion metadata/history remains available after return/reopen, as required
+by REQ-MGR-007/008 and TECHNICAL-SPEC; lifecycle authorization remains server-side.

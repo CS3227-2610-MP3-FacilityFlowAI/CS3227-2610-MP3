@@ -1,21 +1,25 @@
 # Requester development plan
 
-Prepared 14 October 2026 (Asia/Singapore). Owner: Requester role owner (`yooplo`
-in AGENTS.md). Status: proposed execution plan against approved specifications
-v0.1, 12 October 2026. Part 1 build scaffold implemented and tested on 14 October;
-authentication, database integration and Requester features remain pending.
+Original plan prepared 14 October 2026 (Asia/Singapore). Owner: Requester
+role owner (`yooplo` in AGENTS.md). Based on approved specification v0.1,
+12 October 2026. Later progress notes below are updates to the original plan;
+they are not evidence available when it was first prepared.
 
-Part 2a: Supabase PostgreSQL connection configuration/checker prepared on
-14 October at the user's request. User subsequently reported the live connection
-succeeded and authorized resuming database implementation. Part 2b supplies
-tested account/audit/session schema and role setup; hosted migration pending.
-Follow `docs/DatabaseMigrations.md`. This does not complete the full step 2 gate.
+## Progress notes
 
-15 October update: V1 hosted metadata/permissions evidenced in user screenshots;
-runtime connection success is user-reported. Part 3 supplies remaining schema
-and opt-in demo/bootstrap initialization. Apply/verify via DatabaseCompletion.md.
-The full step 2 exit still needs CI, hosted verification and deployment evidence;
-authentication/Requester services remain pending. User .gitignore edits preserved.
+- **14 October snapshot:** Part 1 scaffold and Part 2a connection configuration
+  were prepared. Part 2b supplied identity/audit/session storage and role setup;
+  hosted migration was still pending in that checkpoint. See the dated Part 1,
+  Part 2a and Part 2b logs. This did not complete the full step 2 gate.
+- **15 October update:** Later screenshots/reports recorded V1 metadata and
+  permission checks, successful connectivity, and matching V2/V3 demo results.
+  Hosted results are user-reported, not independently queried by the agent.
+  See `logs/2026-10-15-complete-database-storage.md` and DatabaseCompletion.md.
+  Authentication was integrated afterward; see the separately dated merge log.
+- **16 October review correction:** These notes explicitly distinguish original
+  planning evidence from subsequent reports. Assignment timestamp integrity is
+  strengthened by V4; hosted application of V4 has not been verified. CI,
+  hosted/browser verification, deployment and Requester services remain pending.
 
 This plan sequences existing requirements; it does not change them. The user
 authorized implementation in small parts on 14 October 2026, after the original

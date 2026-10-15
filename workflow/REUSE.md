@@ -89,3 +89,10 @@ planned estimates as actual reuse percentages.
 Detailed provenance of pre-existing documents and future concept-only reuse:
 TBD after checking MP2. Preserve existing content until comparison supports
 accurate classification.
+
+16 October assignment review fix: V4, its regression test and the evidence-date
+clarification are new MP3 work; no MP2 source consulted or copied. Existing
+applied migrations are unchanged. See the dated review-fix log.
+
+Additional 16 October initializer review fixes (profile guard, bounded lock wait,
+regressions and guide updates) are new MP3 work; no MP2 source copied.

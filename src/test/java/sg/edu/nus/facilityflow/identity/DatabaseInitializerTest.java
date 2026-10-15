@@ -60,6 +60,40 @@ class DatabaseInitializerTest {
                 .withProperty("BOOTSTRAP_MANAGER_PASSWORD", password);
     }
 
+    private MockEnvironment demoEnvironment() {
+        var environment = new MockEnvironment().withProperty("DEMO_DATA_ENABLED", "true");
+        environment.setActiveProfiles("development");
+        return environment;
+    }
+
+    @Test
+    @DisplayName("REQ-SH-015/016: known demo credentials require explicit non-production profile")
+    void rejectsDemoOutsideDevelopment() {
+        for (var profiles : new String[][]{{}, {"production"}, {"prod"}, {"development", "production"}, {"development", "prod"}}) {
+            var environment = demoEnvironment();
+            environment.setActiveProfiles(profiles);
+            assertThrows(IllegalStateException.class,
+                    () -> new DatabaseInitializer(jdbc, transaction, environment).initialize());
+        }
+        assertEquals(0L, jdbc.queryForObject("SELECT count(*) FROM facilityflow.user_account", Long.class));
+        assertEquals(0L, jdbc.queryForObject("SELECT count(*) FROM facilityflow.audit_event", Long.class));
+    }
+
+    @Test
+    @DisplayName("REQ-SH-014/016: contended initialization times out and rolls back safely")
+    void boundsInitializationLockWait() throws Exception {
+        var initializer = new DatabaseInitializer(jdbc, transaction, bootstrap("TestPassword123"));
+        try (var blocker = postgres.getPostgresDatabase().getConnection(); var statement = blocker.createStatement()) {
+            statement.execute("SELECT pg_advisory_lock(322726100003)");
+            var failure = assertThrows(org.springframework.dao.DataAccessException.class, initializer::initialize);
+            var cause = assertInstanceOf(java.sql.SQLException.class, failure.getMostSpecificCause());
+            assertEquals("55P03", cause.getSQLState());
+            assertEquals(0L, jdbc.queryForObject("SELECT count(*) FROM facilityflow.user_account", Long.class));
+            assertEquals(0L, jdbc.queryForObject("SELECT count(*) FROM facilityflow.audit_event", Long.class));
+        }
+        assertTrue(initializer.initialize());
+    }
+
     @Test
     @DisplayName("REQ-SH-016 / NFR-SEC-002: default initialization creates only a salted-hash Manager")
     void bootstrapsManagerWithoutDemo() {
@@ -80,7 +114,7 @@ class DatabaseInitializerTest {
     @Test
     @DisplayName("REQ-SH-015: explicit demo initialization supplies six Accounts and all lifecycle states")
     void seedsDemoAtomicallyAndOnlyOnce() {
-        var initializer = new DatabaseInitializer(jdbc, transaction, new MockEnvironment().withProperty("DEMO_DATA_ENABLED", "true"));
+        var initializer = new DatabaseInitializer(jdbc, transaction, demoEnvironment());
         assertTrue(initializer.initialize());
         assertEquals(6L, jdbc.queryForObject("SELECT count(*) FROM facilityflow.user_account", Long.class));
         assertEquals(6L, jdbc.queryForObject("SELECT count(DISTINCT status) FROM facilityflow.maintenance_request", Long.class));
@@ -113,7 +147,7 @@ class DatabaseInitializerTest {
         } catch (java.sql.SQLException exception) {
             throw new IllegalStateException(exception);
         }
-        var initializer = new DatabaseInitializer(jdbc, transaction, new MockEnvironment().withProperty("DEMO_DATA_ENABLED", "true"));
+        var initializer = new DatabaseInitializer(jdbc, transaction, demoEnvironment());
         assertThrows(org.springframework.dao.DataAccessException.class, initializer::initialize);
         assertEquals(0L, jdbc.queryForObject("SELECT count(*) FROM facilityflow.user_account", Long.class));
         assertEquals(0L, jdbc.queryForObject("SELECT count(*) FROM facilityflow.audit_event", Long.class));
@@ -158,7 +192,7 @@ class DatabaseInitializerTest {
     @DisplayName("REQ-SH-015–016: existing catalogue work is preserved without seed changes")
     void rejectsExistingCatalogueWork() {
         jdbc.update("INSERT INTO facilityflow.category (name) VALUES ('Existing Team Category')");
-        var initializer = new DatabaseInitializer(jdbc, transaction, new MockEnvironment().withProperty("DEMO_DATA_ENABLED", "true"));
+        var initializer = new DatabaseInitializer(jdbc, transaction, demoEnvironment());
         assertThrows(IllegalStateException.class, initializer::initialize);
         assertEquals(0L, jdbc.queryForObject("SELECT count(*) FROM facilityflow.user_account", Long.class));
         assertEquals(8L, jdbc.queryForObject("SELECT count(*) FROM facilityflow.category", Long.class));

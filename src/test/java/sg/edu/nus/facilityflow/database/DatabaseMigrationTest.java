@@ -27,6 +27,8 @@ class DatabaseMigrationTest {
     private static JdbcTemplate admin;
     private static JdbcTemplate app;
     private static Flyway flyway;
+    private static UUID legacyAssignment;
+    private static UUID legacyTechnician;
 
     @BeforeAll
     static void createIsolatedDatabase() throws Exception {
@@ -43,8 +45,19 @@ class DatabaseMigrationTest {
                 .schemas("facilityflow").defaultSchema("facilityflow")
                 .cleanDisabled(true).ignoreMigrationPatterns(new String[0]);
         assertEquals(1, configuration.target("1").load().migrate().migrationsExecuted);
-        flyway = configuration.target("3").load();
-        assertEquals(2, flyway.migrate().migrationsExecuted);
+        assertEquals(2, configuration.target("3").load().migrate().migrationsExecuted);
+        // REQ-TECH-003: fixture represents an existing V3 migrated unknown time.
+        legacyTechnician = admin.queryForObject("INSERT INTO facilityflow.user_account "
+                + "(username, display_name, password_hash, role) VALUES "
+                + "('legacy-tech', 'Legacy Technician', 'synthetic', 'TECHNICIAN') RETURNING id", UUID.class);
+        legacyAssignment = admin.queryForObject("INSERT INTO facilityflow.maintenance_request "
+                + "(requester_id, recorded_by, title, description, location, category_id, reported_urgency, "
+                + "status, manager_priority, assigned_technician_id) VALUES (?, ?, 'Legacy request', "
+                + "'Existing imported assignment', 'Block A', (SELECT id FROM facilityflow.category LIMIT 1), "
+                + "'NORMAL', 'ASSIGNED', 'HIGH', ?) RETURNING id", UUID.class,
+                legacyTechnician, legacyTechnician, legacyTechnician);
+        flyway = configuration.target("4").load();
+        assertEquals(1, flyway.migrate().migrationsExecuted);
         app = new JdbcTemplate(dataSource("facilityflow_app"));
     }
 
@@ -257,6 +270,50 @@ class DatabaseMigrationTest {
     }
 
     @Test
+    @DisplayName("REQ-TECH-003: migrated unknown time survives until the next assignment")
+    void preservesLegacyUnknownAssignmentTime() {
+        assertNull(app.queryForObject("SELECT assigned_at FROM facilityflow.maintenance_request WHERE id = ?",
+                java.time.OffsetDateTime.class, legacyAssignment));
+        assertSqlState("23514", () -> admin.update("INSERT INTO facilityflow.maintenance_request "
+                + "(requester_id, recorded_by, title, description, location, category_id, reported_urgency, "
+                + "status, manager_priority, assigned_technician_id) SELECT requester_id, recorded_by, title, "
+                + "description, location, category_id, reported_urgency, status, manager_priority, "
+                + "assigned_technician_id FROM facilityflow.maintenance_request WHERE id = ?", legacyAssignment));
+        assertEquals(1, app.update("UPDATE facilityflow.maintenance_request SET status = 'IN_PROGRESS' WHERE id = ?", legacyAssignment));
+        var otherTechnician = newAccount("TECHNICIAN");
+        assertSqlState("23514", () -> app.update("UPDATE facilityflow.maintenance_request "
+                + "SET assigned_technician_id = ? WHERE id = ?", otherTechnician, legacyAssignment));
+        assertSqlState("23514", () -> app.update("UPDATE facilityflow.maintenance_request "
+                + "SET status = 'ASSIGNED' WHERE id = ?", legacyAssignment));
+        assertEquals(1, app.update("UPDATE facilityflow.maintenance_request SET status = 'ASSIGNED', "
+                + "assigned_at = CURRENT_TIMESTAMP, assigned_technician_id = ? WHERE id = ?", otherTechnician, legacyAssignment));
+        assertSqlState("23514", () -> app.update("UPDATE facilityflow.maintenance_request SET assigned_at = NULL WHERE id = ?", legacyAssignment));
+    }
+
+    @Test
+    @DisplayName("REQ-MGR-004: assignment actor and timestamp must remain paired in every state")
+    void requiresAssignmentTimestamp() {
+        var owner = newAccount("REQUESTER");
+        var technician = newAccount("TECHNICIAN");
+        for (var state : new String[]{"ASSIGNED", "IN_PROGRESS", "COMPLETED", "CLOSED", "CANCELLED"}) {
+            var request = createRequest(owner, owner);
+            var completion = (state.equals("COMPLETED") || state.equals("CLOSED"))
+                    ? ", resolution_summary = 'Repair completed safely', completed_by = requester_id, completed_at = CURRENT_TIMESTAMP"
+                    : "";
+            var update = "UPDATE facilityflow.maintenance_request SET status = ?, manager_priority = 'HIGH', "
+                    + "assigned_technician_id = ?" + completion;
+            assertSqlState("23514", () -> app.update(update + " WHERE id = ?", state, technician, request));
+            assertEquals(1, app.update(update + ", assigned_at = CURRENT_TIMESTAMP WHERE id = ?", state, technician, request));
+            assertSqlState("23514", () -> app.update(
+                    "UPDATE facilityflow.maintenance_request SET assigned_at = NULL WHERE id = ?", request));
+        }
+        var unassigned = createRequest(owner, owner);
+        assertSqlState("23514", () -> app.update("UPDATE facilityflow.maintenance_request "
+                + "SET status = 'CANCELLED', assigned_at = CURRENT_TIMESTAMP WHERE id = ?", unassigned));
+        assertEquals(1, app.update("UPDATE facilityflow.maintenance_request SET status = 'CANCELLED' WHERE id = ?", unassigned));
+    }
+
+    @Test
     @DisplayName("REQ-MGR-004 / REQ-TECH-007: assignment/completion shapes and history survive reopening")
     void preservesWorkAndCompletionRecords() {
         var owner = newAccount("REQUESTER");
@@ -273,6 +330,9 @@ class DatabaseMigrationTest {
                 + "completed_by = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ?", technician, request);
         app.update("UPDATE facilityflow.maintenance_request SET status = 'CLOSED' WHERE id = ?", request);
         app.update("UPDATE facilityflow.maintenance_request SET status = 'ASSIGNED' WHERE id = ?", request);
+        assertEquals(technician, app.queryForObject("SELECT completed_by FROM facilityflow.maintenance_request WHERE id = ?", UUID.class, request));
+        assertNotNull(app.queryForObject("SELECT completed_at FROM facilityflow.maintenance_request WHERE id = ?", java.time.OffsetDateTime.class, request));
+        assertNotNull(app.queryForObject("SELECT resolution_summary FROM facilityflow.maintenance_request WHERE id = ?", String.class, request));
         assertEquals(1, app.queryForObject("SELECT count(*) FROM facilityflow.request_completion_history WHERE request_id = ?", Integer.class, request));
         assertEquals(1, app.queryForObject("SELECT count(*) FROM facilityflow.work_log WHERE id = ?", Integer.class, log));
         assertSqlState("42501", () -> app.update("UPDATE facilityflow.work_log SET minutes = 20 WHERE id = ?", log));

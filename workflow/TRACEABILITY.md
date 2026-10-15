@@ -90,3 +90,16 @@ Private-schema queries and prefixed PBKDF2 verification preserve the V1-V3
 storage/initialization artifacts above; the competing V1 is a test-only H2 fixture.
 Merge validation evidence is recorded in `logs/2026-10-15-master-database-merge.md`.
 Teammate review and browser/hosted release verification remain pending.
+
+Assignment review correction (16 October 2026): REQ-MGR-004 storage integrity
+is strengthened by `V4__require_assignment_timestamp.sql`, requiring timestamps
+for new assignments while preserving migrated unknown times (REQ-TECH-003). `DatabaseMigrationTest.requiresAssignmentTimestamp` covers
+assigned/active/completed/closed/cancelled states and valid paired records.
+See `logs/2026-10-16-assignment-review-fixes.md` for executed validation.
+
+Initializer PR suggestions (16 October): REQ-SH-014-016 / NFR-SEC-002 now have
+explicit development-only demo gating and transaction-local five-second lock
+waits, with regression tests in DatabaseInitializerTest. Completion metadata
+retention after reopening is asserted under REQ-MGR-007/008. Fresh review identified a legacy exception; the user confirmed preserving it.
+V4 now retains existing unknown times until reassignment, with an actual V3-to-V4
+legacy-data upgrade regression. Hosted application remains unverified.
