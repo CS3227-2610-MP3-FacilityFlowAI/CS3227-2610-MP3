@@ -44,7 +44,8 @@ latest release rather than the intended design.
 ## Project overview
 
 FacilityFlow AI, CS3227 MP3. Database and authentication foundations integrated;
-role business workflows remain pending. See README and AGENTS.md.
+Requester create/list/detail are implemented locally; the remaining role
+business workflows are pending. See README and AGENTS.md.
 
 ## Repository structure
 
@@ -84,6 +85,46 @@ remain pending application integration; migrations alone do not implement those 
 
 The accepted entities, relationships, transaction boundaries, invariants and
 concurrency approach are defined in `../workflow/specs/TECHNICAL-SPEC.md`.
+
+## Requester first manual slice (step 2)
+
+REQ-RQ-002/004/005/009–011: `RequesterRequests` exposes bounded use cases and page
+records; `RequesterRequestService` supplies the transaction boundary and
+`RequesterRequestRepository` isolates persistence. Controllers accept an immutable
+five-field `RequestDraft` plus a submission ID. Actor/owner/status/priority/IDs
+and timestamps are never bound from client authority fields.
+
+Every operation rechecks persisted active state, REQUESTER role and session
+version in its transaction. Reads hold a shared account lock; creation holds an
+exclusive account lock so duplicate submissions from the same account serialize
+across server instances. The selected active category is locked for the short
+create transaction. Request creation, its audit event and durable submission ID
+commit together. Validation, stale account, duplicate command, audit/storage
+failure and display-number exhaustion leave no partial business record.
+
+Queries scope by owner before selecting detail/history. History projects only
+approved lifecycle/edit labels, public transition reasons and Requester Updates;
+it never selects Work Logs or returns the audit details object. Returned page
+records omit internal IDs, credentials, assignments and completion metadata,
+following retained MP2 Requester detail behavior. Thymeleaf encodes user text.
+History action names are the `REQUEST_CREATED/EDITED/ASSIGNED/REASSIGNED/STARTED/
+COMPLETED/CLOSED/CANCELLED/RETURNED/REOPENED` variants enumerated in the repository;
+public transition reasons use `details.reason`. Other role services must use
+this shared history contract or update the projection with matching tests.
+
+Apply **V5** using the existing explicit migration profile before web startup.
+It adds an append-only submission table and read-only `schema_version` view.
+`SchemaReadinessCheck` requires successful versions 1–5; missing/failed/future
+versions stop startup with safe guidance. Runtime still cannot read or write the
+full Flyway history or perform DDL. Flyway checksum validation remains part of
+the explicit migration process; startup checks version compatibility only.
+
+`RequesterRequestIntegrationTest` starts a loopback app with genuine disposable
+PostgreSQL and the restricted app role. Existing H2 tests remain authentication-
+only with a clearly marked readiness fixture. Run `gradlew.bat test bootJar` and
+`node src/test/js/request-form.test.cjs`; the Node check uses only standard APIs.
+No new application dependency was added. Browser/hosted/performance verification
+and human review remain pending.
 
 ## Role model
 

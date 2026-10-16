@@ -18,7 +18,7 @@ spring:
     init:
       mode: never
   flyway:
-    # shortcut: runtime schema validation is deferred, add before enabling business endpoints.
+    # Runtime verifies schema versions read-only; only the explicit migration profile performs DDL.
     enabled: false
     schemas: facilityflow
     default-schema: facilityflow

@@ -9,6 +9,11 @@ import sg.edu.nus.facilityflow.identity.CurrentAccountPrincipal;
 @Controller
 public class DashboardController {
 
+    @GetMapping("/about")
+    String about() {
+        return "about";
+    }
+
     @GetMapping("/requester")
     String requester(@AuthenticationPrincipal CurrentAccountPrincipal principal, Model model) {
         addIdentity(model, principal, "Requester workspace");

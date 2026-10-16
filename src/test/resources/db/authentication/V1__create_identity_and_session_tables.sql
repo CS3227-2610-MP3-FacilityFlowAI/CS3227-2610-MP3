@@ -20,6 +20,10 @@ CREATE TABLE user_account (
 
 CREATE INDEX ix_user_account_role_active ON user_account (role, active);
 
+-- Authentication-only H2 fixture; real readiness and Requester tests use migrated PostgreSQL.
+CREATE VIEW schema_version AS
+    SELECT * FROM (VALUES ('1', true), ('2', true), ('3', true), ('4', true), ('5', true)) AS versions(version, success);
+
 CREATE TABLE audit_event (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,

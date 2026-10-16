@@ -1,7 +1,7 @@
 # User Guide
 
-Status: authentication foundation implemented 13 October 2026; teammate review
-pending. Maintenance and AI workflows are not yet released.
+Status: authentication and Requester create/list/detail implemented locally;
+teammate review and hosted verification pending. AI workflows are not yet released.
 
 This guide must be updated continuously to match the deployed product exactly.
 It will document how Requesters, Technicians, and Facilities Managers access,
@@ -10,7 +10,8 @@ test, and use every released feature, including AI fallbacks and limitations.
 ## Introduction
 
 The current walking skeleton supports secure sign-in, sign-out and separate
-placeholder workspaces for the three FacilityFlow roles.
+workspaces for the three FacilityFlow roles. Requesters can now create and view
+their own maintenance reports in the local implementation.
 
 ## Accessing the deployed application
 
@@ -36,10 +37,35 @@ workspace** to leave the form. Hosted availability and browser checks are pendin
 
 ## Features
 
+### Requester: report and follow a problem
+
+Open **My requests** from the Requester workspace, then **Report a problem**.
+Enter a title (5–100 characters), description (10–2,000), location (2–120),
+an active category and reported urgency. Character limits count Unicode code
+points. Select **Submit request** once. Success opens the saved OPEN request
+with its database-generated FF identifier; ownership always comes from your
+signed-in account.
+
+Field errors appear beside the relevant inputs and retain entered text. If a
+category becomes unavailable, choose another active category. A temporary save
+failure retains the form for retry. Repeating the same submission produces a
+safe message directing you to **My requests**, without creating another report.
+
+**My requests** includes reports a Manager recorded on your behalf, newest first.
+Select a report to view its fields, status, Manager priority when set, timestamps,
+status history, public reasons and Requester Updates. Times display explicitly in
+Asia/Singapore. Other Requesters' reports and internal Work Logs/private Manager
+data are unavailable. Editing, cancellation, adding updates, dashboard counts,
+search/filters and the assistant are still pending.
+
+### Shared navigation
+
 The authenticated header shows display name, username and role. Select
 **Sign out** to end the server-side session. A deactivated Account, a Manager
 password reset represented by a session-version change, or a persisted role
 change takes effect on the next request.
+The header also provides **Main workspace**, **Change password** and
+**About FacilityFlow**.
 
 ## AI features
 

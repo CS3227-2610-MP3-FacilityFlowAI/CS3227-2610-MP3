@@ -1,0 +1,19 @@
+body { margin: 0; background: #fff; color: #17212b; font: 1rem/1.5 system-ui, sans-serif; }
+header, main { padding: 1rem 1.5rem; max-width: 72rem; margin: auto; }
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; border-bottom: 1px solid #687583; }
+header form { margin: 0; }
+a { color: #174f91; }
+h1 { overflow-wrap: anywhere; }
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid #174f91; outline-offset: 3px; }
+label, dt { display: block; font-weight: 650; margin-top: 1rem; }
+input:not([type=hidden]), textarea, select { display: block; box-sizing: border-box; width: 100%; max-width: 42rem; padding: .6rem; font: inherit; }
+button { padding: .6rem 1rem; margin: 1rem 0; font: inherit; cursor: pointer; }
+button:disabled { cursor: wait; }
+dd { margin-left: 0; }
+.error, [role=alert] { color: #9d1818; }
+.free-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.table-scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+caption { text-align: left; margin: .5rem 0; }
+th, td { text-align: left; vertical-align: top; padding: .75rem; border-bottom: 1px solid #687583; overflow-wrap: anywhere; }
+li { margin-bottom: 1rem; }

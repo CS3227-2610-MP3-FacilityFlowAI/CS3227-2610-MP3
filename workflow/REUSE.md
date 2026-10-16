@@ -39,6 +39,17 @@ The source commit was verified against the MP2 `master` branch on 12 October
 
 ## Current evidence and measurement detail
 
+Requester step 2 (16 October): `RequestDraft`, Requester use cases/repository,
+controller, templates and tests are **concept-only** reuse of the approved MP2
+Requester workflow/field rules and `RequesterDashboardView.showDetail` at the
+verified baseline (zero copied code lines). MP2 detail inspection confirms the
+report/status/urgency/priority/timestamp presentation without internal completion
+metadata. Spring MVC/Thymeleaf/PostgreSQL implementation is new. V5 migration,
+schema readiness check, durable submission handling, pending-submit script and
+Node self-check, CSS, About page, guide updates and session/handoff records are
+**new** MP3 work. Existing V1–V4 production migrations are unchanged. Final line
+measurement and teammate review remain pending on `feat/requester-workflow`.
+
 Requester step 1 (16 October): `PasswordChangeService`, `JdbcIdentityOperations`,
 `PasswordController`, password template and associated tests reuse MP2
 `AuthenticationService.changePassword` and `ApplicationRouter` password-page

@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${title} + ' · FacilityFlow AI'">FacilityFlow AI</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
 <header th:fragment="header">
@@ -12,6 +13,7 @@
     <span th:text="${role}">ROLE</span>
     <a th:href="${workspace}">Main workspace</a>
     <a th:href="@{/account/password}">Change password</a>
+    <a th:href="@{/about}">About FacilityFlow</a>
     <form method="post" th:action="@{/logout}">
         <button type="submit">Sign out</button>
     </form>
@@ -19,6 +21,10 @@
 <main>
     <h1 th:text="${title}">Workspace</h1>
     <p>The authenticated foundation is ready for this role's workflow.</p>
+    <nav th:if="${role == 'REQUESTER'}" aria-label="Requester navigation">
+        <a th:href="@{/requester/requests}">My requests</a>
+        <a th:href="@{/requester/requests/new}">Report a problem</a>
+    </nav>
 </main>
 </body>
 </html>

@@ -7,6 +7,15 @@ they are not evidence available when it was first prepared.
 
 ## Progress notes
 
+- **16 October Requester step 2:** Step 1 committed as `74949cd` at the user's
+  request. Create, own-list and detail are implemented on `feat/requester-workflow`,
+  with server validation, owner-scoped history, transactional audit and durable
+  duplicate-submission rejection. V5 is required before web startup; runtime
+  schema readiness is now checked read-only. About/shared navigation is supplied.
+  See `logs/2026-10-16-requester-step-2-manual-slice.md` for executed checks and
+  remaining limits. The next user-facing step is eligible edits, cancellation
+  and Requester Updates (plan section 5).
+
 - **16 October Requester step 1:** Work started on `feat/requester-workflow`.
   Shared own-password change, current-session retention and atomic password/login
   audit recording are implemented. The current/new password interaction is

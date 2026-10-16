@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My requests · FacilityFlow AI</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header th:replace="~{dashboard :: header}"></header>
+<main>
+    <h1>My requests</h1>
+    <p><a th:href="@{/requester/requests/new}">Report a problem</a></p>
+    <p th:if="${requests.isEmpty()}">You have no requests yet. Report a problem to get started.</p>
+    <div class="table-scroll" th:unless="${requests.isEmpty()}">
+        <table>
+            <caption>Your requests, newest first</caption>
+            <thead><tr><th scope="col">Request</th><th scope="col">Location</th><th scope="col">Category</th>
+                <th scope="col">Status</th><th scope="col">Created</th></tr></thead>
+            <tbody><tr th:each="request : ${requests}">
+                <td><a th:href="@{/requester/requests/{id}(id=${request.displayId})}">
+                    <span th:text="${request.displayId}"></span> — <span th:text="${request.title}"></span></a></td>
+                <td th:text="${request.location}"></td><td th:text="${request.category}"></td>
+                <td th:text="${request.status}"></td><td th:text="${request.createdTime()}"></td>
+            </tr></tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

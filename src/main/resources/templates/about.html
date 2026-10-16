@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>About FacilityFlow AI</title><link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header th:replace="~{dashboard :: header}"></header>
+<main>
+    <h1>About FacilityFlow AI</h1>
+    <p>FacilityFlow AI supports facilities-maintenance requests for Requesters, Technicians and Facilities Managers.</p>
+    <p>AI assistance is advisory. Authorized users remain responsible for submitting reports and changing workflow state.</p>
+    <a th:href="${workspace}">Back to main workspace</a>
+</main>
+</body>
+</html>

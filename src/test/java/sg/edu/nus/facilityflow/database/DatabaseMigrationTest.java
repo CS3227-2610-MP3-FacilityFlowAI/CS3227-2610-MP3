@@ -58,6 +58,8 @@ class DatabaseMigrationTest {
                 legacyTechnician, legacyTechnician, legacyTechnician);
         flyway = configuration.target("4").load();
         assertEquals(1, flyway.migrate().migrationsExecuted);
+        flyway = configuration.target("5").load();
+        assertEquals(1, flyway.migrate().migrationsExecuted);
         app = new JdbcTemplate(dataSource("facilityflow_app"));
     }
 
@@ -439,6 +441,6 @@ class DatabaseMigrationTest {
     void verifiesPrivateSchemaCoverage() {
         assertEquals(0, admin.queryForObject("SELECT count(*) FROM pg_tables WHERE schemaname = 'facilityflow' AND tablename <> 'flyway_schema_history' AND NOT rowsecurity", Integer.class));
         assertEquals(0, admin.queryForObject("SELECT count(*) FROM pg_tables WHERE schemaname = 'facilityflow' AND tableowner <> 'facilityflow_migrator'", Integer.class));
-        assertEquals(14, admin.queryForObject("SELECT count(*) FROM pg_tables WHERE schemaname = 'facilityflow'", Integer.class));
+        assertEquals(15, admin.queryForObject("SELECT count(*) FROM pg_tables WHERE schemaname = 'facilityflow'", Integer.class));
     }
 }
