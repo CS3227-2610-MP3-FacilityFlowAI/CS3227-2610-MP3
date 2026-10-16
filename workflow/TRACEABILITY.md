@@ -1,7 +1,9 @@
 # Requirement Traceability
 
-Status: approved specification baseline v0.1, 12 October 2026. All listed
-requirements are approved; none is implemented or verified by approval alone.
+Status: approved specification baseline v0.1, 12 October 2026. The gateway
+revision candidate v0.2 received stakeholder approval on 16 October 2026;
+affected role-owner, Security Reviewer, teammate and fresh-reviewer review
+remains pending. No revision is implemented or verified by approval alone.
 
 Ranges may share a row only while every ID has the same source, status and empty
 implementation/evidence fields. Split a range before implementation when files,
@@ -22,7 +24,8 @@ review evidence.
 | REQ-SH-016 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | DatabaseInitializer default Manager bootstrap | DatabaseInitializerTest bootstrap/concurrency/profile/no overwrite; Part 3 log | locally verified; hosted pending |
 | REQ-SH-017 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | bootstrap/demo exceptions supplied; ordinary account authorization pending | initialization tests only | partial |
 | REQ-SH-018 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | AiAccessGuard authorization-before-context seam | AiAccessGuardTest; assistant endpoints pending | partial |
-| NFR-SEC-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | security evidence pending | approved |
+| NFR-SEC-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | web/application security evidence pending | approved |
+| NFR-SEC-002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | secret-free defaults plus redacted AI configuration with package-limited raw properties and API-key access | AiConfigurationValidatorTest, AiSettingsConfigurationContextTest and AiConfigurationSecurityRegressionTest; gateway configuration log | partial; configuration locally verified; repository/deployment secret separation pending |
 | NFR-PERF-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | 50-user performance result pending | approved |
 | NFR-A11Y-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | Chrome/accessibility checks pending | approved |
 | NFR-REL-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | fallback/restore evidence pending | approved |
@@ -30,18 +33,24 @@ review evidence.
 | NFR-DEP-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | deployment separation pending | approved |
 | NFR-DOC-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | documentation/reuse/process review pending | approved |
 | REQ-RQ-001–011 | [Requester manual workflow](specs/ROLE-REQUESTER.md#manual-workflow-requirements) | pending | RQ-A01–A07 pending | approved |
-| REQ-RQ-012–017 | [Smart Report Assistant](specs/ROLE-REQUESTER.md#smart-report-assistant) | pending | RQ-AI01–AI03 pending | approved |
+| REQ-RQ-012–017 | [Smart Report Assistant](specs/ROLE-REQUESTER.md#smart-report-assistant) | pending | RQ-AI01–AI04 pending | v0.1 approved; v0.2 stakeholder-approved 16 Oct; role-owner/teammate review pending |
 | REQ-TECH-001–011 | [Technician manual workflow](specs/ROLE-TECHNICIAN.md#manual-workflow-requirements) | pending | TECH-A01–A06 pending | approved |
-| REQ-TECH-012–017 | [Work Plan Assistant](specs/ROLE-TECHNICIAN.md#work-plan-assistant) | pending | TECH-AI01–AI03 pending | approved |
+| REQ-TECH-012–017 | [Work Plan Assistant](specs/ROLE-TECHNICIAN.md#work-plan-assistant) | pending | TECH-AI01–AI04 pending | v0.1 approved; v0.2 stakeholder-approved 16 Oct; role-owner/teammate review pending |
 | REQ-MGR-001–012 | [Manager request/review](specs/ROLE-MANAGER.md#request-and-review-requirements) | pending | MGR-A01–A05 pending | approved |
 | REQ-MGR-013–015 | [Manager accounts](specs/ROLE-MANAGER.md#account-administration) | pending | MGR-A06 pending | approved |
 | REQ-MGR-016–019 | [Category and skill administration](specs/ROLE-MANAGER.md#category-and-skill-administration) | pending | MGR-A07 pending | approved |
-| REQ-MGR-020–025 | [Triage Assistant and matching](specs/ROLE-MANAGER.md#triage-assistant-and-deterministic-candidate-ranking) | pending | MGR-A08–A10 pending | approved |
-| REQ-AI-001–006 | [SoCLaaS transport](specs/INTEGRATION-SPEC.md#soclaas-transport) | pending | gateway contract tests pending | approved |
-| REQ-AI-007–010 | [Usage and audit metadata](specs/INTEGRATION-SPEC.md#usage-and-audit-metadata) | pending | telemetry/redaction tests pending | approved |
-| AI-SEC-001–022 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | pending | AIS-T01–T14 pending | approved |
+| REQ-MGR-020–025 | [Triage Assistant and matching](specs/ROLE-MANAGER.md#triage-assistant-and-deterministic-candidate-ranking) | pending | MGR-A08–A11 pending | v0.1 approved; v0.2 stakeholder-approved 16 Oct; role-owner/teammate review pending |
+| REQ-AI-001, REQ-AI-003–004 | [SoCLaaS transport](specs/INTEGRATION-SPEC.md#soclaas-transport) | `.env.example`, `application.yml`, `SocLlmProperties`, `AiConfiguration`, `AiConfigurationValidator`, `AiSettingsConfiguration` | `AiConfigurationValidatorTest`, `AiSettingsConfigurationContextTest`, `AiConfigurationSecurityRegressionTest`; `logs/2026-10-16-soclaas-gateway-configuration.md`; `logs/handoffs/2026-10-16-soclaas-gateway-config-developer-handoff.md`; `logs/handoffs/2026-10-16-soclaas-gateway-config-tester-handoff.md`; `logs/handoffs/2026-10-16-soclaas-gateway-config-security-review.md`; `logs/handoffs/2026-10-16-soclaas-gateway-config-fresh-verifier.md` | configuration locally verified; HTTP transport/model discovery pending; v0.2 team review pending |
+| REQ-AI-002, REQ-AI-005–006 | [SoCLaaS transport](specs/INTEGRATION-SPEC.md#soclaas-transport) | pending | gateway/provider contract tests pending | v0.1 approved; v0.2 stakeholder-approved 16 Oct; Security Reviewer/role-owner/teammate review pending |
+| REQ-AI-007–010 | [Usage and audit metadata](specs/INTEGRATION-SPEC.md#usage-and-audit-metadata) | pending | telemetry/redaction tests and reviewed schema revision pending | v0.1 approved; v0.2 stakeholder-approved 16 Oct; Security Reviewer/role-owner/teammate review pending |
+| AI-SEC-001–007 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | authorization-first identity seam only; gateway/prompt controls pending | AiAccessGuardTest; AIS-T01–T08 pending | partial; v0.2 team review pending |
+| AI-SEC-008 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | configuration hard ceilings implemented; runtime deadline/output/concurrency/rate enforcement pending | configuration boundary tests and full check | partial; configuration locally verified |
+| AI-SEC-009–018 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | V3 metadata storage prerequisite only; gateway behavior pending | AIS-T09–T14 and gateway cases pending | partial storage; behavior pending |
+| AI-SEC-019 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | server-side raw binding, official-origin validation, placeholder/control rejection and redacted settings diagnostics | 242 configuration tests including fresh security regressions | partial; configuration locally verified; redirect/TLS transport and environment-separation/deployment review pending |
+| AI-SEC-020 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | startup-safe disabled/unavailable/available configuration states | Spring context binding tests; live/fake model-discovery tests pending | partial; model readiness pending |
+| AI-SEC-021–022 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | V3 limiter storage prerequisite only; runtime limiter and prompt templates pending | AIS-T10 and prompt review/tests pending | partial storage; behavior pending |
 | AI-SEC-023–027 | [Human/process gates](specs/AI-SECURITY-SPEC.md#human-and-development-process-gates) | pending | AIS-T15 and review evidence pending | approved |
-| AI-SEC-028–030 | [Response freshness and leakage controls](specs/AI-SECURITY-SPEC.md#response-freshness-and-leakage-controls) | pending | AIS-T16–T18 pending | approved |
+| AI-SEC-028–030 | [Response freshness and leakage controls](specs/AI-SECURITY-SPEC.md#response-freshness-and-leakage-controls) | pending | AIS-T16–T18 and `no-store` cases pending | v0.1 approved; v0.2 stakeholder-approved 16 Oct; Security Reviewer/role-owner/teammate/fresh review pending |
 
 ## Update rule
 

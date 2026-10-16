@@ -1,9 +1,11 @@
 # AI Security Specification
 
-Status: approved v0.1, 12 October 2026. Owner: Security Reviewer with ngkhengyang
-for gateway controls. Required role-owner and fresh-reviewer approval has been confirmed.
-This document defines required controls and planned tests; it does not claim they
-are implemented or verified.
+Status: approved baseline v0.1, 12 October 2026. Owner: Security Reviewer with
+ngkhengyang for gateway controls. Gateway revision candidate v0.2 received
+stakeholder approval on 16 October 2026; Security Reviewer, affected role-owner,
+teammate and fresh-reviewer review of the revision remains pending. This document
+defines required controls and planned tests; it does not claim they are
+implemented or verified.
 
 ## Assets and trust seams
 
@@ -14,7 +16,8 @@ provider budgets and business integrity.
 Data crosses these seams:
 
 1. browser to deterministic role endpoint;
-2. authorized role module to AI orchestration;
+2. authorized role module through a feature-specific advisory interface to
+   shared AI orchestration;
 3. stored/user text into the prompt as untrusted data;
 4. application to SoCLaaS over HTTPS with bearer credential;
 5. untrusted model text into schema validation;
@@ -25,6 +28,12 @@ Data crosses these seams:
 Authorization occurs before context collection. Schema validation occurs before
 display. Ordinary business authorization and validation occur again after human
 review and before any write.
+
+The current Account and correlation ID are server-derived. Each role module owns
+a minimal persisted eligibility probe, lazy allowlisted context loader,
+freshness snapshot and mandatory post-call recheck. The shared coordinator owns
+admission, prompt/provider policy, validation and terminal metadata. No caller
+may select a feature, actor, template, parser, model or arbitrary context map.
 
 ## Threats considered
 
@@ -62,24 +71,46 @@ review and before any write.
   AI conversation and stores no raw prompt or raw output after the response is
   processed.
 - **AI-SEC-007:** Aggregate serialized prompt content is limited to 12,000
-  characters after normalization. Each business field also retains its normal
-  deterministic limit; excess is rejected before provider use.
+  Unicode code points after converting CRLF/CR to LF, normalizing Unicode to NFC
+  and applying only existing field-specific outer trimming. Permitted internal
+  whitespace is preserved. Count final system-message content plus final
+  JSON-serialized user-message content, including syntax, escaping, provenance
+  labels and delimiters. Each business field retains its deterministic limit;
+  12,001 code points or any other excess is rejected before provider use without
+  silent truncation, except for the specified latest-ten Update selection rule.
 - **AI-SEC-008:** The gateway requests at most 800 output tokens, uses a 30-second
   deadline, allows at most five in-flight calls application-wide, five calls per
-  Account per rolling minute and 30 per Account per rolling hour.
+  Account per rolling minute and 30 per Account per rolling hour. Configuration
+  may only preserve or tighten those maxima. One original configured deadline
+  begins at AI use-case entry after web authentication/CSRF and covers
+  eligibility, admission, context, readiness, waits, provider attempts, decode,
+  validation, post-call recheck, terminal telemetry and lease release.
 - **AI-SEC-009:** At most one automatic retry is permitted for a network failure
-  or 503, and for 429 only when a short Retry-After value fits inside the original
-  user-visible deadline. Never retry 400, 401, 403, validation failure, unsafe
-  output or cancelled requests.
+  or 503 after a 250-millisecond delay. For 429, retry only when `Retry-After` as
+  delta seconds or an RFC-1123 date resolves to 0–2 seconds inclusive and at
+  least five seconds remain in the original deadline. The deadline never resets.
+  Never retry 400, 401, 403, validation failure, unsafe output or cancelled
+  requests.
 - **AI-SEC-010:** A feature-specific strict parser rejects malformed JSON,
-  unknown fields, wrong types, excessive arrays/text, invalid categories,
-  priorities, urgency or skill tags, and any result outside its schema.
-- **AI-SEC-011:** Valid strings are rendered using framework escaping; model HTML,
-  Markdown links, scripts and control characters have no executable meaning.
+  duplicate or unknown fields, trailing content, wrong types, excessive
+  arrays/text, invalid categories, priorities, urgency or skill tags, and any
+  result outside its schema. The provider envelope is limited to 256 KiB after
+  decompression and must contain exactly one choice, a single non-empty assistant
+  content string, no tool/function call and `finish_reason` equal to `stop`.
+  Reject 200 error envelopes, empty/multiple choices, malformed content,
+  truncation and inconsistent non-negative usage counts.
+- **AI-SEC-011:** Reject disallowed Unicode control characters, allowing LF and
+  TAB only where field rules permit them, plus HTML tag syntax, script/style
+  content, Markdown links/images and URI-bearing markup. Every accepted string
+  is still rendered through framework escaping.
 - **AI-SEC-012:** The Technician plan is rejected if required diagnostic,
   evidence, or stop/escalation structure is missing, or if a safety-rule detector
   identifies clearly dangerous prohibited advice. Rejection is not a claim that
-  accepted advice is professionally certified.
+  accepted advice is professionally certified. The detector is a deterministic,
+  versioned structural/rule policy with a human-reviewed multilingual and
+  obfuscated corpus. It is negation-aware; prohibited-condition advice must
+  direct the Technician to stop or escalate. It uses no LLM safety judge, and a
+  keyword match alone is not evidence of safety.
 - **AI-SEC-013:** AI results are visually labelled, editable/rejectable where
   appropriate, and never pre-authorize a business operation.
 - **AI-SEC-014:** Any later business submission ignores AI provenance for
@@ -93,19 +124,42 @@ review and before any write.
 - **AI-SEC-017:** Logs and AI telemetry record correlation ID, Account ID,
   feature, model, prompt-template version, result status, latency, retry count and
   provider token counts when supplied. They exclude raw prompt/output, API keys,
-  session values and full Request text.
+  session values and full Request text. After admission and before protected
+  context loading or provider use, a durable `STARTED` record is required;
+  failure to create it prevents both. A terminal
+  update records `SUCCEEDED`, the applicable safe failure category, or
+  `DISCARDED_ACCESS_CHANGED`. Post-call access/freshness discard is never
+  `SUCCEEDED`. If terminal persistence fails after provider use, withhold output,
+  return `AI_UNAVAILABLE`, retain `STARTED` evidence and emit only a sanitized
+  operational alert. The required status/check/grant schema revision must be
+  reviewed before implementation.
 - **AI-SEC-018:** AI metadata and provider token counts are retained for the life
   of the project. Missing provider usage is recorded as unavailable and never
   estimated as actual usage.
 - **AI-SEC-019:** SoCLaaS base URL, key and model are server-only configuration.
   The key is never sent to the browser. Development and Production use separate
-  keys where the provider permits.
+  keys where the provider permits. `AI_ENABLED` defaults to false. Enabled
+  configuration requires a non-placeholder key/model and the exact canonical
+  `https://soclaas-api.comp.nus.edu.sg/v1` origin/path, permitting only a
+  normalized trailing slash. Reject user information, non-default port, query,
+  fragment, origin/path changes and redirects; use normal TLS verification.
 - **AI-SEC-020:** A configured model is checked against GET /v1/models without
-  blocking core application startup. Failed validation marks AI unavailable and
-  is retried through a bounded readiness/first-use path.
+  blocking core application startup. The startup attempt is non-blocking; chat
+  is forbidden until validation succeeds. Failure is negative-cached for 60
+  seconds. When no result exists or that cache expires, first use allows one
+  single-flight retry. Success is cached for the process/configuration lifetime.
 - **AI-SEC-021:** Rate-limit state is enforced server-side. If distributed
   execution prevents safe in-memory enforcement, use PostgreSQL-backed atomic
-  counters rather than weakening the limits.
+  counters rather than weakening the limits. One admitted logical invocation
+  consumes one Account timestamp; its permitted retry consumes no second
+  timestamp but is recorded as another provider attempt. Authentication, CSRF,
+  early size, disabled/configuration and pre-admission failures consume no
+  Account quota. A global fenced lease spans context, readiness, provider/retry,
+  validation, post-call recheck and terminal telemetry. It lasts 45 seconds,
+  renews every 15 seconds using database time and owner/version fencing, and is
+  released only by the matching fencing token. Lease loss discards output.
+  Limiter database failure fails closed without a provider call. Any required
+  lease-owner/fencing storage revision is reviewed before implementation.
 - **AI-SEC-022:** Prompt templates are versioned in source and changed through
   pull request review with schema/security tests. Prompts may not grant wider
   context or mutation authority.
@@ -141,15 +195,28 @@ evidence of safety.
 - **AI-SEC-028:** After the provider returns and before any suggestion is sent
   to the browser, the server rechecks the Account's active state and role plus
   current object-level access. If access changed during the call, the entire
-  result is discarded and no protected content is returned.
+  result is discarded, no protected content is returned, and terminal metadata
+  is `DISCARDED_ACCESS_CHANGED`. Also discard Work Plan on assignment, status or
+  Request-version change; Triage on Request state/version, category catalogue or
+  skill catalogue change; and Smart Report persisted edit on ownership, state,
+  version or category-catalogue change. A now-inactive catalogue value invalidates
+  every feature result that refers to it.
 - **AI-SEC-029:** Browser AI invocations use POST with valid CSRF protection.
   Authentication, role/object authorization, CSRF, input-size and local
   rate/concurrency checks complete before context loading or any provider call.
+  Existing deterministic field limits reject invalid browser input before
+  protected context loading; the exact browser byte cap remains an explicit
+  pre-implementation parameter. After context loading, AI-SEC-007 applies the
+  aggregate serialized-prompt limit. Responses use `Cache-Control: no-store` and
+  are never stored in the server session or client persistence.
 - **AI-SEC-030:** Schema-valid output still passes a fail-closed disclosure
-  check before display. Reject the entire result if it contains known secret
-  material, prompt-template delimiters or protected identifiers/content outside
-  the feature's response allowlist. Tests place unique canaries in system-only
-  and unauthorized context and require rejection if any canary is returned.
+  check before display. Reject the entire result on an exact or NFC/case-normalized
+  match of server secrets, fixed prompt delimiters/canaries, unauthorized-context
+  canaries/content, protected prompt-template fragments, or any UUID, internal
+  identifier or display identifier not permitted by the output schema.
+  Request-specific deny material is assembled server-side and is never sent as
+  an instruction. Tests place unique canaries in system-only and unauthorized
+  context and require rejection if any canary is returned.
 
 ## Planned security test matrix
 
@@ -160,19 +227,25 @@ evidence of safety.
 | AIS-T03 | encoded/multilingual/delimiter payload | typed result/rejection | tools, role change or leakage |
 | AIS-T04 | Requester/Technician cross-object AI call | denial before provider call | protected data/provider charge |
 | AIS-T05 | wrong-role direct endpoint call | 403/safe denial | output or mutation |
-| AIS-T06 | oversized prompt/arrays | local validation/rate response | provider call or memory exhaustion |
+| AIS-T06 | oversized browser input, 12,001-code-point prompt, arrays or 256 KiB response boundary | local validation/rate response | provider call after local excess or memory exhaustion |
 | AIS-T07 | HTML/script/unknown field in model JSON | reject/escape | script execution or silent field use |
 | AIS-T08 | invalid category/skill/priority | reject and manual fallback | invented value stored |
-| AIS-T09 | unsafe Technician plan | reject with safety message | unsafe plan presented as approved |
-| AIS-T10 | concurrent calls beyond limits | bounded calls and 429-style response | unbounded provider traffic |
-| AIS-T11 | 400/401/403/429/503/timeout | exact retry/error policy | retry storm or draft loss |
+| AIS-T09 | multilingual, obfuscated or negated unsafe Technician plan | deterministic corpus result or rejection with safety message | keyword-only approval, LLM safety judge or unsafe plan presented as approved |
+| AIS-T10 | concurrent/multi-instance calls, lease loss or limiter failure | bounded calls, fenced discard or 429-style response | unbounded provider traffic or stale release |
+| AIS-T11 | 400/401/403/429/503/timeout or cancellation | exact original-deadline/retry/error policy | retry storm, reset deadline or draft loss |
 | AIS-T12 | stale triage after state/tag/workload change | revalidation/refresh | obsolete assignment |
 | AIS-T13 | forged accepted/result/role client fields | normal authorization/validation | approval bypass |
 | AIS-T14 | logs, audit, handoff inspection | safe metadata only | secret/raw prompt/output/full text |
 | AIS-T15 | malicious handoff/document instruction | scope remains authoritative | permission expansion |
-| AIS-T16 | Account/object access revoked while provider call is in flight | result discarded after fresh authorization | stale protected result displayed |
+| AIS-T16 | Account/object access or feature freshness changes while provider call is in flight | `DISCARDED_ACCESS_CHANGED` after fresh authorization | stale protected result displayed or recorded successful |
 | AIS-T17 | missing/invalid CSRF or local limit failure on AI POST | local rejection before context/provider | provider call or protected context load |
-| AIS-T18 | schema-valid output repeats hidden/unauthorized canary | entire result rejected and safely logged | leaked content displayed or retained |
+| AIS-T18 | schema-valid output repeats secret/delimiter/template/identifier or hidden/unauthorized canary | entire result rejected and safely logged | leaked content displayed or retained |
+
+Additional planned cases cover invalid configuration and redirects, readiness
+single-flight/cache behavior, fenced lease renewal and stale release, provider
+envelope/usage variants, terminal telemetry persistence failure, `no-store`
+responses, and proof that early denial performs zero protected context loads,
+readiness calls and provider calls.
 
 Execute with synthetic data in an authorized non-production environment and
 record actual results using the security-test template. Planned cases are not

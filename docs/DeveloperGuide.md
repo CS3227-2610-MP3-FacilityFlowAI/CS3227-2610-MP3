@@ -120,12 +120,31 @@ configuration, initial limits, retention and typed results are defined in
 `../workflow/specs/INTEGRATION-SPEC.md` and
 `../workflow/specs/AI-SECURITY-SPEC.md`.
 
+The first shared-gateway increment implements startup-safe AI configuration only.
+`AI_ENABLED` defaults to `false`. When enabled, the application binds all
+deployment values as raw strings and resolves them to disabled, unavailable or
+validated settings without exposing the API key or allowing malformed values to
+prevent the manual application from starting. The configured base must resolve
+to the official HTTPS SoCLaaS `/v1` base. Timeout, output, concurrency and rate
+settings may tighten but not exceed 30 seconds, 800 output tokens, five
+concurrent in-flight calls application-wide, five Account calls per minute and
+30 per hour.
+
+Copy `.env.example` into the developer's approved local secret mechanism; never
+commit a populated file. AI requires `AI_ENABLED=true`, a real
+`SOCLAAS_API_KEY`, and a configured `SOCLAAS_MODEL`. The remaining variables are
+`SOCLAAS_BASE_URL`, `AI_TIMEOUT_SECONDS`, `AI_MAX_OUTPUT_TOKENS`,
+`AI_MAX_IN_FLIGHT`, `AI_RATE_PER_MINUTE` and `AI_RATE_PER_HOUR`. Invalid,
+placeholder or over-limit values make AI unavailable. This increment does not
+call SoCLaaS or validate a live model.
+
 ## AI security
 
 Prompts/context/output are untrusted. `AiAccessGuard` implements the
 authorization-before-context seam required by AI-SEC-001 and is verified to
-construct no protected context and make no model call after denial. Typed
-schemas, limits, transport and assistant endpoints remain unimplemented. See
+construct no protected context and make no model call after denial. Configuration
+validation and redaction are implemented and locally verified; typed schemas,
+runtime limits, transport/readiness and assistant endpoints remain unimplemented. See
 AI-SECURITY-SPEC.md and ../workflow/SECURITY.md.
 
 ## SDD workflow
