@@ -5,6 +5,12 @@ import java.time.Duration;
 
 /** REQ-AI-006: server-only adapter seam. Implementations must honor interruption and remaining deadline. */
 public interface AiTransport {
+    class UnavailableException extends IOException {
+        public UnavailableException() { super("AI unavailable"); }
+    }
+    class InvalidResponseException extends IOException {
+        public InvalidResponseException() { super("Invalid AI response"); }
+    }
     record Response(int status, String content, Long inputTokens, Long outputTokens, Long totalTokens, Duration retryAfter) { }
     boolean available();
     String model();

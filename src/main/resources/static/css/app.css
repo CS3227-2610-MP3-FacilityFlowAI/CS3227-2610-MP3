@@ -22,3 +22,6 @@ li { margin-bottom: 1rem; }
 .status-counts > div { border: 1px solid #687583; padding: .75rem; }
 .status-counts dt { margin: 0; }
 .status-counts dd { font-size: 1.5rem; }
+[data-smart-report] { border: 1px solid #687583; padding: 1rem; margin: 1rem 0; }
+[data-assistant-review] { border-top: 1px solid #687583; margin-top: 1rem; }
+[data-suggested-fields] > div { border-bottom: 1px solid #c1c7cd; }

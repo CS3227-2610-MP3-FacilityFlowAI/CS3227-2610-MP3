@@ -851,6 +851,47 @@ class RequesterRequestIntegrationTest {
     }
 
     @Test
+    void reqRq015016ReviewUiAndExplicitOrdinarySubmissionRecheckStateRegardlessOfAiFlags() throws Exception {
+        Cookie cookie = login("requester1", "/requester");
+        mvc.perform(get("/requester/requests/new").cookie(cookie))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Smart Report Assistant (optional)")))
+                .andExpect(content().string(containsString("data-endpoint=\"/requester/requests/assistant\"")))
+                .andExpect(content().string(containsString("/js/smart-report.js")))
+                .andExpect(content().string(containsString("Nothing is saved automatically")))
+                .andExpect(content().string(containsString("<noscript>")));
+        String token = formToken(cookie);
+        var response = mvc.perform(post("/requester/requests/assistant").cookie(cookie).with(csrf())
+                        .param("roughText", "Flickering ceiling light"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String suggestedTitle = tools.jackson.databind.json.JsonMapper.builder().build().readTree(response)
+                .get("suggestion").get("draftTitle").asString();
+        assertEquals(0, count("maintenance_request"));
+        var created = mvc.perform(post("/requester/requests").cookie(cookie).with(csrf())
+                        .param("submissionId", token).param("title", suggestedTitle).param("description", "User reviewed and edited description")
+                        .param("location", "Block A").param("categoryId", category).param("reportedUrgency", "NORMAL")
+                        .param("aiAccepted", "true").param("status", "CLOSED").param("managerPriority", "CRITICAL"))
+                .andExpect(status().is3xxRedirection()).andReturn().getResponse().getRedirectedUrl();
+        String id = created.substring(created.lastIndexOf('/') + 1);
+        assertEquals(1, count("maintenance_request"));
+        assertEquals(1, requestAuditCount());
+        var detail = service(OWNER, AccountRole.REQUESTER, 0).detail(id).orElseThrow();
+        assertEquals("OPEN", detail.status()); assertNull(detail.managerPriority());
+        assertEquals("User reviewed and edited description", detail.description());
+        mvc.perform(get("/requester/requests/" + id + "/edit").cookie(cookie))
+                .andExpect(content().string(containsString("data-endpoint=\"/requester/requests/" + id + "/assistant\"")))
+                .andExpect(content().string(containsString("name=\"version\" value=\"0\"")));
+        mvc.perform(post("/requester/requests/" + id + "/assistant").cookie(cookie).with(csrf())
+                        .param("version", "0").param("roughText", "More light details"))
+                .andExpect(status().isOk());
+        setState(id, "ASSIGNED");
+        mvc.perform(post("/requester/requests/" + id + "/edit").cookie(cookie).with(csrf())
+                        .param("version", "0").param("title", "AI approved replacement").param("description", "User description after AI review")
+                        .param("location", "Block B").param("categoryId", category).param("reportedUrgency", "HIGH").param("aiAccepted", "true"))
+                .andExpect(status().isConflict());
+        assertEquals(suggestedTitle, service(OWNER, AccountRole.REQUESTER, 0).detail(id).orElseThrow().title());
+    }
+
+    @Test
     void aiSec002029NoCatalogueContextOnDeniedInvalidOrQuotaLimitedCalls() {
         var repository = org.mockito.Mockito.mock(RequesterRequestRepository.class,
                 org.mockito.AdditionalAnswers.delegatesTo(context.getBean(RequesterRequestRepository.class)));

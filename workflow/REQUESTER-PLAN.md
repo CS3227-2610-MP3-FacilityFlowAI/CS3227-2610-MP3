@@ -7,6 +7,14 @@ they are not evidence available when it was first prepared.
 
 ## Progress notes
 
+- **16 October Requester step 6:** Step 5 committed as `3dc3a60` at the user's
+  request. Create/OPEN-edit AI review, explicit field acceptance/discard, stale
+  input protection and live SoCLaaS adapter/model readiness are implemented.
+  Tests use only local fakes; the user explicitly deferred the live smoke check.
+  See `logs/2026-10-16-requester-step-6-review-live-adapter.md` for executed evidence.
+  Next is integration/security/usability verification (section 9), including
+  deferred browser/hosted/cross-role checks within available authorization.
+
 - **16 October Requester step 5:** Step 4 committed as `66b970c` at the user's
   request. Smart Report service, strict typed output, bounded fake-tested gateway,
   CSRF-protected POST routes, rolling database admission/leases and redacted

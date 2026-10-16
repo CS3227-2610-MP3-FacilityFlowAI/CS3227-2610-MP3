@@ -39,6 +39,14 @@ The source commit was verified against the MP2 `master` branch on 12 October
 
 ## Current evidence and measurement detail
 
+Requester step 6 (16 October): advisory review/accept/discard workflow follows
+**concept-only** behavior retained in approved MP3 Requester/AI specs, with zero
+copied MP2 code lines. No MP2 source consulted or copied. `SoClaasTransport`,
+runtime bean/configuration and typed transport failure additions, review template/
+JavaScript/CSS, local HTTP and DOM checks, PostgreSQL review-to-ordinary-submit
+test and guide/traceability/session/handoff updates are **new** MP3 work.
+No migration or dependency changes; final measurements and teammate review pending.
+
 Requester step 5 (16 October): Smart Report advisory/context/schema concepts are
 **concept-only** behavior retained in approved MP3 Requester/Integration/AI Security
 specs, with zero copied MP2 code lines. No MP2 source consulted/copied this step.

@@ -5,6 +5,7 @@
     <title th:text="${editing ? 'Edit request' : 'Report a problem'} + ' · FacilityFlow AI'">Report a problem · FacilityFlow AI</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <script defer th:src="@{/js/request-form.js}"></script>
+    <script defer th:src="@{/js/smart-report.js}"></script>
 </head>
 <body>
 <header th:replace="~{dashboard :: header}"></header>
@@ -15,6 +16,27 @@
     <p th:if="${!errors.isEmpty()}" role="alert">Check the marked fields and try again.</p>
     <p th:if="${errors.containsKey('submissionId')}" th:text="${errors['submissionId']}" role="alert"></p>
     <p th:if="${errors.containsKey('version')}" th:text="${errors['version']}" role="alert"></p>
+    <section data-smart-report aria-labelledby="assistant-heading"
+             th:attr="data-endpoint=${editing} ? @{/requester/requests/{id}/assistant(id=${displayId})} : @{/requester/requests/assistant}">
+        <h2 id="assistant-heading">Smart Report Assistant (optional)</h2>
+        <p>AI suggestions may be wrong. Review them before using your ordinary report form below. Nothing is saved automatically.</p>
+        <label for="roughText">Rough problem description (up to 2,000 characters)</label>
+        <textarea id="roughText" rows="3" data-rough-text></textarea>
+        <p>The assistant also uses the current report fields below. Share maintenance details only.</p>
+        <button type="button" data-ask-assistant hidden>Get AI suggestions</button>
+        <button type="button" data-discard-suggestions hidden>Discard suggestions</button>
+        <p role="status" aria-live="polite" data-assistant-status></p>
+        <div data-assistant-review hidden aria-labelledby="suggestions-heading">
+            <h3 id="suggestions-heading" tabindex="-1">AI suggestions — review before use</h3>
+            <div data-suggested-fields></div>
+            <h4>Missing information</h4>
+            <ul data-assistant-questions></ul>
+            <h4>Why these suggestions</h4>
+            <p class="free-text" data-assistant-rationale></p>
+            <p>Use individual suggestions, edit the report fields yourself, or discard all suggestions. Submit or save only when you are ready.</p>
+        </div>
+        <noscript><p>AI review requires JavaScript. You can complete and submit the ordinary form below.</p></noscript>
+    </section>
     <form method="post" th:action="${editing} ? @{/requester/requests/{id}/edit(id=${displayId})} : @{/requester/requests}" data-request-form>
         <input th:unless="${editing}" type="hidden" name="submissionId" th:value="${submissionId}">
         <input th:if="${editing}" type="hidden" name="version" th:value="${version}">

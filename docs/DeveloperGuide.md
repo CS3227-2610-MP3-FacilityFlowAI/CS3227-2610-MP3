@@ -262,7 +262,7 @@ AI-SECURITY-SPEC.md and ../workflow/SECURITY.md.
 `SmartReportInput`; POST `/requester/requests/{displayId}/assistant` also requires
 the ordinary Request version. Existing role filters and CSRF protect both. They
 return no-store JSON with a typed suggestion or stable failure category and safe
-guidance. The review UI/field acceptance is not implemented yet. Service code
+guidance. The step 6 review UI is described below. Service code
 never calls a Request mutation or business-audit operation.
 
 The input permits incomplete current fields within their normal maxima. Actor,
@@ -300,15 +300,70 @@ freshness check discards output. Missing usage remains null. No prompt, provider
 error body, free-text input/output or business Audit Event is recorded. A metadata
 storage failure cannot return a successful suggestion.
 
-Runtime `AiConfiguration` installs an unavailable adapter; enabling AI alone
-cannot select the test fake. `FakeAiTransport` exists only under tests. The live
-HTTPS adapter, GET /models readiness, model/base-URL wiring, portal reconciliation,
-other role results and human review UI remain pending with the gateway owner.
+Runtime `AiConfiguration` now installs `SoClaasTransport`; `FakeAiTransport`
+exists only under tests. Missing/invalid configuration leaves AI unavailable.
+Portal reconciliation and other role results remain pending with the gateway owner.
 `AI_ENABLED` defaults false. `AI_TIMEOUT_SECONDS`, `AI_MAX_OUTPUT_TOKENS`,
 `AI_MAX_IN_FLIGHT`, `AI_RATE_PER_MINUTE` and `AI_RATE_PER_HOUR` may reduce defaults;
-values are clamped to 1 through their approved maximum. `SOCLAAS_API_KEY` is used
-only as a server-side forbidden output value at this stage. No dependency or
+values are clamped to 1 through their approved maximum. `SOCLAAS_API_KEY` is a
+server-only bearer credential and forbidden output value. No dependency or
 migration was added. Tests use synthetic values and no external provider.
+
+### Review UI and SoCLaaS adapter (Requester step 6)
+
+`requester/create.html` embeds an optional, separately labelled review section
+outside the ordinary create/edit form. `smart-report.js` sends only current
+allowlisted fields, rough text, expected edit version and CSRF to the same-origin
+POST endpoint. It renders with textContent, never HTML/Markdown. Explicit per-field
+buttons map active category labels to current form option IDs and urgency labels
+to the ordinary enum. Accepted fields remain editable. There is no AI submit or
+save operation, acceptance flag or result ID that can authorize a write.
+
+While awaiting a response, manual fields remain usable. Changed input discards
+late output; a field changed after review cannot be overwritten by its old
+suggestion. Discard, ordinary submission and page navigation abort/ignore pending
+browser results and remove transient suggestion nodes. No chat/localStorage or
+other suggestion persistence. Browser cancellation is best effort; the server
+invocation remains bounded by its deadline/quotas. A no-JavaScript manual path
+remains available. Framework page/JSON escaping plus DOM textContent protect
+display; no raw provider body is sent to the browser.
+
+`SoClaasTransport` uses one JDK HttpClient, default certificate validation and no
+redirects. Runtime accepts only the approved HTTPS SoCLaaS `/v1` origin; it never
+sends credentials to configurable arbitrary hosts or an HTTP URL. The
+adapter also rejects a model setting containing the configured key, preventing
+that misconfiguration from reaching model metadata. The
+package-private injected client/base constructor is for loopback contract tests,
+with no runtime insecure flag. Configuration uses `AI_ENABLED=true`,
+`SOCLAAS_BASE_URL` (default `https://soclaas-api.comp.nus.edu.sg/v1`), a server-only
+`SOCLAAS_API_KEY` and `SOCLAAS_MODEL`. No model is hard-coded. Configure separate
+non-production/production keys where supported, outside tracked files.
+
+Startup and `available()` never contact the provider. After ordinary admission,
+first use checks GET `/models` within two seconds and the invocation's remaining
+deadline. One probe per process runs at a time; success caches five minutes,
+failure cools down 60 seconds. Generation uses POST `/chat/completions` with model,
+stream=false, max_tokens and exactly system/user messages. No tools, history or
+response ID. Credentials stay in the Authorization header. Generation and probe
+share the original deadline; future cancellation closes the HTTP exchange.
+
+Response bodies are capped at 64 KiB with a typed overflow error so oversized or
+malformed output never becomes a network retry. The adapter requires exactly one
+completed assistant-text choice and rejects tool/refusal/truncated responses;
+the existing strict Smart Report parser then validates content. Numeric non-negative
+usage is extracted without estimating missing values. Status/Retry-After map into
+the existing one-retry gateway policy; redirects never forward bearer headers.
+No prompt/output/provider-error body is logged or persisted.
+
+`SoClaasTransportTest` exercises the real HTTP adapter against a loopback provider.
+PostgreSQL integration tests cover rendered create/edit routes and explicit
+ordinary submission after review, including stale state and forged AI flags.
+Run `node src/test/js/smart-report.test.cjs` plus the existing request-form self-
+check for explicit acceptance/discard/stale/cancel/error/escaping behavior.
+These DOM checks do not replace real-browser accessibility/viewport verification.
+The user deferred the non-production live smoke check; no external model, token,
+quality or readiness evidence is claimed. JDK reference:
+[HttpClient](https://docs.oracle.com/en/java/javase/25/docs/api/java.net.http/java/net/http/HttpClient.html).
 
 ## SDD workflow
 

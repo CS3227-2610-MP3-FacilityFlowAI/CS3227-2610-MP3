@@ -1,7 +1,8 @@
 # User Guide
 
-Status: authentication and Requester manual workflow, dashboard and filters implemented locally;
-teammate review and hosted verification pending. AI workflows are not yet released.
+Status: authentication, Requester manual workflow and Smart Report review are
+implemented locally; teammate review, browser and hosted verification pending.
+Live SoCLaaS smoke verification was deferred by the user.
 
 This guide must be updated continuously to match the deployed product exactly.
 It will document how Requesters, Technicians, and Facilities Managers access,
@@ -55,9 +56,8 @@ safe message directing you to **My requests**, without creating another report.
 Select a report to view its fields, status, Manager priority when set, timestamps,
 status history, public reasons and Requester Updates. Times display explicitly in
 Asia/Singapore. Other Requesters' reports and internal Work Logs/private Manager
-data are unavailable. The assistant review interface is still pending. Its
-service is tested against a local fake; ordinary runtime currently returns
-unavailable and the manual workflow remains usable.
+data are unavailable. The optional assistant is described below; it may be
+unavailable when AI is disabled or its provider configuration is not ready.
 
 ### Requester: dashboard and finding reports
 
@@ -110,10 +110,36 @@ The header also provides **Main workspace**, **Change password** and
 
 ## AI features
 
-Three bounded SoC LLM assistants are planned:
+### Requester: Smart Report Assistant
 
-- Requesters may ask the Smart Report Assistant for an editable structured
-  draft, category and urgency suggestions, and missing-information questions.
+On **Report a problem** or an owned OPEN report's **Edit request** page, optionally
+enter a rough description and select **Get AI suggestions**. The assistant uses
+that text and your current report fields. Keep sensitive personal details out of
+the report. The ordinary form remains editable while you wait.
+
+The labelled **AI suggestions — review before use** panel shows proposed fields,
+missing-information questions and rationale. **Use suggested title**, for example,
+copies just that field into the ordinary form. Accept other fields individually
+or edit them yourself. Nothing is saved until you select **Submit request** or
+**Save changes**. All normal field, ownership and OPEN-state checks still apply.
+
+**Discard suggestions** clears the review panel and ignores an in-flight result.
+It keeps your manual fields, including values you already accepted. If you edit
+while waiting, the late result is discarded. If you change a field after review
+appears, an old suggestion cannot overwrite that field; ask again for new
+suggestions. Returning through browser history also clears the review panel.
+
+AI failure, timeout, invalid output or quota exhaustion shows safe guidance and
+keeps your manual input. You can submit normally without waiting for AI. With
+JavaScript disabled, the ordinary form still works. In the local implementation,
+defaults allow five AI attempts/minute and 30/hour per Account, with five in flight
+across the application. Discarding locally may leave a bounded server attempt
+finishing and consuming its quota. No live response quality is claimed yet.
+
+### Other role assistants
+
+These assistants remain planned:
+
 - Technicians may ask the Work Plan Assistant for an advisory diagnostic and
   evidence-collection plan for an assigned request.
 - Facilities Managers may ask the Triage Assistant for explained category,
@@ -121,13 +147,13 @@ Three bounded SoC LLM assistants are planned:
   ranks eligible Technicians using deterministic rules.
 
 No assistant performs a business action. Users review suggestions and use the
-ordinary workflow. Exact steps and screenshots will be added only after the
-features are implemented and verified.
+ordinary workflow. Other role steps and screenshots will be added after
+implementation and verification.
 
 ## Limitations
 
-AI drafts/recommends only; users perform authorized actions. Confirmed
-released resource limits and failure behavior: TBD.
+AI drafts/recommends only; users perform authorized actions. Live provider,
+hosted/browser behavior and released deployment limits remain unverified.
 
 ## Troubleshooting
 

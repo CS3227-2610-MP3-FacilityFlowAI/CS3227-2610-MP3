@@ -71,6 +71,12 @@ public class ValidatedAiGateway implements AiGateway, AutoCloseable {
             try {
                 retries.set(retry);
                 response = transport.complete(SmartReportSchema.SYSTEM, user, tokens, Duration.ofNanos(remaining));
+            } catch (AiTransport.UnavailableException exception) {
+                return failure(AI_UNAVAILABLE, retry);
+            } catch (AiTransport.InvalidResponseException exception) {
+                return failure(AI_INVALID_OUTPUT, retry);
+            } catch (java.net.http.HttpTimeoutException exception) {
+                return failure(AI_TIMEOUT, retry);
             } catch (IOException exception) {
                 if (retry == 0) continue;
                 return failure(AI_UNAVAILABLE, retry);
