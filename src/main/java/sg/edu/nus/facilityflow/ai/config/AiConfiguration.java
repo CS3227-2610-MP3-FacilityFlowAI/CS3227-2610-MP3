@@ -57,7 +57,7 @@ public sealed interface AiConfiguration
         private final int ratePerMinute;
         private final int ratePerHour;
 
-        Available(
+        public Available(
                 URI baseUrl,
                 String apiKey,
                 String model,

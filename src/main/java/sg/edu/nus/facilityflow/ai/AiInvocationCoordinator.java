@@ -11,16 +11,18 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import sg.edu.nus.facilityflow.ai.config.AiConfiguration;
 
 /**
- * Shared process-local admission control for AI invocations.
+ * Shared admission control for AI invocations.
  *
- * <p>This is deliberately a small coordinator seam. It owns the concurrency
- * permit and rolling account windows, while provider adapters remain unaware of
- * accounts and role context. The durable PostgreSQL lease/bucket coordinator is
- * the next increment for multi-instance deployments.
+ * <p>This is deliberately a small coordinator seam. It owns the permit
+ * lifecycle while provider adapters remain unaware of Accounts and role
+ * context. Production wiring uses the PostgreSQL-backed lease/bucket adapter;
+ * deterministic tests and explicitly supplied local instances use the
+ * process-local rolling-window fallback.
  */
 @Component
 public final class AiInvocationCoordinator {
@@ -31,12 +33,14 @@ public final class AiInvocationCoordinator {
     private final int ratePerMinute;
     private final int ratePerHour;
     private final Clock clock;
+    private final AiAdmissionBackend durableBackend;
     private final Object monitor = new Object();
     private final Map<UUID, Deque<Instant>> accountInvocations = new HashMap<>();
     private int inFlight;
 
     @Autowired
-    public AiInvocationCoordinator(AiConfiguration configuration) {
+    AiInvocationCoordinator(
+            AiConfiguration configuration, ObjectProvider<AiAdmissionBackend> durableBackend) {
         this(configuration instanceof AiConfiguration.Available available
                 ? available.maxInFlight()
                 : 0,
@@ -46,10 +50,24 @@ public final class AiInvocationCoordinator {
                 configuration instanceof AiConfiguration.Available available
                         ? available.ratePerHour()
                         : 0,
-                Clock.systemUTC());
+                Clock.systemUTC(),
+                durableBackend.getIfAvailable());
+    }
+
+    public AiInvocationCoordinator(AiConfiguration configuration) {
+        this(configuration, null);
     }
 
     public AiInvocationCoordinator(int maxInFlight, int ratePerMinute, int ratePerHour, Clock clock) {
+        this(maxInFlight, ratePerMinute, ratePerHour, clock, null);
+    }
+
+    private AiInvocationCoordinator(
+            int maxInFlight,
+            int ratePerMinute,
+            int ratePerHour,
+            Clock clock,
+            AiAdmissionBackend durableBackend) {
         if (maxInFlight < 0 || ratePerMinute < 0 || ratePerHour < 0) {
             throw new IllegalArgumentException("Admission limits cannot be negative");
         }
@@ -57,11 +75,16 @@ public final class AiInvocationCoordinator {
         this.ratePerMinute = ratePerMinute;
         this.ratePerHour = ratePerHour;
         this.clock = Objects.requireNonNull(clock, "clock");
+        this.durableBackend = durableBackend;
     }
 
     /** Attempts one logical invocation admission for an account. */
     public Optional<Permit> tryAcquire(UUID accountId) {
         Objects.requireNonNull(accountId, "accountId");
+        if (durableBackend != null) {
+            return durableBackend.tryAcquire(accountId)
+                    .map(lease -> new Permit(lease));
+        }
         Instant now = clock.instant();
         synchronized (monitor) {
             if (inFlight >= maxInFlight) {
@@ -102,16 +125,33 @@ public final class AiInvocationCoordinator {
         return count;
     }
 
-    /** Idempotent permit that releases only the process-local concurrency slot. */
+    /** Idempotent permit that releases the active local or durable admission. */
     public final class Permit implements AutoCloseable {
         private final UUID accountId;
+        private final AiAdmissionBackend.Lease lease;
         private boolean released;
 
         private Permit(UUID accountId) {
             this.accountId = accountId;
+            this.lease = null;
+        }
+
+        private Permit(AiAdmissionBackend.Lease lease) {
+            this.accountId = null;
+            this.lease = Objects.requireNonNull(lease, "lease");
         }
 
         public void release() {
+            if (lease != null) {
+                synchronized (monitor) {
+                    if (released) {
+                        return;
+                    }
+                    released = true;
+                }
+                lease.release();
+                return;
+            }
             synchronized (monitor) {
                 if (released) {
                     return;
@@ -126,6 +166,11 @@ public final class AiInvocationCoordinator {
                     accountInvocations.remove(accountId);
                 }
             }
+        }
+
+        /** Returns false once a durable fenced lease has been lost. */
+        public boolean valid() {
+            return !released && (lease == null || lease.valid());
         }
 
         @Override

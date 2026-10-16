@@ -58,6 +58,8 @@ class DatabaseMigrationTest {
                 legacyTechnician, legacyTechnician, legacyTechnician);
         flyway = configuration.target("4").load();
         assertEquals(1, flyway.migrate().migrationsExecuted);
+        flyway = configuration.target("5").load();
+        assertEquals(1, flyway.migrate().migrationsExecuted);
         app = new JdbcTemplate(dataSource("facilityflow_app"));
     }
 
@@ -381,7 +383,7 @@ class DatabaseMigrationTest {
                 + "(actor_id, correlation_id, feature, template_version, status, latency_ms, retry_count) "
                 + "VALUES (?, ?, 'SMART_REPORT', 'v1', 'AI_TIMEOUT', 1, 2)", actor, UUID.randomUUID()));
         assertSqlState("42501", () -> app.update("DELETE FROM facilityflow.ai_invocation WHERE id = ?", invocation));
-        assertSqlState("42501", () -> app.update("UPDATE facilityflow.ai_invocation SET status = 'SUCCEEDED' WHERE id = ?", invocation));
+        assertEquals(1, app.update("UPDATE facilityflow.ai_invocation SET status = 'SUCCEEDED' WHERE id = ?", invocation));
         var columns = admin.queryForList("SELECT column_name FROM information_schema.columns WHERE table_schema = 'facilityflow' AND table_name = 'ai_invocation'", String.class);
         assertFalse(columns.contains("prompt"));
         assertFalse(columns.contains("output"));
@@ -399,9 +401,63 @@ class DatabaseMigrationTest {
         assertSqlState("23505", () -> app.update("INSERT INTO facilityflow.rate_limit_bucket (scope, account_id) VALUES ('ACCOUNT_RATE', ?)", actor));
         assertEquals(5, app.queryForObject("SELECT count(*) FROM facilityflow.rate_limit_bucket WHERE scope = 'GLOBAL_SLOT'", Integer.class));
         var version = app.queryForObject("SELECT version FROM facilityflow.rate_limit_bucket WHERE slot = 1", Long.class);
-        var claim = "UPDATE facilityflow.rate_limit_bucket SET lease_expires_at = CURRENT_TIMESTAMP + interval '30 seconds', version = version + 1 WHERE slot = 1 AND version = ?";
-        assertEquals(1, app.update(claim, version));
-        assertEquals(0, app.update(claim, version));
+        var owner = UUID.randomUUID();
+        var claim = "UPDATE facilityflow.rate_limit_bucket SET lease_owner = ?, lease_expires_at = CURRENT_TIMESTAMP + interval '30 seconds', version = version + 1 WHERE slot = 1 AND version = ?";
+        assertEquals(1, app.update(claim, owner, version));
+        assertEquals(0, app.update(claim, owner, version));
+        app.update("UPDATE facilityflow.rate_limit_bucket SET lease_owner = NULL, lease_expires_at = NULL WHERE slot = 1");
+    }
+
+    @Test
+    @DisplayName("AI-SEC-021: durable admission claims one account window and fenced global lease")
+    void durableAdmissionClaimsAndReleasesFencedLease() {
+        var actor = newAccount("REQUESTER");
+        var configuration = new sg.edu.nus.facilityflow.ai.config.AiConfiguration.Available(
+                java.net.URI.create("https://soclaas-api.comp.nus.edu.sg/v1"),
+                "synthetic-key", "synthetic-model", 30, 800, 1, 5, 30);
+        var backend = new sg.edu.nus.facilityflow.ai.JdbcAiAdmissionBackend(
+                new org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate(app),
+                new org.springframework.jdbc.datasource.DataSourceTransactionManager(dataSource("facilityflow_app")),
+                configuration);
+
+        var lease = backend.tryAcquire(actor).orElseThrow();
+        assertEquals(1, app.queryForObject(
+                "SELECT cardinality(invocation_times) FROM facilityflow.rate_limit_bucket WHERE account_id = ?",
+                Integer.class, actor));
+        assertEquals(1, app.queryForObject(
+                "SELECT count(*) FROM facilityflow.rate_limit_bucket WHERE scope = 'GLOBAL_SLOT' AND lease_owner IS NOT NULL",
+                Integer.class));
+        assertTrue(backend.tryAcquire(newAccount("REQUESTER")).isEmpty());
+        lease.release();
+        assertEquals(0, app.queryForObject(
+                "SELECT count(*) FROM facilityflow.rate_limit_bucket WHERE scope = 'GLOBAL_SLOT' AND lease_owner IS NOT NULL",
+                Integer.class));
+        lease.release();
+    }
+
+    @Test
+    @DisplayName("AI-SEC-021: stale lease owner cannot release a re-leased slot")
+    void staleLeaseReleaseIsFenced() {
+        var actor = newAccount("REQUESTER");
+        var configuration = new sg.edu.nus.facilityflow.ai.config.AiConfiguration.Available(
+                java.net.URI.create("https://soclaas-api.comp.nus.edu.sg/v1"),
+                "synthetic-key", "synthetic-model", 30, 800, 5, 5, 30);
+        var backend = new sg.edu.nus.facilityflow.ai.JdbcAiAdmissionBackend(
+                new org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate(app),
+                new org.springframework.jdbc.datasource.DataSourceTransactionManager(dataSource("facilityflow_app")),
+                configuration);
+        var original = backend.tryAcquire(actor).orElseThrow();
+        short slot = app.queryForObject(
+                "SELECT slot FROM facilityflow.rate_limit_bucket WHERE lease_owner IS NOT NULL ORDER BY slot LIMIT 1",
+                Short.class);
+        var replacementOwner = UUID.randomUUID();
+        app.update("UPDATE facilityflow.rate_limit_bucket SET lease_owner = ?, version = version + 1, "
+                + "lease_expires_at = CURRENT_TIMESTAMP + interval '45 seconds' WHERE slot = ?",
+                replacementOwner, slot);
+        original.release();
+        assertEquals(replacementOwner, app.queryForObject(
+                "SELECT lease_owner FROM facilityflow.rate_limit_bucket WHERE slot = ?", UUID.class, slot));
+        app.update("UPDATE facilityflow.rate_limit_bucket SET lease_owner = NULL, lease_expires_at = NULL WHERE slot = ?", slot);
     }
 
     @Test

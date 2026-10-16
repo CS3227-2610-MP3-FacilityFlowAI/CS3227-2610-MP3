@@ -19,9 +19,10 @@ rate/lease controls, telemetry, role gateway/coordinator and compressed-response
 support. Iteration 2D adds the first Technician Work Plan vertical slice;
 focused tests pass, but teammate and fresh Security Reviewer review remain
 pending. Iteration 2E adds a process-local shared admission coordinator and
-focused rolling-window/concurrency tests. These slices are intentionally not
-evidence that distributed quota/lease, retry, telemetry or compressed-response
-requirements are implemented.
+focused rolling-window/concurrency tests. Iteration 2F adds PostgreSQL-time
+Account buckets and owner/version-fenced global leases with renewal and
+stale-release tests. Retry, telemetry and compressed-response requirements
+remain deferred.
 
 ## Assets and trust seams
 
@@ -275,6 +276,13 @@ may select a feature, actor, template, parser, model or arbitrary context map.
   path. Limit denial is `AI_LIMITED`; no repository or provider call occurs.
   This remains process-local; PostgreSQL-time distributed buckets, fenced
   leases, durable telemetry and retry execution are deferred.
+- **Iteration 2F durable distributed admission:** `JdbcAiAdmissionBackend`
+  performs Account-window and five-slot lease admission in a transaction using
+  PostgreSQL time. Global leases use an owner UUID plus monotonic version fence,
+  renew at 15 seconds and expire at 45 seconds. Renewal/release requires the
+  exact fence; lease loss withholds a completed result as `AI_UNAVAILABLE`.
+  Admission occurs before readiness and protected context loading. Durable
+  invocation telemetry and retry execution remain deferred.
 - **AI-SEC-020:** A configured model is checked against GET /v1/models without
   blocking core application startup. Readiness states are exactly `UNVALIDATED`,
   `CHECKING`, `NEGATIVE` and `READY`. The core exposes only a non-blocking

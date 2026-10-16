@@ -19,9 +19,10 @@ controls, telemetry and compressed-response support remain later increments.
 Iteration 2D adds the first role-facing Technician Work Plan vertical slice;
 focused implementation tests pass, while teammate and fresh Security Reviewer
 review remain pending. Iteration 2E adds a shared process-local admission
-coordinator for configured in-flight and rolling per-account limits. Durable
-multi-instance coordination, retry, telemetry and compressed-response controls
-remain later increments.
+coordinator for configured in-flight and rolling per-account limits. Iteration
+2F adds PostgreSQL-time Account buckets and fenced global leases. Retry
+execution, durable invocation telemetry and compressed-response controls remain
+later increments.
 
 ## SoCLaaS transport
 
@@ -230,6 +231,26 @@ provider types or secrets.
 This is a single-process control only. PostgreSQL-time buckets, fenced global
 leases, durable STARTED/terminal telemetry, retry accounting and multi-feature
 coordination remain deferred to the distributed coordination increment.
+
+### Iteration 2F durable distributed admission
+
+Iteration 2F adds `JdbcAiAdmissionBackend` behind the existing coordinator seam.
+Account timestamps are pruned and counted using PostgreSQL `CURRENT_TIMESTAMP`
+inside a row-locking transaction, so application clocks cannot diverge across
+instances. A successful admission claims one of five global slots with a random
+owner UUID and monotonically increasing version fence; the 45-second lease is
+renewed every 15 seconds. Release and renewal require the exact slot, owner and
+version, so a stale request cannot release or renew a replacement lease. No
+slot or database failure fails closed before protected context/provider work.
+
+The Technician service now admits before readiness, allowing the durable lease
+to span readiness, context loading, provider work and the freshness recheck.
+Lease loss causes a completed result to be withheld as `AI_UNAVAILABLE`.
+Process-local admission remains the deterministic test fallback when no durable
+adapter is supplied.
+
+Iteration 2F does not yet persist `STARTED`/terminal invocation telemetry or
+execute provider retries; those are the next lifecycle increment.
 
 ### Provider-core readiness
 

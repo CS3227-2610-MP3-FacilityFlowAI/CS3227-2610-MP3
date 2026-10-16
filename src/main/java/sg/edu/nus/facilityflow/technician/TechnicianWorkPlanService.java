@@ -45,25 +45,39 @@ public final class TechnicianWorkPlanService {
             return completedFailure(WorkPlanFailureCode.AI_INVALID_REQUEST);
         }
         CurrentAccount technician = authorization.requireRole(AccountRole.TECHNICIAN);
+        try {
+            if (!lifecycle.enabled()) {
+                return completedFailure(WorkPlanFailureCode.AI_UNAVAILABLE);
+            }
+        } catch (RuntimeException disabled) {
+            return completedFailure(WorkPlanFailureCode.AI_UNAVAILABLE);
+        }
+        java.util.Optional<AiInvocationCoordinator.Permit> permit;
+        try {
+            permit = invocationCoordinator.tryAcquire(technician.id());
+        } catch (RuntimeException admissionFailure) {
+            return completedFailure(WorkPlanFailureCode.AI_UNAVAILABLE);
+        }
+        if (permit.isEmpty()) {
+            return completedFailure(WorkPlanFailureCode.AI_LIMITED);
+        }
         CompletionStage<AiProviderLifecycle.State> readiness;
         try {
             readiness = lifecycle.readiness();
         } catch (RuntimeException readinessFailure) {
+            permit.get().release();
             return completedFailure(WorkPlanFailureCode.AI_UNAVAILABLE);
         }
         if (readiness == null) {
+            permit.get().release();
             return completedFailure(WorkPlanFailureCode.AI_UNAVAILABLE);
         }
         return readiness.handle((state, readinessFailure) ->
                 readinessFailure == null && state == AiProviderLifecycle.State.READY)
                 .thenCompose(ready -> {
                     if (!ready) {
+                        permit.get().release();
                         return completedFailure(WorkPlanFailureCode.AI_UNAVAILABLE);
-                    }
-                    java.util.Optional<AiInvocationCoordinator.Permit> permit =
-                            invocationCoordinator.tryAcquire(technician.id());
-                    if (permit.isEmpty()) {
-                        return completedFailure(WorkPlanFailureCode.AI_LIMITED);
                     }
                     OptionalContext loaded = load(displayId, technician.id());
                     if (loaded.context() == null) {
@@ -76,6 +90,9 @@ public final class TechnicianWorkPlanService {
                                 context.assignedTechnicianId(), () -> context, assistant::request);
                         return response.handle((value, failure) -> {
                             if (failure != null || value == null) {
+                                return WorkPlanResponse.failure(WorkPlanFailureCode.AI_UNAVAILABLE);
+                            }
+                            if (!permit.get().valid()) {
                                 return WorkPlanResponse.failure(WorkPlanFailureCode.AI_UNAVAILABLE);
                             }
                             if (value instanceof WorkPlanResponse.Success) {
