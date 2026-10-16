@@ -11,6 +11,10 @@ Security Reviewer findings were incorporated on 16 October 2026; re-review and
 teammate review remain pending. The implementation Security Reviewer currently
 records a NO-GO; the remediation requirements below are specified but their
 implementation, tests and security re-review remain pending.
+Iteration 2B HTTPS-adapter requirements were prepared against provider-core base
+commit `897937d`; the adapter, focused tests and fresh Security Reviewer approval
+are complete. Spring wiring, role gateway/coordinator, retries, rate/lease
+controls, telemetry and compressed-response support remain later increments.
 
 ## SoCLaaS transport
 
@@ -56,8 +60,8 @@ implementation, tests and security re-review remain pending.
   Behind that coordinator, an internal provider port exposes only `listModels`
   and `complete`. The provider core exposes a non-blocking readiness-start
   operation and permits completion only after the configured model is in the
-  `READY` state. Actual Spring lifecycle/startup invocation is deferred to the
-  HTTPS adapter/configuration-bean increment and must occur only for
+  `READY` state. Actual Spring lifecycle/startup invocation is deferred to a
+  later configuration-bean increment and must occur only for
   `AiConfiguration.Available`. Raw transport bodies and provider envelope details
   never cross the provider-core seam. In Iteration 2A, `SocLlmProviderCore`,
   `SocLlmProviderPort`, provider decoder/body/failure types, their constructors
@@ -72,6 +76,86 @@ implementation, tests and security re-review remain pending.
   deterministic fake completes caller-controlled pending futures and uses no
   sleeping or wall-clock delay. Fake raw bodies pass through the same bounded
   UTF-8 decoder and envelope validation used for production responses.
+
+### Iteration 2B HTTPS adapter
+
+Iteration 2B adds a package-private `SocLlmHttpsProviderAdapter` behind the
+package-private `SocLlmProviderPort`, plus a package-private HTTP transport seam
+whose production implementation uses JDK `HttpClient`. Adapter, transport,
+production transport, constructors, response-body wrappers and credential
+plumbing remain inaccessible to role and web packages. The JDK client uses
+`HttpClient.Redirect.NEVER` and the JDK's default TLS trust and hostname
+verification; no permissive trust manager, hostname verifier or redirect
+following is permitted.
+
+REQ-AI-001 endpoint construction is structural from the already validated
+canonical base. Model discovery is exactly
+`https://soclaas-api.comp.nus.edu.sg/v1/models`; completion is exactly
+`https://soclaas-api.comp.nus.edu.sg/v1/chat/completions`. Construction must not
+duplicate `/v1`, change authority, add a query or fragment, or accept a response
+whose effective URI differs from the request URI.
+
+The adapter applies exactly these application-controlled request values:
+
+- model discovery: `GET`, no request body, `Accept: application/json`,
+  `Accept-Encoding: identity`, and `Authorization: Bearer <server credential>`;
+- completion: `POST`, UTF-8 JSON, the same three headers, plus
+  `Content-Type: application/json`;
+- the completion JSON root contains exactly `model`, `messages`, `max_tokens`
+  and `stream`; `messages` contains exactly one `system` message followed by one
+  `user` message, each with only `role` and `content`; `max_tokens` is the
+  validated request value and `stream` is `false`. No tools, functions, prior
+  messages, response identifier or unlisted request member is sent. JSON string
+  escaping is deterministic, and malformed surrogate input fails before send.
+
+The validated `AiConfiguration.Available` supplies bearer authorization through
+a credential-applying capability. The adapter can apply that capability to an
+HTTP request builder but cannot obtain the raw key as a returned `String` or
+include it in `toString`, exception messages, results, logs or test diagnostics.
+No API outside the configuration/provider boundary exposes that capability.
+
+Model discovery receives the configured absolute expiry. Completion receives the
+earlier of its absolute caller deadline and a newly computed configured-timeout
+ceiling; that same remaining duration is installed on its `HttpRequest`. An
+already expired deadline makes zero transport calls. Caller cancellation requests
+cancellation of the unique transport stage; timeout/cancellation and provider-core
+detachment ignore late completion and close any late response body. Transport
+cancellation and deadline signals contain no request body, response body or
+credential diagnostics.
+
+Only HTTP 200 proceeds to decoding. `Content-Encoding` may be absent or contain
+only `identity` tokens; every other or malformed encoding fails closed as
+`UNSUPPORTED_CONTENT_ENCODING`. The identity response stream is handed directly
+to the existing bounded post-decompression `DecompressedBody` decoder, which
+retains the 262,145-byte abort and all REQ-AI-005/AI-SEC-010 bounds. Ownership is
+explicit: the decoder owns and closes a handed-off HTTP 200 identity body; the
+adapter closes every body that is rejected or never handed off, including
+non-200, redirect/effective-URI rejection, cancellation, timeout, late completion
+and exceptional paths. Null response/body and read/close failures map only to
+existing safe provider failures and never disclose diagnostics.
+
+Iteration 2B status mapping is closed and exact: 400 -> `HTTP_BAD_REQUEST`; 401
+-> `HTTP_UNAUTHORIZED`; 403 -> `HTTP_FORBIDDEN`; 429 ->
+`HTTP_RATE_LIMITED`; 503 -> `HTTP_SERVICE_UNAVAILABLE`; any 3xx status or changed
+effective response URI -> `REDIRECT_REJECTED`; every other non-200 ->
+`HTTP_UNEXPECTED`; deadline/HTTP-client timeout -> `TIMEOUT`; caller/transport
+cancellation -> `CANCELLED`; and connection, DNS, TLS or other transport failure
+-> `NETWORK_FAILURE`. Request construction/encoding failure is
+`REQUEST_BUILD_FAILED`. These failures carry only their closed code and permitted
+retry metadata, never provider bodies, headers, causes or attacker values.
+
+For a 429 response only, retry advice is retained when there is exactly one
+`Retry-After` field value and it is either decimal delta-seconds from 0 through 2
+inclusive or an RFC-1123 date resolving, against the injected clock, to a
+non-negative duration no greater than two seconds. Multiple, blank, negative,
+overflowing, malformed or out-of-range values produce no retry advice. Parsing
+the header does not itself retry or reset a deadline.
+
+Iteration 2B explicitly excludes retry execution, Account/global rate and lease
+enforcement, telemetry persistence, Spring construction/lifecycle wiring, the
+shared role-feature gateway/coordinator, and compressed-response decompression or
+a compressed-wire byte limit. Those remain later increments; Iteration 2B sends
+and accepts identity encoding only.
 
 ### Provider-core readiness
 
@@ -165,7 +249,8 @@ bytes must be strict UTF-8. Parsing is streaming/bounded before any unrestricted
 tree is built and rejects duplicate keys, trailing content and a root-level
 error member. Limits are maximum nesting depth 64, JSON string length 262,144,
 numeric token length 20, total JSON tokens 8,192 and model entries 1,000. A
-compressed-wire byte limit remains deferred to the HTTPS adapter.
+compressed-wire byte limit remains deferred to a later compressed-transport
+increment.
 
 Envelope fields use location allowlists; every unlisted member rejects on
 presence. Permitted inert metadata may have any JSON type but is never consumed:
@@ -200,9 +285,8 @@ overflowing or negative values reject the envelope. When all three standard
 fields are present, total must equal prompt plus completion without overflow.
 
 Iteration 2A defines the provider-neutral port, readiness and decoder behavior.
-Production HTTPS mapping for response statuses not already specified in the
-failure table remains unresolved for the later HTTPS adapter and is not inferred
-from the fake or decoder contract.
+Iteration 2B defines the production HTTPS adapter and closed transport/status
+mapping above; retry execution and compressed-response handling remain deferred.
 
 Decoder failures expose only closed, stable error codes. Exceptions, return
 values and logs exclude raw bodies, model/provider responses, provider error
@@ -422,3 +506,14 @@ deterministic delay/cancellation coverage without sleeps. Read and close-failure
 tests throw checked and unchecked canary-bearing failures and prove the result is
 `BODY_UNREADABLE` where applicable, safe `ProviderFailure` codes are preserved,
 and no canary appears in a result, cause chain or captured log.
+
+Iteration 2B adapter tests shall use the package-private transport seam and an
+injected clock, with no external network or sleeps. They cover exact methods,
+canonical URIs, application-controlled headers and byte-equivalent JSON shape;
+credential application without raw-key access or diagnostic leakage; JDK redirect
+policy/default TLS construction; identity/unsupported content encodings; bounded
+decoder handoff; body closure on every terminal/race path; expired deadlines and
+cancellation before/after transport-stage attachment; ignored late responses;
+every closed status/timeout/network mapping; and all single/multiple/malformed
+`Retry-After` boundaries. Architecture tests prove adapter/transport types and
+constructors remain package-private and no role/web package imports them.

@@ -11,6 +11,10 @@ Reviewer findings were incorporated on 16 October 2026; re-review and teammate
 review remain pending. The implementation Security Reviewer currently records a
 NO-GO; the remediation requirements below are specified but implementation,
 tests and security re-review remain pending.
+Iteration 2B HTTPS-adapter requirements were prepared against provider-core base
+commit `897937d`; the adapter, focused tests and fresh Security Reviewer approval
+are complete. Later increments still own retries, rate/lease controls, telemetry,
+Spring wiring, role gateway/coordinator and compressed-response support.
 
 ## Assets and trust seams
 
@@ -124,7 +128,8 @@ may select a feature, actor, template, parser, model or arbitrary context map.
   materialization/parsing. JSON is bounded before any unrestricted tree: nesting
   depth 64, string length 262,144, numeric-token length 20, total tokens 8,192 and
   model entries 1,000. Duplicate keys, trailing content and a root error member
-  reject. A compressed-wire limit remains deferred to the HTTPS adapter.
+  reject. A compressed-wire limit remains deferred to a later
+  compressed-transport increment.
 
   Envelope location allowlists are exact. Models root permits only `object` and
   `data`; model entries only `id`, `object`, `created`, `owned_by`; chat root only
@@ -201,6 +206,40 @@ may select a feature, actor, template, parser, model or arbitrary context map.
   validated enabled `AiConfiguration.Available` may construct/start a provider
   core. Disabled/unavailable configuration creates no core, schedules no work and
   makes zero port calls. Iteration 2A configuration is immutable/process-lifetime.
+
+  The Iteration 2B HTTPS adapter and HTTP transport seam, including production
+  JDK transport, constructors and response-body wrappers, are package-private.
+  The JDK `HttpClient` uses redirects `NEVER` and default TLS trust/hostname
+  verification. It calls only canonical `/v1/models` and
+  `/v1/chat/completions`. Requests set `Accept: application/json`,
+  `Accept-Encoding: identity` and a server-side Bearer authorization header;
+  completion additionally sets `Content-Type: application/json`. The credential
+  is supplied only as an apply-to-request capability: no adapter or external API
+  receives the raw key as a returned string, and the key never enters a
+  diagnostic, result or log.
+
+  Model discovery is bodyless GET. Completion is UTF-8 POST JSON containing only
+  model, exactly two ordered system/user messages with role/content, validated
+  `max_tokens`, and `stream: false`; deterministic escaping rejects malformed
+  surrogates before transport. No tool, function, history or extra member is
+  sent. Response `Content-Encoding` is absent or identity-only. The identity
+  stream is passed to the existing bounded post-decompression decoder; unsupported
+  encoding fails closed. The decoder owns and closes a handed-off HTTP 200
+  identity body; the adapter closes every rejected, cancelled, timed-out, late or
+  failed response body that was not handed off.
+
+  Transport status mapping is closed: 400 `HTTP_BAD_REQUEST`, 401
+  `HTTP_UNAUTHORIZED`, 403 `HTTP_FORBIDDEN`, 429 `HTTP_RATE_LIMITED`, 503
+  `HTTP_SERVICE_UNAVAILABLE`, any redirect/effective-URI change
+  `REDIRECT_REJECTED`, other non-200 `HTTP_UNEXPECTED`, timeout `TIMEOUT`,
+  cancellation `CANCELLED`, transport/TLS/DNS failure `NETWORK_FAILURE`, and
+  request construction failure `REQUEST_BUILD_FAILED`. No mapped failure retains
+  a response body/header, unsafe cause or attacker value.
+
+  A 429 exposes retry advice only for exactly one `Retry-After` field containing
+  delta-seconds 0–2 inclusive or an RFC-1123 date whose injected-clock delta is
+  0–2 seconds inclusive. Multiple, blank, negative, overflowing, malformed or
+  out-of-range values yield no advice. Iteration 2B performs no retry.
 - **AI-SEC-020:** A configured model is checked against GET /v1/models without
   blocking core application startup. Readiness states are exactly `UNVALIDATED`,
   `CHECKING`, `NEGATIVE` and `READY`. The core exposes only a non-blocking
@@ -361,8 +400,7 @@ discovery submission/`listModels`, scheduler rejection performs zero discovery
 work, and discovery-submission rejection cancels its timer. No-sleep chat tests
 cover cancellation/deadline before and after dispatch, zero calls before
 enforcement is armed, provider-response wins, cancellation wins, best-effort
-unique-stage cancellation and ignored late provider/decode completion. Exhaustive
-production HTTP status mapping remains pending for the later HTTPS adapter.
+unique-stage cancellation and ignored late provider/decode completion.
 Further no-sleep cases block synchronous `listModels` and prove timeout/close
 finishes without releasing it; block synchronous `complete` and prove deadline
 or cancellation returns promptly before a late stage is cancelled and ignored;
@@ -371,6 +409,16 @@ prove provider types/mutating inputs are package-private and role/web code has n
 `ai.provider` dependency. Checked and unchecked read/close canary tests prove
 `BODY_UNREADABLE` mapping, preservation of safe `ProviderFailure` codes, and no
 canary in results, cause chains or captured logs.
+
+Iteration 2B adapter cases use an injected package-private transport and clock,
+without network or sleeps, to verify canonical endpoints, exact request
+headers/shape, credential non-exposure, redirect NEVER/default TLS, absolute
+deadline and cancellation propagation, identity decoder handoff, body closure,
+late-response disposal, every safe status/timeout/network mapping and exact
+single-header `Retry-After` boundaries. Architecture tests prove the adapter and
+transport seam remain package-private and unreachable from role/web packages.
+Retries, rate/lease enforcement, telemetry, Spring wiring, role-feature gateway
+and compressed decompression remain explicitly deferred.
 
 Execute with synthetic data in an authorized non-production environment and
 record actual results using the security-test template. Planned cases are not

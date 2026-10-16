@@ -458,7 +458,19 @@ final class SocLlmProviderCore implements AutoCloseable {
 
     enum Readiness { UNVALIDATED, CHECKING, NEGATIVE, READY }
 
-    enum FailureCode { MODEL_UNAVAILABLE, PROVIDER_UNAVAILABLE, INVALID_OUTPUT, DEADLINE_EXCEEDED }
+    enum FailureCode {
+        MODEL_UNAVAILABLE,
+        PROVIDER_UNAVAILABLE,
+        PROVIDER_BAD_REQUEST,
+        PROVIDER_AUTHENTICATION,
+        PROVIDER_FORBIDDEN,
+        PROVIDER_RATE_LIMITED,
+        PROVIDER_SERVICE_UNAVAILABLE,
+        PROVIDER_TIMEOUT,
+        PROVIDER_CANCELLED,
+        INVALID_OUTPUT,
+        DEADLINE_EXCEEDED
+    }
 
     sealed interface CompletionResult permits Completion, Failure {}
 
@@ -676,8 +688,9 @@ final class SocLlmProviderCore implements AutoCloseable {
                 timer = deadlineTask;
                 if (failure != null || completion == null) {
                     Throwable safeType = failure == null ? null : unwrap(failure);
-                    failureCode = safeType instanceof ProviderFailure
-                            ? FailureCode.INVALID_OUTPUT : FailureCode.PROVIDER_UNAVAILABLE;
+                    failureCode = safeType instanceof ProviderFailure providerFailure
+                            ? mapProviderFailure(providerFailure.code())
+                            : FailureCode.PROVIDER_UNAVAILABLE;
                 } else {
                     success = toCompletion(completion);
                 }
@@ -735,6 +748,22 @@ final class SocLlmProviderCore implements AutoCloseable {
         private Completion toCompletion(ProviderCompletion providerCompletion) {
             Optional<Usage> usage = providerCompletion.usage().map(CallControl::toUsage);
             return new Completion(providerCompletion.content(), usage);
+        }
+
+        private static FailureCode mapProviderFailure(ProviderFailure.Code code) {
+            return switch (code) {
+                case HTTP_BAD_REQUEST -> FailureCode.PROVIDER_BAD_REQUEST;
+                case HTTP_UNAUTHORIZED -> FailureCode.PROVIDER_AUTHENTICATION;
+                case HTTP_FORBIDDEN -> FailureCode.PROVIDER_FORBIDDEN;
+                case HTTP_RATE_LIMITED -> FailureCode.PROVIDER_RATE_LIMITED;
+                case HTTP_SERVICE_UNAVAILABLE -> FailureCode.PROVIDER_SERVICE_UNAVAILABLE;
+                case TIMEOUT -> FailureCode.PROVIDER_TIMEOUT;
+                case CANCELLED -> FailureCode.PROVIDER_CANCELLED;
+                case BODY_TOO_LARGE, BODY_UNREADABLE, INVALID_UTF8, MALFORMED_JSON,
+                        INVALID_ENVELOPE -> FailureCode.INVALID_OUTPUT;
+                case HTTP_UNEXPECTED, REDIRECT_REJECTED, UNSUPPORTED_CONTENT_ENCODING,
+                        NETWORK_FAILURE, REQUEST_BUILD_FAILED -> FailureCode.PROVIDER_UNAVAILABLE;
+            };
         }
 
         private static Usage toUsage(ProviderUsage usage) {

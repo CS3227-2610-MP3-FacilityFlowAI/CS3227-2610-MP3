@@ -1,8 +1,10 @@
 package sg.edu.nus.facilityflow.ai.config;
 
 import java.net.URI;
+import java.net.http.HttpRequest;
 import java.util.Objects;
 import java.util.Set;
+import sg.edu.nus.facilityflow.ai.provider.ProviderCredentialCapability;
 
 /**
  * Startup-safe result of validating the optional SoCLaaS capability.
@@ -80,6 +82,18 @@ public sealed interface AiConfiguration
 
         String apiKey() {
             return apiKey;
+        }
+
+        /**
+         * Applies the server-side bearer credential without exposing its value
+         * through the configuration API or diagnostics.
+         */
+        public HttpRequest.Builder applyAuthorization(
+                HttpRequest.Builder builder, ProviderCredentialCapability internalCapability) {
+            Objects.requireNonNull(builder, "builder");
+            Objects.requireNonNull(internalCapability, "internalCapability");
+            builder.header("Authorization", "Bearer " + apiKey);
+            return builder;
         }
 
         public String model() {
