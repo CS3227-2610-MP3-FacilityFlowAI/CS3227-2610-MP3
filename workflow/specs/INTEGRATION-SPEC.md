@@ -13,7 +13,8 @@ records a NO-GO; the remediation requirements below are specified but their
 implementation, tests and security re-review remain pending.
 Iteration 2B HTTPS-adapter requirements were prepared against provider-core base
 commit `897937d`; the adapter, focused tests and fresh Security Reviewer approval
-are complete. Spring wiring, role gateway/coordinator, retries, rate/lease
+are complete. Iteration 2C adds production lifecycle/readiness wiring and has a
+fresh Security Reviewer GO; role gateway/coordinator, retries, rate/lease
 controls, telemetry and compressed-response support remain later increments.
 
 ## SoCLaaS transport
@@ -156,6 +157,25 @@ enforcement, telemetry persistence, Spring construction/lifecycle wiring, the
 shared role-feature gateway/coordinator, and compressed-response decompression or
 a compressed-wire byte limit. Those remain later increments; Iteration 2B sends
 and accepts identity encoding only.
+
+### Iteration 2C provider lifecycle wiring
+
+Iteration 2C wires the validated configuration, HTTPS adapter and provider core
+into the Spring application without making readiness a startup blocker. Only an
+`AiConfiguration.Available` value may construct the provider runtime. Disabled
+and unavailable configuration receives an inert lifecycle view that creates no
+provider core, transport, executor, scheduler or provider call; its terminal
+state is respectively `DISABLED` or `UNAVAILABLE` and close is idempotent.
+
+An available runtime owns separate daemon discovery and provider-dispatch
+executors plus a scheduler. It starts the existing non-blocking model-readiness
+check after bean construction, maps provider readiness to the narrow lifecycle
+view, and closes the core and owned resources idempotently during Spring bean
+destruction. Discovery work must use the discovery executor; chat work must use
+the provider-dispatch executor. Readiness timeout, negative caching, generation
+fencing and late-callback handling remain the provider-core rules from
+Iteration 2A. The runtime factory has a package-private deterministic seam for
+tests; no role or web package may depend on provider implementation types.
 
 ### Provider-core readiness
 

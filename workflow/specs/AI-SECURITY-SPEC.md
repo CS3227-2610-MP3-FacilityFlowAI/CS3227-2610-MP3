@@ -13,8 +13,10 @@ NO-GO; the remediation requirements below are specified but implementation,
 tests and security re-review remain pending.
 Iteration 2B HTTPS-adapter requirements were prepared against provider-core base
 commit `897937d`; the adapter, focused tests and fresh Security Reviewer approval
-are complete. Later increments still own retries, rate/lease controls, telemetry,
-Spring wiring, role gateway/coordinator and compressed-response support.
+are complete. Iteration 2C adds startup-safe Spring lifecycle/readiness wiring;
+fresh Security Reviewer review is GO. Later increments still own retries,
+rate/lease controls, telemetry, role gateway/coordinator and compressed-response
+support.
 
 ## Assets and trust seams
 
@@ -240,11 +242,22 @@ may select a feature, actor, template, parser, model or arbitrary context map.
   delta-seconds 0–2 inclusive or an RFC-1123 date whose injected-clock delta is
   0–2 seconds inclusive. Multiple, blank, negative, overflowing, malformed or
   out-of-range values yield no advice. Iteration 2B performs no retry.
+
+  Iteration 2C wires an available runtime through a narrow lifecycle interface.
+  Its Spring bean starts readiness asynchronously and never blocks application
+  startup on the provider. Disabled and unavailable configurations create only
+  an inert, terminal lifecycle and perform zero core, executor, scheduler,
+  transport or provider work. Available lifecycle close is idempotent, closes
+  the provider core and owned executors/scheduler, and ignores late readiness
+  callbacks. Discovery and chat dispatch use separate executors; a deterministic
+  package-private factory seam is used for tests. No role/web source imports
+  provider implementation types.
 - **AI-SEC-020:** A configured model is checked against GET /v1/models without
   blocking core application startup. Readiness states are exactly `UNVALIDATED`,
   `CHECKING`, `NEGATIVE` and `READY`. The core exposes only a non-blocking
-  readiness-start operation in Iteration 2A; Spring lifecycle/startup wiring is
-  deferred and later wiring invokes it only for `AiConfiguration.Available`.
+  readiness-start operation in Iteration 2A; Iteration 2C invokes it only for
+  `AiConfiguration.Available` through the lifecycle bean and does not block
+  Spring startup.
 
   Each check has immutable generation identity and one absolute expiry. Only the
   current owned `CHECKING` generation may transition. Timeout or core closure
@@ -417,8 +430,12 @@ deadline and cancellation propagation, identity decoder handoff, body closure,
 late-response disposal, every safe status/timeout/network mapping and exact
 single-header `Retry-After` boundaries. Architecture tests prove the adapter and
 transport seam remain package-private and unreachable from role/web packages.
-Retries, rate/lease enforcement, telemetry, Spring wiring, role-feature gateway
-and compressed decompression remain explicitly deferred.
+Iteration 2C lifecycle cases use injected executors/scheduler and a fake
+provider port without network access; they cover disabled/unavailable zero-work
+paths, available asynchronous readiness, separate discovery/provider dispatch,
+close idempotence and ignored late callbacks. Retries, rate/lease enforcement,
+telemetry, role-feature gateway and compressed decompression remain explicitly
+deferred.
 
 Execute with synthetic data in an authorized non-production environment and
 record actual results using the security-test template. Planned cases are not

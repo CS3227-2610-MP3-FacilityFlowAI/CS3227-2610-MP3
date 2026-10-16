@@ -6,6 +6,10 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -28,11 +32,13 @@ final class SocLlmProviderCore implements AutoCloseable {
     private final Object readinessLock = new Object();
     private final SocLlmProviderPort port;
     private final Clock clock;
+    private final Executor discoveryExecutor;
     private final Executor providerDispatchExecutor;
     private final ScheduledExecutorService scheduler;
     private final String configuredModel;
     private final int maxOutputTokens;
     private final Duration readinessTimeout;
+    private final Set<CallControl> activeCalls = new HashSet<>();
 
     private Readiness readiness = Readiness.UNVALIDATED;
     private Instant negativeUntil = Instant.MIN;
@@ -60,6 +66,7 @@ final class SocLlmProviderCore implements AutoCloseable {
         AiConfiguration.Available available = Objects.requireNonNull(configuration, "configuration");
         this.port = Objects.requireNonNull(port, "port");
         this.clock = Objects.requireNonNull(clock, "clock");
+        this.discoveryExecutor = Objects.requireNonNull(discoveryExecutor, "discoveryExecutor");
         this.providerDispatchExecutor = Objects.requireNonNull(providerDispatchExecutor, "providerDispatchExecutor");
         this.scheduler = Objects.requireNonNull(scheduler, "scheduler");
         this.configuredModel = requireConfiguredModel(available.model());
@@ -113,6 +120,17 @@ final class SocLlmProviderCore implements AutoCloseable {
         Objects.requireNonNull(chat, "chat");
         Objects.requireNonNull(absoluteDeadline, "absoluteDeadline");
         CallControl call = new CallControl(absoluteDeadline);
+        boolean registered;
+        synchronized (readinessLock) {
+            registered = !closed;
+            if (registered) {
+                activeCalls.add(call);
+            }
+        }
+        if (!registered) {
+            call.fail(FailureCode.MODEL_UNAVAILABLE);
+            return call.handle;
+        }
         if (!call.armDeadline()) {
             return call.handle;
         }
@@ -167,6 +185,7 @@ final class SocLlmProviderCore implements AutoCloseable {
         ReadinessGeneration generation;
         ScheduledFuture<?> timer;
         CompletableFuture<ProviderModels> providerStage;
+        List<CallControl> calls;
         synchronized (readinessLock) {
             if (closed) {
                 return;
@@ -176,6 +195,7 @@ final class SocLlmProviderCore implements AutoCloseable {
             currentGeneration = null;
             timer = generation == null ? null : generation.timeoutTask;
             providerStage = generation == null ? null : generation.providerStage;
+            calls = new ArrayList<>(activeCalls);
             if (generation != null && readiness == Readiness.CHECKING) {
                 readiness = Readiness.NEGATIVE;
                 negativeUntil = safePlus(clock.instant(), NEGATIVE_CACHE_DURATION);
@@ -185,6 +205,9 @@ final class SocLlmProviderCore implements AutoCloseable {
         cancelProvider(providerStage);
         if (generation != null) {
             generation.shared.publish(Readiness.NEGATIVE);
+        }
+        for (CallControl call : calls) {
+            call.closeFromCore();
         }
     }
 
@@ -211,7 +234,7 @@ final class SocLlmProviderCore implements AutoCloseable {
             return;
         }
         try {
-            providerDispatchExecutor.execute(() -> runDiscovery(generation));
+            discoveryExecutor.execute(() -> runDiscovery(generation));
         } catch (RuntimeException ignored) {
             cancelTimer(scheduled);
             transitionNegative(generation);
@@ -352,6 +375,7 @@ final class SocLlmProviderCore implements AutoCloseable {
             }
         }
         if (expired) {
+            call.unregister();
             cancelTimer(expiredTimer);
             call.result.publish(new Failure(FailureCode.DEADLINE_EXCEEDED));
             return;
@@ -695,6 +719,7 @@ final class SocLlmProviderCore implements AutoCloseable {
                     success = toCompletion(completion);
                 }
             }
+            unregister();
             cancelTimer(timer);
             result.publish(failureCode == null ? success : new Failure(failureCode));
         }
@@ -710,6 +735,7 @@ final class SocLlmProviderCore implements AutoCloseable {
                 stageToCancel = providerStage;
                 timer = deadlineTask;
             }
+            unregister();
             cancelTimer(timer);
             cancelProvider(stageToCancel);
             result.publish(new Failure(FailureCode.DEADLINE_EXCEEDED));
@@ -726,6 +752,7 @@ final class SocLlmProviderCore implements AutoCloseable {
                 stageToCancel = providerStage;
                 timer = deadlineTask;
             }
+            unregister();
             cancelTimer(timer);
             cancelProvider(stageToCancel);
             result.withdraw();
@@ -741,8 +768,33 @@ final class SocLlmProviderCore implements AutoCloseable {
                 terminal = true;
                 timer = deadlineTask;
             }
+            unregister();
             cancelTimer(timer);
             result.publish(new Failure(code));
+        }
+
+        private void closeFromCore() {
+            CompletableFuture<ProviderCompletion> stageToCancel;
+            ScheduledFuture<?> timer;
+            synchronized (callLock) {
+                if (terminal) {
+                    return;
+                }
+                terminal = true;
+                invocationReserved = false;
+                stageToCancel = providerStage;
+                timer = deadlineTask;
+            }
+            unregister();
+            cancelTimer(timer);
+            cancelProvider(stageToCancel);
+            result.publish(new Failure(FailureCode.MODEL_UNAVAILABLE));
+        }
+
+        private void unregister() {
+            synchronized (readinessLock) {
+                activeCalls.remove(this);
+            }
         }
 
         private Completion toCompletion(ProviderCompletion providerCompletion) {

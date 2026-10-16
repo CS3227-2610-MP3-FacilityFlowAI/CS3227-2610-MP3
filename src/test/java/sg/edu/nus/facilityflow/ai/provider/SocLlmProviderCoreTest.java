@@ -14,6 +14,8 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import sg.edu.nus.facilityflow.ai.provider.ProviderTestControls.FakeProviderPort;
 import sg.edu.nus.facilityflow.ai.provider.ProviderTestControls.ManualExecutor;
@@ -32,6 +34,49 @@ import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderPort.ProviderModels;
 import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderPort.ProviderUsage;
 
 class SocLlmProviderCoreTest {
+
+    @Test
+    void reqAi005SeparateDiscoveryAndProviderExecutorsOwnTheirRespectiveInvocations() {
+        MutableClock clock = new MutableClock();
+        ManualExecutor discoveryExecutor = new ManualExecutor();
+        ManualExecutor providerExecutor = new ManualExecutor();
+        ManualScheduler scheduler = new ManualScheduler(clock);
+        FakeProviderPort port = new FakeProviderPort();
+        SocLlmProviderCore core = new SocLlmProviderCore(
+                ProviderTestControls.availableConfiguration(),
+                port,
+                clock,
+                discoveryExecutor,
+                providerExecutor,
+                scheduler);
+
+        CompletableFuture<ProviderModels> modelStage = port.enqueueModels();
+        CompletionStage<Readiness> readiness = core.beginStartupReadinessCheck();
+
+        assertEquals(1, discoveryExecutor.queuedCount());
+        assertEquals(0, providerExecutor.queuedCount());
+        assertEquals(0, port.modelCalls());
+
+        discoveryExecutor.runNext();
+        assertEquals(1, port.modelCalls());
+        assertEquals(0, providerExecutor.queuedCount());
+        modelStage.complete(ProviderTestControls.models(ProviderTestControls.MODEL));
+        assertEquals(Readiness.READY, join(readiness));
+
+        CompletableFuture<ProviderCompletion> chatStage = port.enqueueChat();
+        CallHandle call = core.complete(
+                new PreparedChat("system", "user"), clock.instant().plusSeconds(10));
+
+        assertEquals(1, providerExecutor.queuedCount());
+        assertEquals(0, port.chatCalls());
+        providerExecutor.runNext();
+        assertEquals(1, port.chatCalls());
+        chatStage.complete(ProviderTestControls.completion("advisory"));
+
+        Completion completion = assertInstanceOf(Completion.class, join(call.stage()));
+        assertEquals("advisory", completion.content());
+        core.close();
+    }
 
     @Test
     void aiSec020StartupCheckIsNonBlockingSingleFlightAndRequiresExactModel() {
@@ -243,6 +288,64 @@ class SocLlmProviderCoreTest {
         assertEquals(Readiness.NEGATIVE, rig.core.readiness());
         assertEquals(0, rig.scheduler.activeTaskCount());
         rig.core.close();
+    }
+
+    @Test
+    void aiSec020CloseTerminatesQueuedChatBeforeProviderDispatch() {
+        TestRig rig = readyRig();
+        rig.port.enqueueChat();
+        CallHandle call = rig.core.complete(
+                new PreparedChat("system", "user"), rig.clock.instant().plusSeconds(10));
+
+        assertEquals(1, rig.executor.queuedCount());
+        rig.core.close();
+
+        assertFailure(join(call.stage()), FailureCode.MODEL_UNAVAILABLE);
+        rig.executor.runNext();
+        assertEquals(0, rig.port.chatCalls());
+    }
+
+    @Test
+    void aiSec020CloseCancelsInstalledChatStageAndIgnoresLateCompletion() {
+        TestRig rig = readyRig();
+        CompletableFuture<ProviderCompletion> providerStage = rig.port.enqueueChat();
+        CallHandle call = rig.core.complete(
+                new PreparedChat("system", "user"), rig.clock.instant().plusSeconds(10));
+        rig.executor.runNext();
+
+        rig.core.close();
+
+        assertFailure(join(call.stage()), FailureCode.MODEL_UNAVAILABLE);
+        assertTrue(providerStage.isCancelled());
+        assertFalse(providerStage.complete(ProviderTestControls.completion("late")));
+    }
+
+    @Test
+    void aiSec020CloseTerminatesCallWhileProviderInvocationIsBlocked() throws Exception {
+        MutableClock clock = new MutableClock();
+        ManualExecutor discoveryExecutor = new ManualExecutor();
+        ManualExecutor providerExecutor = new ManualExecutor();
+        ManualScheduler scheduler = new ManualScheduler(clock);
+        BlockingProviderPort port = new BlockingProviderPort();
+        SocLlmProviderCore core = new SocLlmProviderCore(
+                ProviderTestControls.availableConfiguration(), port, clock,
+                discoveryExecutor, providerExecutor, scheduler);
+        CompletionStage<Readiness> readiness = core.beginStartupReadinessCheck();
+        discoveryExecutor.runNext();
+        assertEquals(Readiness.READY, join(readiness));
+
+        CallHandle call = core.complete(
+                new PreparedChat("system", "user"), clock.instant().plusSeconds(10));
+        Thread invocation = Thread.ofPlatform().start(providerExecutor::runNext);
+        assertTrue(port.entered.await(1, TimeUnit.SECONDS));
+
+        core.close();
+        assertFailure(join(call.stage()), FailureCode.MODEL_UNAVAILABLE);
+
+        port.release.countDown();
+        invocation.join(1_000);
+        assertFalse(invocation.isAlive());
+        assertTrue(port.chatStage.isCancelled());
     }
 
     @Test
@@ -497,6 +600,31 @@ class SocLlmProviderCoreTest {
             core.complete(chat, clock.instant().plusSeconds(10));
             executor.runNext();
             return port.requests().getFirst();
+        }
+    }
+
+    private static final class BlockingProviderPort implements SocLlmProviderPort {
+        private final CountDownLatch entered = new CountDownLatch(1);
+        private final CountDownLatch release = new CountDownLatch(1);
+        private final CompletableFuture<ProviderCompletion> chatStage = new CompletableFuture<>();
+
+        @Override
+        public CompletableFuture<ProviderModels> listModels() {
+            return CompletableFuture.completedFuture(ProviderTestControls.models(ProviderTestControls.MODEL));
+        }
+
+        @Override
+        public CompletableFuture<ProviderCompletion> complete(ProviderChatRequest request) {
+            entered.countDown();
+            try {
+                if (!release.await(1, TimeUnit.SECONDS)) {
+                    throw new AssertionError("test provider invocation was not released");
+                }
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError("test provider invocation was interrupted", interrupted);
+            }
+            return chatStage;
         }
     }
 }
