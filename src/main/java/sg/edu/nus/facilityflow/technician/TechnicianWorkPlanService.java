@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.springframework.stereotype.Service;
 import sg.edu.nus.facilityflow.ai.AiAccessGuard;
+import sg.edu.nus.facilityflow.ai.AiInvocationCoordinator;
 import sg.edu.nus.facilityflow.ai.config.AiProviderLifecycle;
 import sg.edu.nus.facilityflow.ai.technician.WorkPlanAssistant;
 import sg.edu.nus.facilityflow.ai.technician.WorkPlanContext;
@@ -19,6 +20,7 @@ import sg.edu.nus.facilityflow.identity.IdentityAuthorization;
 public final class TechnicianWorkPlanService {
     private final IdentityAuthorization authorization;
     private final AiAccessGuard aiAccessGuard;
+    private final AiInvocationCoordinator invocationCoordinator;
     private final AiProviderLifecycle lifecycle;
     private final TechnicianWorkPlanRepository repository;
     private final WorkPlanAssistant assistant;
@@ -26,11 +28,13 @@ public final class TechnicianWorkPlanService {
     public TechnicianWorkPlanService(
             IdentityAuthorization authorization,
             AiAccessGuard aiAccessGuard,
+            AiInvocationCoordinator invocationCoordinator,
             AiProviderLifecycle lifecycle,
             TechnicianWorkPlanRepository repository,
             WorkPlanAssistant assistant) {
         this.authorization = authorization;
         this.aiAccessGuard = aiAccessGuard;
+        this.invocationCoordinator = invocationCoordinator;
         this.lifecycle = lifecycle;
         this.repository = repository;
         this.assistant = assistant;
@@ -56,8 +60,14 @@ public final class TechnicianWorkPlanService {
                     if (!ready) {
                         return completedFailure(WorkPlanFailureCode.AI_UNAVAILABLE);
                     }
+                    java.util.Optional<AiInvocationCoordinator.Permit> permit =
+                            invocationCoordinator.tryAcquire(technician.id());
+                    if (permit.isEmpty()) {
+                        return completedFailure(WorkPlanFailureCode.AI_LIMITED);
+                    }
                     OptionalContext loaded = load(displayId, technician.id());
                     if (loaded.context() == null) {
+                        permit.get().release();
                         return completedFailure(loaded.failure());
                     }
                     WorkPlanContext context = loaded.context();
@@ -85,8 +95,9 @@ public final class TechnicianWorkPlanService {
                                 }
                             }
                             return value;
-                        });
+                        }).whenComplete((value, failure) -> permit.get().release());
                     } catch (RuntimeException accessFailure) {
+                        permit.get().release();
                         return completedFailure(WorkPlanFailureCode.AI_UNAVAILABLE);
                     }
                 });

@@ -2,6 +2,7 @@ package sg.edu.nus.facilityflow.technician;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 import sg.edu.nus.facilityflow.ai.AiAccessGuard;
+import sg.edu.nus.facilityflow.ai.AiInvocationCoordinator;
 import sg.edu.nus.facilityflow.ai.config.AiProviderLifecycle;
 import sg.edu.nus.facilityflow.ai.technician.WorkPlanAssistant;
 import sg.edu.nus.facilityflow.ai.technician.WorkPlanContext;
@@ -89,6 +91,7 @@ class TechnicianWorkPlanServiceTest {
         TechnicianWorkPlanService service = new TechnicianWorkPlanService(
                 authorization,
                 new AiAccessGuard(authorization),
+                coordinator(),
                 new ReadyLifecycle(),
                 repository,
                 assistant);
@@ -102,15 +105,48 @@ class TechnicianWorkPlanServiceTest {
         assertEquals(WorkPlanFailureCode.DISCARDED_ACCESS_CHANGED, failureCode(await(response)));
     }
 
+    @Test
+    @DisplayName("AI-SEC-008 shared admission limit rejects before protected context loading")
+    void admissionLimitRejectsBeforeRepositoryAndReleasesAfterCompletion() {
+        CurrentAccount account = new CurrentAccount(
+                TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN);
+        IdentityAuthorization authorization = new IdentityAuthorization(() -> account);
+        CountingRepository repository = new CountingRepository();
+        CompletableFuture<WorkPlanResponse> provider = new CompletableFuture<>();
+        WorkPlanAssistant assistant = ignored -> provider;
+        AiInvocationCoordinator coordinator = new AiInvocationCoordinator(
+                1, 5, 30, java.time.Clock.systemUTC());
+        TechnicianWorkPlanService service = new TechnicianWorkPlanService(
+                authorization,
+                new AiAccessGuard(authorization),
+                coordinator,
+                new ReadyLifecycle(),
+                repository,
+                assistant);
+
+        CompletionStage<WorkPlanResponse> first = service.request("FF-000001");
+        WorkPlanResponse limited = await(service.request("FF-000001"));
+        assertEquals(WorkPlanFailureCode.AI_LIMITED, failureCode(limited));
+        assertEquals(1, repository.loadCalls.get());
+
+        provider.complete(new CountingAssistant().request(context()).toCompletableFuture().join());
+        assertTrue(await(first) instanceof WorkPlanResponse.Success);
+    }
+
     private static TechnicianWorkPlanService serviceFor(
             CurrentAccount account, CountingRepository repository, CountingAssistant assistant) {
         IdentityAuthorization authorization = new IdentityAuthorization(() -> account);
         return new TechnicianWorkPlanService(
                 authorization,
                 new AiAccessGuard(authorization),
+                coordinator(),
                 new ReadyLifecycle(),
                 repository,
                 assistant);
+    }
+
+    private static AiInvocationCoordinator coordinator() {
+        return new AiInvocationCoordinator(5, 5, 30, java.time.Clock.systemUTC());
     }
 
     private static WorkPlanContext context() {

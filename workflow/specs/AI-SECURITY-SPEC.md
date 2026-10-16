@@ -18,8 +18,10 @@ fresh Security Reviewer review is GO. Later increments still own retries,
 rate/lease controls, telemetry, role gateway/coordinator and compressed-response
 support. Iteration 2D adds the first Technician Work Plan vertical slice;
 focused tests pass, but teammate and fresh Security Reviewer review remain
-pending. The slice is intentionally not evidence that the later quota, lease,
-retry, telemetry or compressed-response requirements are implemented.
+pending. Iteration 2E adds a process-local shared admission coordinator and
+focused rolling-window/concurrency tests. These slices are intentionally not
+evidence that distributed quota/lease, retry, telemetry or compressed-response
+requirements are implemented.
 
 ## Assets and trust seams
 
@@ -266,6 +268,13 @@ may select a feature, actor, template, parser, model or arbitrary context map.
   discarded as `DISCARDED_ACCESS_CHANGED`. Focused tests pass. This is the first
   role vertical slice, not completion of AI-SEC-021 quota/lease, durable
   telemetry, retry execution or the shared multi-feature coordinator.
+- **Iteration 2E shared admission coordinator:** `AiInvocationCoordinator`
+  enforces the configured process-wide in-flight ceiling and Account-scoped
+  rolling minute/hour windows before protected context loading. `Permit` release
+  is idempotent and attached to every synchronous and asynchronous terminal
+  path. Limit denial is `AI_LIMITED`; no repository or provider call occurs.
+  This remains process-local; PostgreSQL-time distributed buckets, fenced
+  leases, durable telemetry and retry execution are deferred.
 - **AI-SEC-020:** A configured model is checked against GET /v1/models without
   blocking core application startup. Readiness states are exactly `UNVALIDATED`,
   `CHECKING`, `NEGATIVE` and `READY`. The core exposes only a non-blocking

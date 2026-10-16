@@ -18,8 +18,10 @@ fresh Security Reviewer GO; role gateway/coordinator, retries, rate/lease
 controls, telemetry and compressed-response support remain later increments.
 Iteration 2D adds the first role-facing Technician Work Plan vertical slice;
 focused implementation tests pass, while teammate and fresh Security Reviewer
-review remain pending. This slice intentionally does not claim the later shared
-coordinator, retry, quota/lease, telemetry or compressed-response controls.
+review remain pending. Iteration 2E adds a shared process-local admission
+coordinator for configured in-flight and rolling per-account limits. Durable
+multi-instance coordination, retry, telemetry and compressed-response controls
+remain later increments.
 
 ## SoCLaaS transport
 
@@ -208,9 +210,26 @@ leave the deterministic Technician workflow available. The endpoint remains
 subject to the existing authenticated `/technician/**` security rules and POST
 CSRF protection.
 
-This vertical slice deliberately leaves the shared multi-feature coordinator,
-provider retry execution, Account/global rate and lease enforcement, durable AI
-telemetry and compressed-response support for subsequent increments.
+This vertical slice deliberately leaves provider retry execution, Account/global
+lease enforcement, durable AI telemetry and compressed-response support for
+subsequent increments.
+
+### Iteration 2E shared admission coordinator
+
+Iteration 2E introduces `AiInvocationCoordinator`, a provider-neutral Spring
+component shared by role services. It admits a logical invocation only when the
+configured process-wide in-flight limit and the caller Account's one-minute and
+one-hour rolling windows both have capacity. Admission occurs after readiness
+has confirmed a usable provider but before protected Work Plan context loading,
+so a limit denial performs no repository or provider work and maps to the
+stable `AI_LIMITED` result. An idempotent permit is released on every load,
+exception and asynchronous completion path, including post-call freshness
+discard. The coordinator uses an injected clock in tests and does not expose
+provider types or secrets.
+
+This is a single-process control only. PostgreSQL-time buckets, fenced global
+leases, durable STARTED/terminal telemetry, retry accounting and multi-feature
+coordination remain deferred to the distributed coordination increment.
 
 ### Provider-core readiness
 
