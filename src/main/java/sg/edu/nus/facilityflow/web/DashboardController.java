@@ -14,12 +14,6 @@ public class DashboardController {
         return "about";
     }
 
-    @GetMapping("/requester")
-    String requester(@AuthenticationPrincipal CurrentAccountPrincipal principal, Model model) {
-        addIdentity(model, principal, "Requester workspace");
-        return "dashboard";
-    }
-
     @GetMapping("/technician")
     String technician(@AuthenticationPrincipal CurrentAccountPrincipal principal, Model model) {
         addIdentity(model, principal, "Technician workspace");

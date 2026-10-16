@@ -39,6 +39,15 @@ The source commit was verified against the MP2 `master` branch on 12 October
 
 ## Current evidence and measurement detail
 
+Requester step 4 (16 October): dashboard/status counts, five recent reports,
+literal search and combined filters follow **concept-only** Requester discovery
+behavior already retained in approved MP3 specs (zero copied code lines).
+No additional MP2 source consulted or copied. `RequestFilters`, use-case/repository/
+controller additions, dashboard/list templates and CSS, filter/PostgreSQL tests,
+authentication-only dashboard stub and guide/traceability/session/handoff updates
+are **new** MP3 implementation. No migration or dependency changes. Final line
+measurement and teammate review remain pending on `feat/requester-workflow`.
+
 Requester step 3 (16 October): edit/cancel/Requester Update use cases, Request
 version/state locking, reason/note validation, shared form/action templates and
 tests are **concept-only** reuse of behaviors already approved in MP3 product/

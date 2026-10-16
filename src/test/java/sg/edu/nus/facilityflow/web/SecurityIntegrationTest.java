@@ -52,6 +52,20 @@ class SecurityIntegrationTest {
         environment.getPropertySources().remove(
                 org.springframework.core.env.StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME);
         application.setEnvironment(environment);
+        // H2 tests authentication; PostgreSQL tests exercise the real workspace and row locks.
+        application.addInitializers(applicationContext -> {
+            var workspace = org.mockito.Mockito.mock(sg.edu.nus.facilityflow.requester.RequesterRequests.class);
+            org.mockito.Mockito.when(workspace.dashboard()).thenReturn(
+                    new sg.edu.nus.facilityflow.requester.RequesterRequests.Dashboard(
+                            sg.edu.nus.facilityflow.requester.RequesterRequests.STATUSES.stream()
+                                    .map(status -> new sg.edu.nus.facilityflow.requester.RequesterRequests.StatusCount(status, 0)).toList(),
+                            java.util.List.of()));
+            var definition = org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition(
+                    sg.edu.nus.facilityflow.requester.RequesterRequests.class, () -> workspace).getBeanDefinition();
+            definition.setPrimary(true);
+            ((org.springframework.beans.factory.support.BeanDefinitionRegistry) applicationContext.getBeanFactory())
+                    .registerBeanDefinition("authenticationOnlyRequesterWorkspace", definition);
+        });
         context = (org.springframework.web.context.ConfigurableWebApplicationContext) application.run(
                 "--spring.profiles.active=test", "--server.port=0", "--server.address=127.0.0.1",
                 "--spring.datasource.url=jdbc:h2:mem:facilityflow;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1",

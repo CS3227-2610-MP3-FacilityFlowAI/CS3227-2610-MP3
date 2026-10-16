@@ -1,6 +1,6 @@
 # User Guide
 
-Status: authentication and Requester create/list/detail/edit/cancel/updates implemented locally;
+Status: authentication and Requester manual workflow, dashboard and filters implemented locally;
 teammate review and hosted verification pending. AI workflows are not yet released.
 
 This guide must be updated continuously to match the deployed product exactly.
@@ -55,8 +55,24 @@ safe message directing you to **My requests**, without creating another report.
 Select a report to view its fields, status, Manager priority when set, timestamps,
 status history, public reasons and Requester Updates. Times display explicitly in
 Asia/Singapore. Other Requesters' reports and internal Work Logs/private Manager
-data are unavailable. Dashboard counts, search/filters and the assistant are
-still pending.
+data are unavailable. The assistant is still pending.
+
+### Requester: dashboard and finding reports
+
+The Requester workspace shows your counts for OPEN, ASSIGNED, IN_PROGRESS,
+COMPLETED, CLOSED and CANCELLED, plus your five newest reports. Select a status
+count to open **My requests** with that filter applied.
+
+Search **My requests** by display ID, title or location. Search ignores case and
+surrounding spaces; punctuation such as `%` and `_` matches literally. Combine
+search with status, category and creation-date filters, then select **Apply filters**.
+Both dates are inclusive in Asia/Singapore. Inactive categories remain available
+for finding older reports; new reports still require an active category.
+
+Applied values stay visible. **Reset filters** restores the full list. A new
+workspace explains that you have no requests; a search with no matches suggests
+changing or resetting filters. Invalid dates, reversed ranges or unavailable
+filter values show field errors and retain your input.
 
 ### Requester: edit, cancel and add updates
 

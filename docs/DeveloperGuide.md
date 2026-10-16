@@ -44,7 +44,7 @@ latest release rather than the intended design.
 ## Project overview
 
 FacilityFlow AI, CS3227 MP3. Database and authentication foundations integrated;
-Requester create/list/detail and eligible mutations are implemented locally; the remaining role
+Requester manual workflow, dashboard and discovery are implemented locally; the remaining role
 business workflows are pending. See README and AGENTS.md.
 
 ## Repository structure
@@ -156,6 +156,31 @@ version; it never substitutes a fresh version behind stale user input. Reloading
 is explicit. Tests cover all states, replay, foreign/wrong-role/CSRF denial,
 post-load assignment/category changes, concurrent edits/cancel-update races,
 all-mutation audit rollback/retry and inactive/invalidated direct-service access.
+
+## Requester dashboard and discovery (step 4)
+
+REQ-RQ-001/003/004/009 and REQ-SH-008/009: `RequestFilters` binds only five
+immutable filter inputs, normalizes whitespace and validates status, category
+UUID, strict dates and date order before queries. Invalid or unknown category
+filters return HTTP 422 with retained values and no unfiltered fallback.
+
+The service derives the owner from the revalidated account. Every count/list
+query constrains that owner; the search OR group remains inside that predicate.
+Bound `position` expressions implement literal case-insensitive substrings over
+display ID, title and location. All filters combine with AND. Inclusive Singapore
+dates become UTC bounds `created_at >= start` and `created_at < next day start`.
+List and five-recent queries share creation-descending/display-ID-ascending order.
+The dashboard fills absent states with zero. Filter categories include inactive
+history options; creation/edit choices remain active-only. No migration or
+dependency was added.
+
+PostgreSQL integration tests cover ownership, all six counts, five recent reports,
+literal punctuation, combined filters, local midnight boundaries, reset/empty
+states and escaped retained errors. The H2 authentication suite uses a primary
+`RequesterRequests` dashboard stub registered only by its test initializer,
+because H2 cannot execute PostgreSQL `FOR SHARE`. Its security chain, persisted
+accounts, JDBC sessions and password/audit services remain real; PostgreSQL
+workspace tests exercise the actual authorization and locking.
 
 ## Role model
 

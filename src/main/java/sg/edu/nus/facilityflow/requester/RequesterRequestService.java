@@ -33,8 +33,27 @@ public class RequesterRequestService implements RequesterRequests {
     }
 
     @Override
-    public List<Summary> list() {
-        return authorized(false, actor -> requests.list(actor.id()));
+    public Dashboard dashboard() {
+        return authorized(false, actor -> {
+            var counts = requests.statusCounts(actor.id());
+            return new Dashboard(STATUSES.stream().map(status -> new StatusCount(status, counts.getOrDefault(status, 0L))).toList(),
+                    requests.list(actor.id(), RequestFilters.empty(), 5));
+        });
+    }
+
+    @Override
+    public ListPage list(RequestFilters filters) {
+        return authorized(false, actor -> {
+            var errors = filters.errors();
+            var categories = requests.filterCategories();
+            if (!filters.categoryId().isEmpty() && !errors.containsKey("categoryId")
+                    && categories.stream().noneMatch(category -> category.id().equals(UUID.fromString(filters.categoryId())))) {
+                errors.put("categoryId", "Choose a listed category.");
+            }
+            boolean hasRequests = !requests.statusCounts(actor.id()).isEmpty();
+            return new ListPage(errors.isEmpty() ? requests.list(actor.id(), filters, 0) : List.of(),
+                    categories, hasRequests, Map.copyOf(errors));
+        });
     }
 
     @Override

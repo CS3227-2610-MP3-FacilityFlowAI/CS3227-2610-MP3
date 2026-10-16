@@ -7,6 +7,13 @@ they are not evidence available when it was first prepared.
 
 ## Progress notes
 
+- **16 October Requester step 4:** Step 3 committed as `8d00fe6` at the user's
+  request. Own status counts, five recent reports and combined list search,
+  status/category/inclusive Singapore date filters are implemented locally.
+  Visible filters, reset, validation and distinct empty/no-match states are
+  supplied. See `logs/2026-10-16-requester-step-4-discovery.md` for verification.
+  Next is the Smart Report service against a fake gateway (section 7).
+
 - **16 October Requester step 3:** Step 2 committed as `9ff8a5b` at the user's
   request. Owned OPEN edit/cancel and non-terminal Requester Updates are now
   implemented with Request version/state locks and atomic audit, using the

@@ -2,6 +2,9 @@ package sg.edu.nus.facilityflow.requester;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -37,15 +40,61 @@ public class JdbcRequesterRequestRepository implements RequesterRequestRepositor
     }
 
     @Override
-    public List<RequesterRequests.Summary> list(UUID owner) {
-        return jdbc.query("""
+    public List<RequesterRequests.Category> filterCategories() {
+        return jdbc.query("SELECT id, name || CASE WHEN active THEN '' ELSE ' (inactive)' END AS name FROM facilityflow.category ORDER BY lower(name), id",
+                (row, index) -> new RequesterRequests.Category(row.getObject("id", UUID.class), row.getString("name")));
+    }
+
+    @Override
+    public Map<String, Long> statusCounts(UUID owner) {
+        return jdbc.query("SELECT status, count(*) AS total FROM facilityflow.maintenance_request WHERE requester_id = ? GROUP BY status",
+                rows -> {
+                    var counts = new HashMap<String, Long>();
+                    while (rows.next()) counts.put(rows.getString("status"), rows.getLong("total"));
+                    return counts;
+                }, owner);
+    }
+
+    @Override
+    public List<RequesterRequests.Summary> list(UUID owner, RequestFilters filters, int limit) {
+        var sql = new StringBuilder("""
                 SELECT r.display_id, r.title, r.location, c.name AS category,
                        r.reported_urgency, r.status, r.manager_priority, r.created_at
                   FROM facilityflow.maintenance_request r JOIN facilityflow.category c ON c.id = r.category_id
-                 WHERE r.requester_id = ? ORDER BY r.created_at DESC, r.display_id ASC
-                """, (row, index) -> new RequesterRequests.Summary(row.getString("display_id"), row.getString("title"),
+                 WHERE r.requester_id = ?
+                """);
+        var parameters = new ArrayList<Object>();
+        parameters.add(owner);
+        if (!filters.search().isEmpty()) {
+            sql.append(" AND (position(lower(?) in lower(r.display_id)) > 0 OR position(lower(?) in lower(r.title)) > 0 OR position(lower(?) in lower(r.location)) > 0)");
+            parameters.add(filters.search());
+            parameters.add(filters.search());
+            parameters.add(filters.search());
+        }
+        if (!filters.status().isEmpty()) {
+            sql.append(" AND r.status = ?");
+            parameters.add(filters.status());
+        }
+        if (!filters.categoryId().isEmpty()) {
+            sql.append(" AND r.category_id = ?");
+            parameters.add(UUID.fromString(filters.categoryId()));
+        }
+        if (!filters.createdFrom().isEmpty()) {
+            sql.append(" AND r.created_at >= ?");
+            parameters.add(filters.fromUtc());
+        }
+        if (!filters.createdTo().isEmpty()) {
+            sql.append(" AND r.created_at < ?");
+            parameters.add(filters.beforeUtc());
+        }
+        sql.append(" ORDER BY r.created_at DESC, r.display_id ASC");
+        if (limit > 0) {
+            sql.append(" LIMIT ?");
+            parameters.add(limit);
+        }
+        return jdbc.query(sql.toString(), (row, index) -> new RequesterRequests.Summary(row.getString("display_id"), row.getString("title"),
                 row.getString("location"), row.getString("category"), row.getString("reported_urgency"),
-                row.getString("status"), row.getString("manager_priority"), row.getObject("created_at", OffsetDateTime.class).toInstant()), owner);
+                row.getString("status"), row.getString("manager_priority"), row.getObject("created_at", OffsetDateTime.class).toInstant()), parameters.toArray());
     }
 
     @Override

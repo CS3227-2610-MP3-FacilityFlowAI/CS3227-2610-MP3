@@ -10,8 +10,54 @@
 <main>
     <h1>My requests</h1>
     <p><a th:href="@{/requester/requests/new}">Report a problem</a></p>
-    <p th:if="${requests.isEmpty()}">You have no requests yet. Report a problem to get started.</p>
-    <div class="table-scroll" th:unless="${requests.isEmpty()}">
+    <form method="get" th:action="@{/requester/requests}" aria-label="Request filters" class="request-filters">
+        <div>
+            <label for="search">Search display ID, title or location</label>
+            <input id="search" name="search" type="search" th:value="${filters.search}"
+                   th:attr="aria-invalid=${errors.containsKey('search')},aria-describedby=${errors.containsKey('search') ? 'search-error' : null}">
+            <p id="search-error" class="error" th:if="${errors.containsKey('search')}" th:text="${errors['search']}"></p>
+        </div>
+        <div>
+            <label for="status">Status</label>
+            <select id="status" name="status"
+                    th:attr="aria-invalid=${errors.containsKey('status')},aria-describedby=${errors.containsKey('status') ? 'status-error' : null}">
+                <option value="">All statuses</option>
+                <option th:each="status : ${statuses}" th:value="${status}" th:text="${#strings.replace(status, '_', ' ')}"
+                        th:selected="${status == filters.status}"></option>
+                <option th:if="${!filters.status.isEmpty() and !statuses.contains(filters.status)}" th:value="${filters.status}" selected>Previous selection unavailable</option>
+            </select>
+            <p id="status-error" class="error" th:if="${errors.containsKey('status')}" th:text="${errors['status']}"></p>
+        </div>
+        <div>
+            <label for="categoryId">Category</label>
+            <select id="categoryId" name="categoryId"
+                    th:attr="aria-invalid=${errors.containsKey('categoryId')},aria-describedby=${errors.containsKey('categoryId') ? 'category-error' : null}">
+                <option value="">All categories</option>
+                <option th:each="category : ${categories}" th:value="${category.id}" th:text="${category.name}"
+                        th:selected="${category.id.toString() == filters.categoryId}"></option>
+                <option th:if="${!filters.categoryId.isEmpty() and !categories.![id.toString()].contains(filters.categoryId)}" th:value="${filters.categoryId}" selected>Previous selection unavailable</option>
+            </select>
+            <p id="category-error" class="error" th:if="${errors.containsKey('categoryId')}" th:text="${errors['categoryId']}"></p>
+        </div>
+        <div>
+            <label for="createdFrom">Created from (Asia/Singapore)</label>
+            <input id="createdFrom" name="createdFrom" type="date" th:value="${filters.createdFrom}"
+                   th:attr="aria-invalid=${errors.containsKey('createdFrom')},aria-describedby=${errors.containsKey('createdFrom') ? 'from-error' : null}">
+            <p id="from-error" class="error" th:if="${errors.containsKey('createdFrom')}" th:text="${errors['createdFrom']}"></p>
+        </div>
+        <div>
+            <label for="createdTo">Created through (inclusive, Asia/Singapore)</label>
+            <input id="createdTo" name="createdTo" type="date" th:value="${filters.createdTo}"
+                   th:attr="aria-invalid=${errors.containsKey('createdTo')},aria-describedby=${errors.containsKey('createdTo') ? 'to-error' : null}">
+            <p id="to-error" class="error" th:if="${errors.containsKey('createdTo')}" th:text="${errors['createdTo']}"></p>
+        </div>
+        <div><button type="submit">Apply filters</button> <a th:href="@{/requester/requests}">Reset filters</a></div>
+    </form>
+    <p th:if="${!errors.isEmpty()}" role="alert">Check the marked filters and try again.</p>
+    <p th:if="${errors.isEmpty() and !hasRequests}">You have no requests yet. Report a problem to get started.</p>
+    <p th:if="${errors.isEmpty() and hasRequests and requests.isEmpty()}">No requests match these filters. Try changing or resetting them.</p>
+    <p th:if="${errors.isEmpty() and !requests.isEmpty()}" th:text="${requests.size()} + ' matching request(s).'"></p>
+    <div th:fragment="requestTable(requests)" class="table-scroll" th:unless="${requests.isEmpty()}">
         <table>
             <caption>Your requests, newest first</caption>
             <thead><tr><th scope="col">Request</th><th scope="col">Location</th><th scope="col">Category</th>

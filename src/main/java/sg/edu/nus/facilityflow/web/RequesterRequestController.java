@@ -21,6 +21,7 @@ import sg.edu.nus.facilityflow.requester.DuplicateSubmissionException;
 import sg.edu.nus.facilityflow.requester.RequesterRequests;
 import sg.edu.nus.facilityflow.requester.RequestUnavailableException;
 import sg.edu.nus.facilityflow.requester.StaleRequestException;
+import sg.edu.nus.facilityflow.requester.RequestFilters;
 
 @Controller
 public class RequesterRequestController {
@@ -30,9 +31,21 @@ public class RequesterRequestController {
         this.requests = requests;
     }
 
+    @GetMapping("/requester")
+    String dashboard(Model model) {
+        model.addAttribute("dashboard", requests.dashboard());
+        return "requester/dashboard";
+    }
+
     @GetMapping("/requester/requests")
-    String list(Model model) {
-        model.addAttribute("requests", requests.list());
+    String list(@ModelAttribute("filters") RequestFilters filters, Model model, HttpServletResponse response) {
+        var page = requests.list(filters);
+        model.addAttribute("requests", page.requests());
+        model.addAttribute("categories", page.categories());
+        model.addAttribute("hasRequests", page.hasRequests());
+        model.addAttribute("errors", page.errors());
+        model.addAttribute("statuses", RequesterRequests.STATUSES);
+        if (!page.errors().isEmpty()) response.setStatus(422);
         return "requester/list";
     }
 

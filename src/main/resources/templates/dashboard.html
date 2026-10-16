@@ -21,10 +21,6 @@
 <main>
     <h1 th:text="${title}">Workspace</h1>
     <p>The authenticated foundation is ready for this role's workflow.</p>
-    <nav th:if="${role == 'REQUESTER'}" aria-label="Requester navigation">
-        <a th:href="@{/requester/requests}">My requests</a>
-        <a th:href="@{/requester/requests/new}">Report a problem</a>
-    </nav>
 </main>
 </body>
 </html>

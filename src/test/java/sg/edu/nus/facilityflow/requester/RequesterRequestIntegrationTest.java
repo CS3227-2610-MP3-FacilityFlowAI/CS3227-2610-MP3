@@ -250,13 +250,16 @@ class RequesterRequestIntegrationTest {
     void reqSh002RechecksAccountAtUseCaseSeamAndCategoryBeforeCreate() {
         var requester = service(OWNER, AccountRole.REQUESTER, 0);
         app.update("UPDATE facilityflow.user_account SET active = false WHERE id = ?", OWNER);
-        assertThrows(AccessDeniedException.class, requester::list);
+        assertThrows(AccessDeniedException.class, () -> requester.list(RequestFilters.empty()));
+        assertThrows(AccessDeniedException.class, requester::dashboard);
         assertThrows(AccessDeniedException.class, () -> requester.create(draft(), UUID.randomUUID().toString()));
         app.update("UPDATE facilityflow.user_account SET active = true, session_version = 1 WHERE id = ?", OWNER);
         assertThrows(AccessDeniedException.class, requester::categories);
+        assertThrows(AccessDeniedException.class, requester::dashboard);
         app.update("UPDATE facilityflow.user_account SET session_version = 0, role = 'TECHNICIAN' WHERE id = ?", OWNER);
-        assertThrows(AccessDeniedException.class, requester::list);
-        assertThrows(AccessDeniedException.class, () -> service(MANAGER, AccountRole.FACILITIES_MANAGER, 0).list());
+        assertThrows(AccessDeniedException.class, () -> requester.list(RequestFilters.empty()));
+        assertThrows(AccessDeniedException.class, () -> service(MANAGER, AccountRole.FACILITIES_MANAGER, 0).list(RequestFilters.empty()));
+        assertThrows(AccessDeniedException.class, requester::dashboard);
         app.update("UPDATE facilityflow.user_account SET role = 'REQUESTER' WHERE id = ?", OWNER);
         assertThrows(RequestValidationException.class, () -> requester.create(
                 new RequestDraft("Broken light", "Valid report description", "Block A", UUID.randomUUID().toString(), "NORMAL"),
@@ -270,7 +273,7 @@ class RequesterRequestIntegrationTest {
         var second = managerRecorded(OWNER, "Second report");
         admin.update("UPDATE facilityflow.maintenance_request SET created_at = '2026-01-01T00:00:00Z'");
         admin.update("UPDATE facilityflow.category SET active = false WHERE id = ?::uuid", category);
-        var result = service(OWNER, AccountRole.REQUESTER, 0).list();
+        var result = service(OWNER, AccountRole.REQUESTER, 0).list(RequestFilters.empty()).requests();
         assertEquals(List.of(first, second), result.stream().map(RequesterRequests.Summary::displayId).toList());
     }
 
@@ -533,6 +536,147 @@ class RequesterRequestIntegrationTest {
 
     private int mutationAudits(String action) {
         return app.queryForObject("SELECT count(*) FROM facilityflow.audit_event WHERE action = ?", Integer.class, action);
+    }
+
+    @Test
+    void reqRq001DashboardCountsAndFiveRecentReportsAreOwnerScoped() throws Exception {
+        var owned = new java.util.ArrayList<String>();
+        int day = 1;
+        for (String status : RequesterRequests.STATUSES) {
+            String id = managerRecorded(OWNER, "Owned dashboard " + status);
+            setState(id, status);
+            setCreated(id, java.time.OffsetDateTime.parse("2026-01-0" + day++ + "T00:00:00Z"));
+            owned.add(id);
+        }
+        String newest = managerRecorded(OWNER, "Newest owner report");
+        setCreated(newest, java.time.OffsetDateTime.parse("2026-01-07T00:00:00Z"));
+        owned.add(newest);
+        for (int index = 0; index < 3; index++) {
+            String foreign = managerRecorded(OTHER, "FOREIGN PRIVATE DASHBOARD " + index);
+            setCreated(foreign, java.time.OffsetDateTime.parse("2026-02-01T00:00:00Z"));
+        }
+        var dashboard = service(OWNER, AccountRole.REQUESTER, 0).dashboard();
+        assertEquals(6, dashboard.counts().size());
+        assertEquals(2, dashboard.counts().getFirst().count());
+        assertEquals(7, dashboard.counts().stream().mapToLong(RequesterRequests.StatusCount::count).sum());
+        assertTrue(dashboard.counts().stream().skip(1).allMatch(count -> count.count() == 1));
+        assertEquals(List.of(owned.get(6), owned.get(5), owned.get(4), owned.get(3), owned.get(2)),
+                dashboard.recent().stream().map(RequesterRequests.Summary::displayId).toList());
+        Cookie cookie = login("requester1", "/requester");
+        mvc.perform(get("/requester").cookie(cookie)).andExpect(status().isOk())
+                .andExpect(content().string(containsString("Recent requests")))
+                .andExpect(content().string(containsString("status=OPEN")))
+                .andExpect(content().string(containsString("Newest owner report")))
+                .andExpect(content().string(not(containsString("FOREIGN PRIVATE DASHBOARD"))));
+    }
+
+    @Test
+    void reqRq003LiteralCaseInsensitiveSearchCoversOnlyIdTitleAndLocation() throws Exception {
+        String title = managerRecorded(OWNER, "Leaking pipe by lift");
+        String literal = managerRecorded(OWNER, "100%_safe\\check report");
+        String location = managerRecorded(OWNER, "Storage door report");
+        admin.update("UPDATE facilityflow.maintenance_request SET location = 'North STORAGE' WHERE display_id = ?", location);
+        managerRecorded(OTHER, "Leaking pipe by lift FOREIGN");
+        var requester = service(OWNER, AccountRole.REQUESTER, 0);
+        assertEquals(List.of(title), ids(requester.list(new RequestFilters("\u2003lEaKiNg ", "", "", "", ""))));
+        assertEquals(List.of(title), ids(requester.list(new RequestFilters(title.toLowerCase(java.util.Locale.ROOT), "", "", "", ""))));
+        assertEquals(List.of(location), ids(requester.list(new RequestFilters(" north storage ", "", "", "", ""))));
+        for (String text : List.of("%", "_", "\\")) {
+            assertEquals(List.of(literal), ids(requester.list(new RequestFilters(text, "", "", "", ""))));
+        }
+        assertTrue(requester.list(new RequestFilters("Recorded for the requester", "", "", "", "")).requests().isEmpty());
+        assertTrue(requester.list(new RequestFilters("' OR 1=1 --", "", "", "", "")).requests().isEmpty());
+        Cookie cookie = login("requester1", "/requester");
+        mvc.perform(get("/requester/requests").cookie(cookie).param("search", " lEaKiNg ").param("requesterId", OTHER.toString()))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Leaking pipe by lift")))
+                .andExpect(content().string(not(containsString("FOREIGN"))))
+                .andExpect(content().string(not(containsString("Storage door report"))));
+    }
+
+    @Test
+    void reqRq003AndSh009FiltersCombineWithInclusiveLocalDatesAndInactiveHistory() throws Exception {
+        var start = java.time.OffsetDateTime.parse("2026-10-15T16:00:00Z");
+        var end = java.time.OffsetDateTime.parse("2026-10-16T16:00:00Z");
+        String before = managerRecorded(OWNER, "Pipe before day");
+        String first = managerRecorded(OWNER, "Pipe at day start");
+        String last = managerRecorded(OWNER, "Pipe at last microsecond");
+        String after = managerRecorded(OWNER, "Pipe next day");
+        String otherCategory = managerRecorded(OWNER, "Pipe other category");
+        String foreign = managerRecorded(OTHER, "Pipe FOREIGN in range");
+        setCreated(before, start.minusNanos(1000));
+        setCreated(first, start);
+        setCreated(last, end.minusNanos(1000));
+        setCreated(after, end);
+        setCreated(otherCategory, start.plusHours(1));
+        setCreated(foreign, start.plusHours(2));
+        setState(last, "ASSIGNED");
+        String otherId = app.queryForObject("SELECT id::text FROM facilityflow.category WHERE name = 'Other'", String.class);
+        admin.update("UPDATE facilityflow.maintenance_request SET category_id = ?::uuid WHERE display_id = ?", otherId, otherCategory);
+        admin.update("UPDATE facilityflow.category SET active = false WHERE id = ?::uuid", category);
+        var requester = service(OWNER, AccountRole.REQUESTER, 0);
+        var day = requester.list(new RequestFilters("", "", "", "2026-10-16", "2026-10-16"));
+        assertEquals(List.of(last, otherCategory, first), ids(day));
+        assertFalse(ids(day).contains(before));
+        assertFalse(ids(day).contains(after));
+        assertEquals(List.of(first), ids(requester.list(new RequestFilters(" PiPe ", "OPEN", category, "2026-10-16", "2026-10-16"))));
+        assertTrue(ids(requester.list(new RequestFilters("", "", "", "2026-10-16", ""))).contains(after));
+        assertFalse(ids(requester.list(new RequestFilters("", "", "", "2026-10-16", ""))).contains(before));
+        assertTrue(ids(requester.list(new RequestFilters("", "", "", "", "2026-10-16"))).contains(before));
+        assertFalse(ids(requester.list(new RequestFilters("", "", "", "", "2026-10-16"))).contains(after));
+        assertTrue(day.categories().stream().anyMatch(option -> option.id().toString().equals(category) && option.name().contains("inactive")));
+        assertTrue(requester.categories().stream().noneMatch(option -> option.id().toString().equals(category)));
+        Cookie cookie = login("requester1", "/requester");
+        mvc.perform(get("/requester/requests").cookie(cookie).param("search", "PiPe").param("status", "OPEN")
+                        .param("categoryId", category).param("createdFrom", "2026-10-16").param("createdTo", "2026-10-16"))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("Pipe at day start")))
+                .andExpect(content().string(not(containsString("Pipe next day"))))
+                .andExpect(content().string(containsString("Electrical (inactive)")));
+    }
+
+    @Test
+    void reqSh008EmptyAndZeroResultStatesAreDistinctAndResetRestoresOwnList() throws Exception {
+        managerRecorded(OTHER, "FOREIGN exists but owner empty");
+        Cookie cookie = login("requester1", "/requester");
+        mvc.perform(get("/requester/requests").cookie(cookie))
+                .andExpect(content().string(containsString("You have no requests yet")))
+                .andExpect(content().string(not(containsString("FOREIGN exists"))));
+        var dashboard = service(OWNER, AccountRole.REQUESTER, 0).dashboard();
+        assertTrue(dashboard.recent().isEmpty());
+        assertTrue(dashboard.counts().stream().allMatch(count -> count.count() == 0));
+        managerRecorded(OWNER, "Own reset report");
+        mvc.perform(get("/requester/requests").cookie(cookie).param("search", "nonexistent search text"))
+                .andExpect(content().string(containsString("No requests match these filters")))
+                .andExpect(content().string(not(containsString("You have no requests yet"))))
+                .andExpect(content().string(containsString("href=\"/requester/requests\">Reset filters")));
+        mvc.perform(get("/requester/requests").cookie(cookie)).andExpect(content().string(containsString("Own reset report")));
+    }
+
+    @Test
+    void reqRq003InvalidFiltersRetainValuesWithSpecificErrorsAndNoUnfilteredFallback() throws Exception {
+        managerRecorded(OWNER, "Must not appear under invalid filters");
+        var filters = new RequestFilters("<script>alert(1)</script>", "INVALID", UUID.randomUUID().toString(), "2026-10-17", "2026-10-16");
+        var result = service(OWNER, AccountRole.REQUESTER, 0).list(filters);
+        assertTrue(result.requests().isEmpty());
+        assertTrue(result.hasRequests());
+        assertEquals(java.util.Set.of("status", "categoryId", "createdTo"), result.errors().keySet());
+        Cookie cookie = login("requester1", "/requester");
+        var response = mvc.perform(get("/requester/requests").cookie(cookie).param("search", filters.search())
+                        .param("status", filters.status()).param("categoryId", filters.categoryId())
+                        .param("createdFrom", filters.createdFrom()).param("createdTo", filters.createdTo()))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(content().string(containsString("End date must be on or after")))
+                .andExpect(content().string(containsString("&lt;script&gt;")))
+                .andExpect(content().string(not(containsString("<script>alert"))))
+                .andExpect(content().string(not(containsString("Must not appear under invalid filters")))).andReturn();
+        assertEquals(filters, response.getModelAndView().getModel().get("filters"));
+    }
+
+    private static List<String> ids(RequesterRequests.ListPage page) {
+        return page.requests().stream().map(RequesterRequests.Summary::displayId).toList();
+    }
+
+    private void setCreated(String id, java.time.OffsetDateTime time) {
+        admin.update("UPDATE facilityflow.maintenance_request SET created_at = ?, updated_at = ? WHERE display_id = ?", time, time, id);
     }
 
     @Test
