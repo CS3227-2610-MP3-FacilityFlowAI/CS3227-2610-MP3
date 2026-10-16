@@ -16,6 +16,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 import sg.edu.nus.facilityflow.ai.AiAccessGuard;
 import sg.edu.nus.facilityflow.ai.AiInvocationCoordinator;
+import sg.edu.nus.facilityflow.ai.AiInvocationTelemetry;
+import sg.edu.nus.facilityflow.ai.AiInvocationTelemetry.Feature;
+import sg.edu.nus.facilityflow.ai.AiInvocationTelemetry.Status;
+import sg.edu.nus.facilityflow.ai.config.AiConfiguration;
 import sg.edu.nus.facilityflow.ai.config.AiProviderLifecycle;
 import sg.edu.nus.facilityflow.ai.technician.WorkPlanAssistant;
 import sg.edu.nus.facilityflow.ai.technician.WorkPlanContext;
@@ -133,8 +137,70 @@ class TechnicianWorkPlanServiceTest {
         assertTrue(await(first) instanceof WorkPlanResponse.Success);
     }
 
+    @Test
+    @DisplayName("AI-SEC-017 admitted request starts telemetry before context and finishes once")
+    void admittedRequestPersistsLifecycleTelemetryAroundProtectedWork() {
+        CountingRepository repository = new CountingRepository();
+        CountingAssistant assistant = new CountingAssistant();
+        RecordingTelemetry telemetry = new RecordingTelemetry();
+        TechnicianWorkPlanService service = serviceFor(
+                new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN),
+                repository, assistant, telemetry);
+
+        WorkPlanResponse response = await(service.request("FF-000001"));
+
+        assertTrue(response instanceof WorkPlanResponse.Success);
+        assertEquals(1, telemetry.starts.get());
+        assertEquals(1, telemetry.finishes.get());
+        assertEquals(AiInvocationTelemetry.Status.SUCCEEDED, telemetry.status);
+        assertTrue(telemetry.startedBeforeContext);
+        assertEquals(AiInvocationTelemetry.Feature.WORK_PLAN, telemetry.feature);
+        assertEquals("work-plan-v1", telemetry.templateVersion);
+    }
+
+    @Test
+    @DisplayName("AI-SEC-017 terminal telemetry failure withholds a successful result")
+    void terminalTelemetryFailureWithholdsResult() {
+        RecordingTelemetry telemetry = new RecordingTelemetry();
+        telemetry.failFinish = true;
+        TechnicianWorkPlanService service = serviceFor(
+                new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN),
+                new CountingRepository(), new CountingAssistant(), telemetry);
+
+        WorkPlanResponse response = await(service.request("FF-000001"));
+
+        assertEquals(WorkPlanFailureCode.AI_UNAVAILABLE, failureCode(response));
+        assertEquals(1, telemetry.starts.get());
+        assertEquals(1, telemetry.finishes.get());
+    }
+
+    @Test
+    @DisplayName("AI-SEC-017 start telemetry failure prevents protected context loading")
+    void startTelemetryFailurePreventsProtectedWork() {
+        RecordingTelemetry telemetry = new RecordingTelemetry();
+        telemetry.failStart = true;
+        CountingRepository repository = new CountingRepository();
+        CountingAssistant assistant = new CountingAssistant();
+        TechnicianWorkPlanService service = serviceFor(
+                new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN),
+                repository, assistant, telemetry);
+
+        WorkPlanResponse response = await(service.request("FF-000001"));
+
+        assertEquals(WorkPlanFailureCode.AI_UNAVAILABLE, failureCode(response));
+        assertEquals(0, repository.loadCalls.get());
+        assertEquals(0, assistant.calls.get());
+        assertEquals(0, telemetry.finishes.get());
+    }
+
     private static TechnicianWorkPlanService serviceFor(
             CurrentAccount account, CountingRepository repository, CountingAssistant assistant) {
+        return serviceFor(account, repository, assistant, AiInvocationTelemetry.noop());
+    }
+
+    private static TechnicianWorkPlanService serviceFor(
+            CurrentAccount account, CountingRepository repository, CountingAssistant assistant,
+            AiInvocationTelemetry telemetry) {
         IdentityAuthorization authorization = new IdentityAuthorization(() -> account);
         return new TechnicianWorkPlanService(
                 authorization,
@@ -142,7 +208,11 @@ class TechnicianWorkPlanServiceTest {
                 coordinator(),
                 new ReadyLifecycle(),
                 repository,
-                assistant);
+                assistant,
+                telemetry,
+                new AiConfiguration.Available(
+                        java.net.URI.create("https://soclaas-api.comp.nus.edu.sg/v1"),
+                        "synthetic-key", "synthetic-model", 30, 800, 5, 5, 30));
     }
 
     private static AiInvocationCoordinator coordinator() {
@@ -190,6 +260,41 @@ class TechnicianWorkPlanServiceTest {
         @Override
         public boolean isStillEligible(WorkPlanContext context) {
             return stillEligible;
+        }
+    }
+
+    private static final class RecordingTelemetry implements AiInvocationTelemetry {
+        private final AtomicInteger starts = new AtomicInteger();
+        private final AtomicInteger finishes = new AtomicInteger();
+        private volatile Status status;
+        private volatile Feature feature;
+        private volatile String templateVersion;
+        private volatile boolean startedBeforeContext;
+        private volatile boolean failStart;
+        private volatile boolean failFinish;
+        private Invocation invocation;
+
+        @Override
+        public Invocation start(StartRequest request) {
+            starts.incrementAndGet();
+            if (failStart) {
+                throw new IllegalStateException("synthetic telemetry start failure");
+            }
+            feature = request.feature();
+            templateVersion = request.templateVersion();
+            startedBeforeContext = true;
+            invocation = new Invocation(UUID.randomUUID(), java.time.Instant.now());
+            return invocation;
+        }
+
+        @Override
+        public void finish(Invocation invocation, Terminal terminal) {
+            finishes.incrementAndGet();
+            if (failFinish) {
+                throw new IllegalStateException("synthetic telemetry failure");
+            }
+            assertEquals(this.invocation, invocation);
+            status = terminal.status();
         }
     }
 

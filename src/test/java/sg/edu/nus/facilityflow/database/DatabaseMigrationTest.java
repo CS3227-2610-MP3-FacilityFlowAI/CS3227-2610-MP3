@@ -391,6 +391,34 @@ class DatabaseMigrationTest {
     }
 
     @Test
+    @DisplayName("AI-SEC-017: durable telemetry transitions STARTED exactly once without raw content")
+    void persistsInvocationLifecycleTelemetry() {
+        var actor = newAccount("TECHNICIAN");
+        var telemetry = new sg.edu.nus.facilityflow.ai.JdbcAiInvocationTelemetry(
+                new org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate(app));
+        var correlation = UUID.randomUUID();
+        var invocation = telemetry.start(new sg.edu.nus.facilityflow.ai.AiInvocationTelemetry.StartRequest(
+                actor, correlation, sg.edu.nus.facilityflow.ai.AiInvocationTelemetry.Feature.WORK_PLAN,
+                "synthetic-model", "work-plan-v1"));
+
+        assertEquals("STARTED", app.queryForObject(
+                "SELECT status FROM facilityflow.ai_invocation WHERE id = ?", String.class, invocation.id()));
+        telemetry.finish(invocation, new sg.edu.nus.facilityflow.ai.AiInvocationTelemetry.Terminal(
+                sg.edu.nus.facilityflow.ai.AiInvocationTelemetry.Status.SUCCEEDED,
+                42, 0, 10L, 20L, 30L));
+        assertEquals("SUCCEEDED", app.queryForObject(
+                "SELECT status FROM facilityflow.ai_invocation WHERE id = ?", String.class, invocation.id()));
+        assertEquals(42L, app.queryForObject(
+                "SELECT latency_ms FROM facilityflow.ai_invocation WHERE id = ?", Long.class, invocation.id()));
+        assertEquals(30L, app.queryForObject(
+                "SELECT total_tokens FROM facilityflow.ai_invocation WHERE id = ?", Long.class, invocation.id()));
+        assertThrows(IllegalStateException.class, () -> telemetry.finish(invocation,
+                new sg.edu.nus.facilityflow.ai.AiInvocationTelemetry.Terminal(
+                        sg.edu.nus.facilityflow.ai.AiInvocationTelemetry.Status.AI_UNAVAILABLE,
+                        43, 0, null, null, null)));
+    }
+
+    @Test
     @DisplayName("AI-SEC-008/021: rolling-window storage and optimistic global-slot claims")
     void supportsAtomicLimitStorage() {
         var actor = newAccount("REQUESTER");
