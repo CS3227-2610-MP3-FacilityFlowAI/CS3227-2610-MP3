@@ -7,6 +7,14 @@ they are not evidence available when it was first prepared.
 
 ## Progress notes
 
+- **16 October Requester step 1:** Work started on `feat/requester-workflow`.
+  Shared own-password change, current-session retention and atomic password/login
+  audit recording are implemented. The current/new password interaction is
+  resolved by retained MP2 behavior under the specification index precedence.
+  See `logs/2026-10-16-requester-step-1-identity.md` for actual checks and limits.
+  Manager account-administration services remain with their owner. The next
+  Requester implementation slice is create, own list and detail.
+
 - **14 October snapshot:** Part 1 scaffold and Part 2a connection configuration
   were prepared. Part 2b supplied identity/audit/session storage and role setup;
   hosted migration was still pending in that checkpoint. See the dated Part 1,

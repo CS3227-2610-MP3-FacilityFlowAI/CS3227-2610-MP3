@@ -39,6 +39,17 @@ The source commit was verified against the MP2 `master` branch on 12 October
 
 ## Current evidence and measurement detail
 
+Requester step 1 (16 October): `PasswordChangeService`, `JdbcIdentityOperations`,
+`PasswordController`, password template and associated tests reuse MP2
+`AuthenticationService.changePassword` and `ApplicationRouter` password-page
+behavior at the verified baseline as **concept only** (zero copied code lines).
+Current/new password inputs, Unicode limits, current-session retention and
+password audit semantics are retained; the Spring/JDBC implementation is new.
+`AuthenticatedPageAdvice`, shared header edits, login audit failure handling,
+`CurrentAccount.sessionVersion`, H2 fixture additions and guide/session records
+are **new** MP3 changes. No JavaFX or SQLite code copied. Final line measurements
+and teammate review remain pending; branch `feat/requester-workflow`.
+
 Part 3 V2/V3, initialization source/tests, database test extensions and completion
 guide/ADR-006 are **new** MP3 code/documentation, not MP2-derived. Demo usernames,
 development-only password and lifecycle scenarios are **concept-only** reuse

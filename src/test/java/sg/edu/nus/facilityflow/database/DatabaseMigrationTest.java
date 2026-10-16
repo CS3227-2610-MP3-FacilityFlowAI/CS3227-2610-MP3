@@ -93,6 +93,36 @@ class DatabaseMigrationTest {
     }
 
     @Test
+    @DisplayName("REQ-SH-004/006/014: password audit rollback and stale credentials under restricted PostgreSQL role")
+    void passwordChangeIsAtomicAndRejectsStaleAccounts() {
+        var id = newAccount("REQUESTER");
+        var repository = new sg.edu.nus.facilityflow.identity.JdbcAccountRepository(
+                new org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate(app));
+        var expected = repository.findById(id).orElseThrow();
+        var operations = new sg.edu.nus.facilityflow.identity.JdbcIdentityOperations(app,
+                new org.springframework.jdbc.datasource.DataSourceTransactionManager(app.getDataSource()));
+        admin.execute("ALTER TABLE facilityflow.audit_event ADD CONSTRAINT test_reject_password CHECK (action <> 'PASSWORD_CHANGED')");
+        try {
+            assertThrows(DataAccessException.class, () -> operations.changePassword(expected, "synthetic-replacement"));
+            assertEquals(expected.passwordHash(), repository.findById(id).orElseThrow().passwordHash());
+            assertEquals(0L, app.queryForObject("SELECT version FROM facilityflow.user_account WHERE id = ?", Long.class, id));
+        } finally {
+            admin.execute("ALTER TABLE facilityflow.audit_event DROP CONSTRAINT test_reject_password");
+        }
+        operations.changePassword(expected, "synthetic-replacement");
+        assertEquals("synthetic-replacement", repository.findById(id).orElseThrow().passwordHash());
+        assertEquals(expected.sessionVersion(), repository.findById(id).orElseThrow().sessionVersion());
+        assertEquals(1, app.queryForObject("SELECT count(*) FROM facilityflow.audit_event WHERE target_id = ? AND action = 'PASSWORD_CHANGED'",
+                Integer.class, id));
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> operations.changePassword(expected, "stale-replacement"));
+        var fresh = repository.findById(id).orElseThrow();
+        admin.update("UPDATE facilityflow.user_account SET session_version = session_version + 1 WHERE id = ?", id);
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> operations.changePassword(fresh, "reset-race"));
+    }
+
+    @Test
     @DisplayName("TECHNICAL-SPEC: migrations rerun without duplicates and reject newer schema")
     void validatesMigrationHistory() {
         assertEquals(0, flyway.migrate().migrationsExecuted);

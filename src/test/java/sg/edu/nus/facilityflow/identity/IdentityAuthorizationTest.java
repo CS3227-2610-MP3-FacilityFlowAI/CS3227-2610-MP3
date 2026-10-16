@@ -39,7 +39,7 @@ class IdentityAuthorizationTest {
     }
 
     private static IdentityAuthorization authorizationFor(AccountRole role) {
-        CurrentAccount account = new CurrentAccount(CURRENT_ID, "current", "Current User", role);
+        CurrentAccount account = new CurrentAccount(CURRENT_ID, "current", "Current User", role, 0);
         return new IdentityAuthorization(() -> account);
     }
 }

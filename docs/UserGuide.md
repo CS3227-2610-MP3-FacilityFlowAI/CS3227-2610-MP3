@@ -23,7 +23,16 @@ the Account directly to its role workspace.
 
 Requester, Technician and Facilities Manager are the only roles. Each Account
 can open only its own role workspace. Directly entering another role's URL is
-denied. Account provisioning and password-change screens are not yet available.
+denied. Account provisioning screens are not yet available.
+
+## Change your password
+
+The local implementation provides **Change password** in the authenticated header
+for all three roles. Enter your current password and a new password containing
+8–24 Unicode characters; no composition rule applies. Select **Change password**.
+Success keeps you signed in. Subsequent sign-ins use the new password. Password
+fields are cleared on errors; re-enter them to retry. Select **Back to main
+workspace** to leave the form. Hosted availability and browser checks are pending.
 
 ## Features
 

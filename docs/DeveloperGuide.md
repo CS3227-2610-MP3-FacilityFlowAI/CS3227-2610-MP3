@@ -120,6 +120,36 @@ configuration, initial limits, retention and typed results are defined in
 `../workflow/specs/INTEGRATION-SPEC.md` and
 `../workflow/specs/AI-SECURITY-SPEC.md`.
 
+## Identity operations (Requester step 1)
+
+REQ-SH-002/004/006/014: `/account/password` accepts POST with CSRF for any
+authenticated role. `PasswordChangeService` obtains the actor from the server
+session, reloads active state/role/session version, verifies the current password,
+validates the new password by Unicode code points and encodes it before opening
+the transaction. `JdbcIdentityOperations` conditionally updates the expected hash,
+role and session version, increments the account row version and appends
+`PASSWORD_CHANGED` atomically. A changed account rejects the write; audit failure
+rolls it back. Passwords are never returned in the page model. Own-password change
+leaves session versions and existing sessions intact, matching retained MP2 behavior.
+
+`RoleLoginSuccessHandler` records `LOGIN_SUCCESS` before redirecting. Audit failure
+clears authentication and invalidates the newly established session, returning the
+generic login failure. Neither audit action records password material.
+
+Manager integration contract (REQ-SH-004, REQ-MGR-013–015): Manager operations
+remain with the Manager owner. Deactivation/reset must atomically mutate the
+account, increment `session_version`, remove affected JDBC sessions and append
+their audit event. The existing request filter also rejects stale session versions.
+Eligible role changes retain the current session and the next protected request
+reloads the persisted role. Manager self-change restrictions and active Technician
+assignment guards must be enforced in those use cases; this password endpoint
+accepts no target account or role. Those Manager operations remain unimplemented.
+
+The password interaction is sourced from MP2 commit
+`9819b857d880134c1fc1ffef8a8bcd5d6e536f43`, `AuthenticationService.changePassword`
+and `ApplicationRouter`'s password page, under the spec index's source precedence.
+Spring reference: [form login success processing](https://docs.spring.io/spring-security/reference/7.0/servlet/authentication/passwords/form.html).
+
 ## AI security
 
 Prompts/context/output are untrusted. `AiAccessGuard` implements the

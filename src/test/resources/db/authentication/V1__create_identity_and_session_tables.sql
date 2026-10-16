@@ -7,6 +7,7 @@ CREATE TABLE user_account (
     role VARCHAR(32) NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     session_version BIGINT NOT NULL DEFAULT 0,
+    version BIGINT NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
     CONSTRAINT ck_user_account_role CHECK (
@@ -18,6 +19,15 @@ CREATE TABLE user_account (
 );
 
 CREATE INDEX ix_user_account_role_active ON user_account (role, active);
+
+CREATE TABLE audit_event (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    actor_id UUID NOT NULL REFERENCES user_account(id),
+    action VARCHAR(100) NOT NULL,
+    target_type VARCHAR(50) NOT NULL,
+    target_id UUID NOT NULL
+);
 
 CREATE TABLE spring_session (
     primary_id CHAR(36) NOT NULL,

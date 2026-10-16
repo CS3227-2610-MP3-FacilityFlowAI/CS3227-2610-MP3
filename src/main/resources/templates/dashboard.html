@@ -6,10 +6,12 @@
     <title th:text="${title} + ' · FacilityFlow AI'">FacilityFlow AI</title>
 </head>
 <body>
-<header>
+<header th:fragment="header">
     <strong th:text="${displayName}">Display name</strong>
     <span th:text="${username}">username</span>
     <span th:text="${role}">ROLE</span>
+    <a th:href="${workspace}">Main workspace</a>
+    <a th:href="@{/account/password}">Change password</a>
     <form method="post" th:action="@{/logout}">
         <button type="submit">Sign out</button>
     </form>

@@ -75,6 +75,7 @@ class SecurityIntegrationTest {
     void seedAccounts() {
         jdbc.update("DELETE FROM facilityflow.spring_session_attributes");
         jdbc.update("DELETE FROM facilityflow.spring_session");
+        jdbc.update("DELETE FROM facilityflow.audit_event");
         jdbc.update("DELETE FROM facilityflow.user_account");
         insertAccount(REQUESTER_ID, "requester1", AccountRole.REQUESTER, true);
         insertAccount(TECHNICIAN_ID, "technician1", AccountRole.TECHNICIAN, true);
@@ -240,6 +241,73 @@ class SecurityIntegrationTest {
         Cookie cookie = result.getResponse().getCookie("SESSION");
         assertThat(cookie).as("Spring Session cookie").isNotNull();
         return cookie;
+    }
+
+    @Test
+    void reqSh004006OwnPasswordChangeIsAuditedAndRetainsSessionForEveryRole() throws Exception {
+        for (String[] role : new String[][]{{"requester1", "/requester"},
+                {"technician1", "/technician"}, {"manager1", "/manager"}}) {
+            Cookie cookie = login(role[0], VALID_PASSWORD, role[1]);
+            mockMvc.perform(get("/account/password").cookie(cookie))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("Current password (required)")));
+            mockMvc.perform(post("/account/password").cookie(cookie).with(csrf())
+                            .param("currentPassword", VALID_PASSWORD).param("newPassword", "😀".repeat(8)))
+                    .andExpect(redirectedUrl("/account/password?changed"));
+            mockMvc.perform(get(role[1]).cookie(cookie)).andExpect(status().isOk());
+            assertThat(failedLoginRedirect(role[0], VALID_PASSWORD)).isEqualTo("/login?error");
+            login(role[0], "😀".repeat(8), role[1]);
+        }
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM facilityflow.audit_event WHERE action = 'PASSWORD_CHANGED'",
+                Integer.class)).isEqualTo(3);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM facilityflow.audit_event WHERE action = 'LOGIN_SUCCESS'",
+                Integer.class)).isEqualTo(6);
+        assertThat(jdbc.queryForObject("SELECT sum(session_version) FROM facilityflow.user_account", Long.class)).isZero();
+    }
+
+    @Test
+    void reqSh004PasswordValidationAndCsrfRejectWithoutMutationOrPasswordEcho() throws Exception {
+        Cookie cookie = login("requester1", VALID_PASSWORD, "/requester");
+        mockMvc.perform(post("/account/password").cookie(cookie)
+                        .param("currentPassword", VALID_PASSWORD).param("newPassword", "Replacement123"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/account/password").cookie(cookie).with(csrf())
+                        .param("currentPassword", "wrong-secret").param("newPassword", "Replacement123"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Current password is incorrect.")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("wrong-secret"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Replacement123"))));
+        for (String invalid : new String[]{"", "a".repeat(7), "😀".repeat(25)}) {
+            mockMvc.perform(post("/account/password").cookie(cookie).with(csrf())
+                            .param("currentPassword", VALID_PASSWORD).param("newPassword", invalid))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("New password must contain 8–24 characters.")));
+        }
+        assertThat(jdbc.queryForObject("SELECT password_hash FROM facilityflow.user_account WHERE id = ?",
+                String.class, REQUESTER_ID)).isEqualTo(validPasswordHash);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM facilityflow.audit_event WHERE action = 'PASSWORD_CHANGED'",
+                Integer.class)).isZero();
+        mockMvc.perform(post("/account/password").cookie(cookie).with(csrf())
+                        .param("currentPassword", VALID_PASSWORD).param("newPassword", "x".repeat(24)))
+                .andExpect(redirectedUrl("/account/password?changed"));
+    }
+
+    @Test
+    void reqSh006LoginAuditFailureDoesNotLeaveAnAuthenticatedSession() throws Exception {
+        jdbc.execute("ALTER TABLE facilityflow.audit_event ADD CONSTRAINT test_reject_login CHECK (action <> 'LOGIN_SUCCESS')");
+        try {
+            var result = mockMvc.perform(post("/login").with(csrf())
+                            .param("username", "requester1").param("password", VALID_PASSWORD))
+                    .andExpect(redirectedUrl("/login?error")).andReturn();
+            Cookie cookie = result.getResponse().getCookie("SESSION");
+            if (cookie != null) {
+                mockMvc.perform(get("/requester").cookie(cookie)).andExpect(redirectedUrl("/login"));
+            }
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM facilityflow.spring_session WHERE principal_name = 'requester1'",
+                    Integer.class)).isZero();
+        } finally {
+            jdbc.execute("ALTER TABLE facilityflow.audit_event DROP CONSTRAINT test_reject_login");
+        }
     }
 
     private MvcResult performSuccessfulLogin(
