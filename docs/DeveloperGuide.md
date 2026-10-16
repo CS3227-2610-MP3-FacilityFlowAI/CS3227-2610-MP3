@@ -249,11 +249,66 @@ Spring reference: [form login success processing](https://docs.spring.io/spring-
 
 ## AI security
 
-Prompts/context/output are untrusted. `AiAccessGuard` implements the
-authorization-before-context seam required by AI-SEC-001 and is verified to
-construct no protected context and make no model call after denial. Typed
-schemas, limits, transport and assistant endpoints remain unimplemented. See
+Prompts/context/output are untrusted. `AiAccessGuard` supplies the initial shared
+authorization seam. The Smart Report service now rechecks persisted Account,
+ownership, OPEN state and expected version before context collection and again
+after inference. Technician/Manager assistant endpoints remain pending. See
 AI-SECURITY-SPEC.md and ../workflow/SECURITY.md.
+
+### Smart Report service (Requester step 5)
+
+`ai/SmartReportService` calls the role-owned read repository, `AiGateway` and
+`AiOperations` persistence seams. POST `/requester/requests/assistant` accepts
+`SmartReportInput`; POST `/requester/requests/{displayId}/assistant` also requires
+the ordinary Request version. Existing role filters and CSRF protect both. They
+return no-store JSON with a typed suggestion or stable failure category and safe
+guidance. The review UI/field acceptance is not implemented yet. Service code
+never calls a Request mutation or business-audit operation.
+
+The input permits incomplete current fields within their normal maxima. Actor,
+object/version checks, input bounds and database admission precede category
+loading/provider use. Context includes only current rough/form text, selected
+category label/urgency and active category labels. No saved Request description,
+Account/display/internal IDs, history or unrelated records enter the prompt.
+Fixed field rules live in source-controlled `SmartReportSchema` template
+`smart-report-v1`. Jackson 3 serializes one provenance-labelled data object;
+untrusted strings never extend the fixed system instructions.
+
+`ValidatedAiGateway` bounds aggregate system/data JSON to 12,000 UTF-16 units
+(conservative for Unicode), output to 800 tokens and deadline to 30 seconds.
+It has five worker slots without a waiting queue, cancels/ignores late responses,
+and retries network/503 once or 429 once only for Retry-After up to two seconds
+inside the original deadline. Other failures never retry. The strict parser
+rejects duplicate/unknown fields, trailing JSON, wrong types, invalid enum/category,
+empty optional strings, schema lengths and missing required structure. Plain-text
+validation rejects active markup/links, unsafe control/format characters, identifiers,
+prompt markers, known secrets and adapter-provided disclosure canaries. This
+bounded detector is not proof against every semantic or obfuscated disclosure.
+
+`JdbcAiOperations` uses the existing V3 tables: a locked per-Account rolling
+timestamp array (five/minute, 30/hour) plus five global expiring slot leases
+claimed with FOR UPDATE SKIP LOCKED. Versioned release cannot clear a newer
+lease. Short transactions end before inference. Limits survive service instances;
+each invocation reserves one quota unit, including its permitted retry. Leases
+last the configured provider deadline plus 15 seconds for local processing.
+Adapters must honor remaining deadlines/interruption; bounded workers also
+prevent ignored cancellation from creating an unbounded local call queue.
+
+Telemetry stores actor/correlation IDs, feature, configured model/template,
+status/latency/retry and provider usage, retaining known counts even when a
+freshness check discards output. Missing usage remains null. No prompt, provider
+error body, free-text input/output or business Audit Event is recorded. A metadata
+storage failure cannot return a successful suggestion.
+
+Runtime `AiConfiguration` installs an unavailable adapter; enabling AI alone
+cannot select the test fake. `FakeAiTransport` exists only under tests. The live
+HTTPS adapter, GET /models readiness, model/base-URL wiring, portal reconciliation,
+other role results and human review UI remain pending with the gateway owner.
+`AI_ENABLED` defaults false. `AI_TIMEOUT_SECONDS`, `AI_MAX_OUTPUT_TOKENS`,
+`AI_MAX_IN_FLIGHT`, `AI_RATE_PER_MINUTE` and `AI_RATE_PER_HOUR` may reduce defaults;
+values are clamped to 1 through their approved maximum. `SOCLAAS_API_KEY` is used
+only as a server-side forbidden output value at this stage. No dependency or
+migration was added. Tests use synthetic values and no external provider.
 
 ## SDD workflow
 

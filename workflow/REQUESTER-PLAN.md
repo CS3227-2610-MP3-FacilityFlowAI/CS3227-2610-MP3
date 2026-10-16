@@ -7,6 +7,14 @@ they are not evidence available when it was first prepared.
 
 ## Progress notes
 
+- **16 October Requester step 5:** Step 4 committed as `66b970c` at the user's
+  request. Smart Report service, strict typed output, bounded fake-tested gateway,
+  CSRF-protected POST routes, rolling database admission/leases and redacted
+  metadata are implemented. Runtime adapter remains unavailable until live
+  integration; no fake suggestions are served in ordinary runtime. See
+  `logs/2026-10-16-requester-step-5-assistant-service.md` for executed checks.
+  Next is the AI review UI and live SoCLaaS integration (section 8).
+
 - **16 October Requester step 4:** Step 3 committed as `8d00fe6` at the user's
   request. Own status counts, five recent reports and combined list search,
   status/category/inclusive Singapore date filters are implemented locally.

@@ -39,6 +39,15 @@ The source commit was verified against the MP2 `master` branch on 12 October
 
 ## Current evidence and measurement detail
 
+Requester step 5 (16 October): Smart Report advisory/context/schema concepts are
+**concept-only** behavior retained in approved MP3 Requester/Integration/AI Security
+specs, with zero copied MP2 code lines. No MP2 source consulted/copied this step.
+`ai/` Smart Report input/service/schema, gateway/transport and persistence seams,
+disabled runtime adapter, bounded gateway, JDBC limits/telemetry, owner/OPEN-version
+read, POST controller, fake/gateway/PostgreSQL tests and associated guides/process
+records are **new** MP3 implementation. Existing V1–V5 are unchanged; no dependency
+was added. Final measurement and human teammate review remain pending.
+
 Requester step 4 (16 October): dashboard/status counts, five recent reports,
 literal search and combined filters follow **concept-only** Requester discovery
 behavior already retained in approved MP3 specs (zero copied code lines).

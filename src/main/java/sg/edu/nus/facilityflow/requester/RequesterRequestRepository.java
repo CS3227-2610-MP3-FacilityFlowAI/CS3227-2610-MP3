@@ -21,6 +21,7 @@ public interface RequesterRequestRepository {
     void auditCreation(UUID owner, UUID request);
     void recordSubmission(UUID owner, UUID command, UUID request);
     Optional<Locked> lockOwned(UUID owner, String displayId);
+    Optional<Long> openVersion(UUID owner, String displayId);
     void edit(Locked request, RequestDraft draft);
     void cancel(Locked request);
     void addUpdate(UUID owner, Locked request, String note);

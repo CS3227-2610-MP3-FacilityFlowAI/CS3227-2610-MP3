@@ -55,7 +55,9 @@ safe message directing you to **My requests**, without creating another report.
 Select a report to view its fields, status, Manager priority when set, timestamps,
 status history, public reasons and Requester Updates. Times display explicitly in
 Asia/Singapore. Other Requesters' reports and internal Work Logs/private Manager
-data are unavailable. The assistant is still pending.
+data are unavailable. The assistant review interface is still pending. Its
+service is tested against a local fake; ordinary runtime currently returns
+unavailable and the manual workflow remains usable.
 
 ### Requester: dashboard and finding reports
 

@@ -22,6 +22,7 @@ import org.springframework.web.context.support.StandardServletEnvironment;
 import sg.edu.nus.facilityflow.FacilityFlowApplication;
 import sg.edu.nus.facilityflow.identity.*;
 import sg.edu.nus.facilityflow.operations.SchemaReadinessCheck;
+import sg.edu.nus.facilityflow.ai.*;
 import sg.edu.nus.facilityflow.requestcore.RequestDraft;
 import sg.edu.nus.facilityflow.requestcore.RequestValidationException;
 
@@ -44,6 +45,7 @@ class RequesterRequestIntegrationTest {
     private MockMvc mvc;
     private String passwordHash;
     private String category;
+    private final FakeAiTransport ai = new FakeAiTransport();
 
     @BeforeAll
     void startIsolatedApplication() throws Exception {
@@ -66,8 +68,16 @@ class RequesterRequestIntegrationTest {
         var environment = new StandardServletEnvironment();
         environment.getPropertySources().remove(org.springframework.core.env.StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME);
         application.setEnvironment(environment);
+        application.addInitializers(ctx -> {
+            var definition = org.springframework.beans.factory.support.BeanDefinitionBuilder
+                    .genericBeanDefinition(AiTransport.class, () -> ai).getBeanDefinition();
+            definition.setPrimary(true);
+            ((org.springframework.beans.factory.support.BeanDefinitionRegistry) ctx.getBeanFactory())
+                    .registerBeanDefinition("syntheticAiTransport", definition);
+        });
         context = (ConfigurableWebApplicationContext) application.run(
                 "--spring.profiles.active=test", "--spring.flyway.enabled=false",
+                "--AI_ENABLED=true", "--AI_TIMEOUT_SECONDS=1",
                 "--server.address=127.0.0.1", "--server.port=0",
                 "--spring.datasource.url=jdbc:postgresql://127.0.0.1:" + postgres.getPort() + "/postgres",
                 "--spring.datasource.username=facilityflow_app", "--spring.datasource.password=",
@@ -90,6 +100,8 @@ class RequesterRequestIntegrationTest {
     @BeforeEach
     void seed() {
         admin.execute("TRUNCATE facilityflow.user_account CASCADE");
+        admin.execute("INSERT INTO facilityflow.rate_limit_bucket (scope, slot) SELECT 'GLOBAL_SLOT', generate_series(1, 5)");
+        ai.reset();
         app.update("DELETE FROM facilityflow.spring_session");
         admin.update("UPDATE facilityflow.category SET active = true");
         for (var account : List.of(new Object[]{OWNER, "requester1", "REQUESTER"},
@@ -670,6 +682,191 @@ class RequesterRequestIntegrationTest {
                 .andExpect(content().string(not(containsString("Must not appear under invalid filters")))).andReturn();
         assertEquals(filters, response.getModelAndView().getModel().get("filters"));
     }
+
+    @Test
+    void reqRq012014AssistantCreateAndOwnedOpenEditReturnSuggestionsWithoutBusinessWrites() throws Exception {
+        String owned = managerRecorded(OWNER, "Own report");
+        managerRecorded(OTHER, "UNAUTHORIZED_PRIVATE_CANARY_791");
+        Cookie cookie = login("requester1", "/requester");
+        int audit = count("audit_event");
+        mvc.perform(post("/requester/requests/assistant").cookie(cookie).with(csrf())
+                        .param("roughText", "The light keeps flickering").param("categoryId", category)
+                        .param("reportedUrgency", "NORMAL").param("actorId", OTHER.toString()).param("accepted", "true"))
+                .andExpect(status().isOk()).andExpect(header().string("Cache-Control", containsString("no-store")))
+                .andExpect(jsonPath("$.status").value("SUCCEEDED"))
+                .andExpect(jsonPath("$.suggestion.draftTitle").value("Flickering light"));
+        mvc.perform(post("/requester/requests/" + owned + "/assistant").cookie(cookie).with(csrf())
+                        .param("version", "0").param("roughText", "Current unsaved report"))
+                .andExpect(status().isOk());
+        assertEquals(2, ai.calls.get());
+        assertEquals(2, count("maintenance_request"));
+        assertEquals(0, count("requester_update"));
+        assertEquals(audit, count("audit_event"));
+        assertEquals(0L, app.queryForObject("SELECT version FROM facilityflow.maintenance_request WHERE display_id = ?", Long.class, owned));
+        assertEquals(2, count("ai_invocation"));
+        assertEquals(2, app.queryForObject("SELECT count(*) FROM facilityflow.ai_invocation WHERE actor_id = ? AND status = 'SUCCEEDED' AND input_tokens = 10 AND output_tokens = 20 AND total_tokens = 30", Integer.class, OWNER));
+        String metadata = admin.queryForList("SELECT * FROM facilityflow.ai_invocation").toString();
+        assertFalse(metadata.contains("Current unsaved report"));
+        assertFalse(metadata.contains("Flickering light"));
+        assertFalse(ai.user.contains("UNAUTHORIZED_PRIVATE_CANARY_791"));
+        assertFalse(ai.user.contains(owned));
+        assertFalse(ai.user.contains(OWNER.toString()));
+        assertTrue(ai.user.contains("Electrical"));
+        assertEquals(0, app.queryForObject("SELECT count(*) FROM facilityflow.rate_limit_bucket WHERE scope = 'GLOBAL_SLOT' AND lease_expires_at IS NOT NULL", Integer.class));
+    }
+
+    @Test
+    void aiSec002029DenialsAndInputLimitsPrecedeContextAndProvider() throws Exception {
+        Cookie owner = login("requester1", "/requester");
+        Cookie technician = login("technician1", "/technician");
+        Cookie manager = login("manager1", "/manager");
+        String foreign = managerRecorded(OTHER, "Foreign AI report");
+        mvc.perform(post("/requester/requests/assistant").cookie(owner).param("roughText", "rough"))
+                .andExpect(status().isForbidden());
+        for (Cookie wrongRole : List.of(technician, manager)) {
+            mvc.perform(post("/requester/requests/assistant").cookie(wrongRole).with(csrf()).param("roughText", "rough"))
+                    .andExpect(status().isForbidden());
+        }
+        String foreignResponse = mvc.perform(post("/requester/requests/" + foreign + "/assistant").cookie(owner)
+                        .with(csrf()).param("version", "0").param("roughText", "rough"))
+                .andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+        String absentResponse = mvc.perform(post("/requester/requests/FF-000000/assistant").cookie(owner)
+                        .with(csrf()).param("version", "0").param("roughText", "rough"))
+                .andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+        assertEquals(foreignResponse, absentResponse);
+        mvc.perform(post("/requester/requests/assistant").cookie(owner).with(csrf()).param("roughText", "a".repeat(2001)))
+                .andExpect(status().isUnprocessableContent());
+        assertEquals(0, ai.calls.get());
+        assertEquals(0, app.queryForObject("SELECT count(*) FROM facilityflow.rate_limit_bucket WHERE scope = 'ACCOUNT_RATE'", Integer.class));
+        var requester = assistant(OWNER, AccountRole.REQUESTER, 0);
+        app.update("UPDATE facilityflow.user_account SET active = false WHERE id = ?", OWNER);
+        assertThrows(AccessDeniedException.class, () -> requester.suggest(null, null, rough()));
+        app.update("UPDATE facilityflow.user_account SET active = true, session_version = 1 WHERE id = ?", OWNER);
+        assertThrows(AccessDeniedException.class, () -> requester.suggest(null, null, rough()));
+        app.update("UPDATE facilityflow.user_account SET session_version = 0, role = 'TECHNICIAN' WHERE id = ?", OWNER);
+        assertThrows(AccessDeniedException.class, () -> requester.suggest(null, null, rough()));
+        assertEquals(0, ai.calls.get());
+    }
+
+    @Test
+    void reqRq012AssistantRejectsAllNonOpenAndStaleVersionsBeforeProvider() {
+        var assistant = assistant(OWNER, AccountRole.REQUESTER, 0);
+        for (String state : List.of("ASSIGNED", "IN_PROGRESS", "COMPLETED", "CLOSED", "CANCELLED")) {
+            String id = managerRecorded(OWNER, "AI state boundary");
+            setState(id, state);
+            assertThrows(RequestUnavailableException.class, () -> assistant.suggest(id, "0", rough()));
+        }
+        String open = managerRecorded(OWNER, "AI version boundary");
+        assertThrows(StaleRequestException.class, () -> assistant.suggest(open, "1", rough()));
+        assertThrows(StaleRequestException.class, () -> assistant.suggest(open, "", rough()));
+        assertEquals(0, ai.calls.get());
+    }
+
+    @Test
+    void aiSec028AccessAndCatalogueChangesDuringInferenceDiscardEntireResult() {
+        var assistant = assistant(OWNER, AccountRole.REQUESTER, 0);
+        ai.behavior = (s, u, d) -> {
+            app.update("UPDATE facilityflow.user_account SET active = false WHERE id = ?", OWNER);
+            return FakeAiTransport.success(FakeAiTransport.VALID);
+        };
+        var revoked = assistant.suggest(null, null, rough());
+        assertNull(revoked.suggestion());
+        assertEquals(AiGateway.Status.AI_UNAVAILABLE, revoked.status());
+        app.update("UPDATE facilityflow.user_account SET active = true WHERE id = ?", OWNER);
+        String owned = managerRecorded(OWNER, "Assigned while AI runs");
+        ai.behavior = (s, u, d) -> {
+            setState(owned, "ASSIGNED");
+            return FakeAiTransport.success(FakeAiTransport.VALID);
+        };
+        assertNull(assistant.suggest(owned, "0", rough()).suggestion());
+        ai.behavior = (s, u, d) -> {
+            app.update("UPDATE facilityflow.category SET active = false WHERE id = ?::uuid", category);
+            return FakeAiTransport.success(FakeAiTransport.VALID);
+        };
+        assertEquals(AiGateway.Status.AI_INVALID_OUTPUT, assistant.suggest(null, null, rough()).status());
+        assertEquals(3, ai.calls.get());
+        assertEquals(0, app.queryForObject("SELECT count(*) FROM facilityflow.ai_invocation WHERE status = 'SUCCEEDED'", Integer.class));
+        assertEquals(3, app.queryForObject("SELECT count(*) FROM facilityflow.ai_invocation WHERE input_tokens = 10 AND output_tokens = 20 AND total_tokens = 30", Integer.class));
+    }
+
+    @Test
+    void aiSec008021DatabaseLimitsAreRollingGlobalAndLeaseReleaseUsesVersion() throws Exception {
+        var limits = context.getBean(JdbcAiOperations.class);
+        var permits = new java.util.ArrayList<AiOperations.Permit>();
+        for (int i = 0; i < 5; i++) permits.add(limits.acquire(OWNER, 30));
+        assertTrue(permits.stream().allMatch(java.util.Objects::nonNull));
+        assertNull(limits.acquire(OTHER, 30));
+        permits.forEach(limits::release);
+        assertNull(limits.acquire(OWNER, 30));
+        app.update("UPDATE facilityflow.rate_limit_bucket SET invocation_times = array_fill(clock_timestamp() - interval '61 seconds', ARRAY[30]) WHERE account_id = ?", OWNER);
+        assertNull(limits.acquire(OWNER, 30));
+        app.update("UPDATE facilityflow.rate_limit_bucket SET invocation_times = array_fill(clock_timestamp() - interval '3601 seconds', ARRAY[30]) WHERE account_id = ?", OWNER);
+        var expired = limits.acquire(OWNER, 1);
+        assertNotNull(expired);
+        app.update("UPDATE facilityflow.rate_limit_bucket SET lease_expires_at = clock_timestamp() - interval '1 second' WHERE id = ?", expired.slotId());
+        var renewed = limits.acquire(OTHER, 1);
+        assertEquals(expired.slotId(), renewed.slotId());
+        limits.release(expired);
+        assertNotNull(app.queryForObject("SELECT lease_expires_at FROM facilityflow.rate_limit_bucket WHERE id = ?", java.time.OffsetDateTime.class, renewed.slotId()));
+        limits.release(renewed);
+        app.update("UPDATE facilityflow.rate_limit_bucket SET invocation_times = '{}' WHERE scope = 'ACCOUNT_RATE'");
+        try (var pool = Executors.newFixedThreadPool(8)) {
+            var attempts = java.util.stream.IntStream.range(0, 8).<Callable<AiOperations.Permit>>mapToObj(i -> () -> limits.acquire(OWNER, 30)).toList();
+            var results = pool.invokeAll(attempts);
+            var admitted = new java.util.ArrayList<AiOperations.Permit>();
+            for (var result : results) { var permit = result.get(); if (permit != null) admitted.add(permit); }
+            assertEquals(5, admitted.size());
+            admitted.forEach(limits::release);
+        }
+    }
+
+    @Test
+    void reqRq017DisabledMalformedTimeoutAndRateLimitLeaveManualInputAndWritesAlone() throws Exception {
+        var assistant = assistant(OWNER, AccountRole.REQUESTER, 0);
+        var input = rough();
+        ai.enabled = false;
+        assertEquals(AiGateway.Status.AI_UNAVAILABLE, assistant.suggest(null, null, input).status());
+        assertEquals(0, ai.calls.get());
+        ai.enabled = true;
+        ai.behavior = (s, u, d) -> FakeAiTransport.success("{broken");
+        assertEquals(AiGateway.Status.AI_INVALID_OUTPUT, assistant.suggest(null, null, input).status());
+        ai.behavior = (s, u, d) -> { Thread.sleep(5000); return FakeAiTransport.success(FakeAiTransport.VALID); };
+        assertEquals(AiGateway.Status.AI_TIMEOUT, assistant.suggest(null, null, input).status());
+        ai.behavior = (s, u, d) -> FakeAiTransport.success(FakeAiTransport.VALID);
+        app.update("UPDATE facilityflow.rate_limit_bucket SET invocation_times = array_fill(clock_timestamp(), ARRAY[5]) WHERE account_id = ?", OWNER);
+        int before = ai.calls.get();
+        assertEquals(AiGateway.Status.AI_LIMITED, assistant.suggest(null, null, input).status());
+        assertEquals(before, ai.calls.get());
+        assertEquals("The light keeps flickering", input.roughText());
+        assertEquals(0, count("maintenance_request"));
+        assertEquals(0, count("request_submission"));
+        assertEquals(0, count("requester_update"));
+        assertEquals(0, count("audit_event"));
+    }
+
+    private SmartReportService assistant(UUID id, AccountRole role, long version) {
+        return new SmartReportService(() -> new CurrentAccount(id, "synthetic", "Synthetic", role, version),
+                context.getBean(RequesterRequestRepository.class), context.getBean(PlatformTransactionManager.class),
+                context.getBean(JdbcAiOperations.class), context.getBean(AiGateway.class));
+    }
+
+    @Test
+    void aiSec002029NoCatalogueContextOnDeniedInvalidOrQuotaLimitedCalls() {
+        var repository = org.mockito.Mockito.mock(RequesterRequestRepository.class,
+                org.mockito.AdditionalAnswers.delegatesTo(context.getBean(RequesterRequestRepository.class)));
+        var assistant = new SmartReportService(() -> new CurrentAccount(OWNER, "synthetic", "Synthetic", AccountRole.REQUESTER, 0),
+                repository, context.getBean(PlatformTransactionManager.class), context.getBean(AiOperations.class), context.getBean(AiGateway.class));
+        assertThrows(RequestUnavailableException.class, () -> assistant.suggest("FF-000000", "0", rough()));
+        assertEquals(AiGateway.Status.AI_INVALID_REQUEST,
+                assistant.suggest(null, null, new SmartReportInput("a".repeat(2001), "", "", "", "", "")).status());
+        app.update("INSERT INTO facilityflow.rate_limit_bucket (scope, account_id) VALUES ('ACCOUNT_RATE', ?)", OWNER);
+        app.update("UPDATE facilityflow.rate_limit_bucket SET invocation_times = array_fill(clock_timestamp(), ARRAY[5]) WHERE account_id = ?", OWNER);
+        assertEquals(AiGateway.Status.AI_LIMITED, assistant.suggest(null, null, rough()).status());
+        org.mockito.Mockito.verify(repository, org.mockito.Mockito.never()).categories();
+        assertEquals(0, ai.calls.get());
+    }
+
+    private static SmartReportInput rough() { return new SmartReportInput("The light keeps flickering", "", "", "", "", ""); }
 
     private static List<String> ids(RequesterRequests.ListPage page) {
         return page.requests().stream().map(RequesterRequests.Summary::displayId).toList();

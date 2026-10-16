@@ -34,6 +34,12 @@ public class JdbcRequesterRequestRepository implements RequesterRequestRepositor
     }
 
     @Override
+    public Optional<Long> openVersion(UUID owner, String displayId) {
+        return jdbc.queryForList("SELECT version FROM facilityflow.maintenance_request WHERE requester_id = ? AND display_id = ? AND status = 'OPEN' FOR SHARE",
+                Long.class, owner, displayId).stream().findFirst();
+    }
+
+    @Override
     public List<RequesterRequests.Category> categories() {
         return jdbc.query("SELECT id, name FROM facilityflow.category WHERE active ORDER BY lower(name), id",
                 (row, index) -> new RequesterRequests.Category(row.getObject("id", UUID.class), row.getString("name")));
