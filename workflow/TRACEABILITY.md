@@ -28,9 +28,9 @@ review evidence.
 | REQ-SH-017 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | bootstrap/demo exceptions supplied; ordinary account authorization pending | initialization tests only | partial |
 | REQ-SH-018 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | AiAccessGuard; SmartReportService/Controller persisted authorization, review UI and SoClaasTransport | guard/gateway/HTTP/PostgreSQL/DOM tests; steps 5/6 logs | Requester locally implemented; live smoke deferred; other roles/browser/hosted pending |
 | NFR-SEC-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | security evidence pending | approved |
-| NFR-PERF-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | 50-user performance result pending | approved |
-| NFR-A11Y-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | Chrome/accessibility checks pending | approved |
-| NFR-REL-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | fallback/restore evidence pending | approved |
+| NFR-PERF-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | opt-in requesterVerification with 50 distinct authenticated users, 400 non-AI GETs | step 7 log: local p95 1,733 ms (pool 2), 1,467 ms (test-only pool 5), independent final pool-2 p95 1,413 ms; zero HTTP errors | local conservative gate FAIL; server-only/deployed evidence pending |
+| NFR-A11Y-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | Requester labels/errors/focus, responsive templates and palette | real Chrome 155.0.8059.41, 67 checks; three viewports and contrast in step 7 log | partial; latest-stable confirmation, remaining manual accessibility/other roles pending |
+| NFR-REL-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | Smart Report safe manual fallback; transactional JDBC storage | gateway/HTTP/DOM fallback and graceful app/session restart regression; step 7 log | Requester local evidence; backup/restore/hosted pending |
 | NFR-OPS-001–002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | monitoring/log evidence pending | approved |
 | NFR-DEP-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | deployment separation pending | approved |
 | NFR-DOC-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | documentation/reuse/process review pending | approved |
@@ -95,6 +95,21 @@ review evidence.
 | AI-SEC-030 | [Response freshness and leakage controls](specs/AI-SECURITY-SPEC.md#response-freshness-and-leakage-controls) | fail-closed schema/disclosure markers, known secret/identifier checks and adapter canaries | gateway system-only/unauthorized canary, secret and identifier rejection | fake seam locally verified; live/semantic leakage evaluation pending |
 
 ## Update rule
+
+Requester step 7 evidence: [local verification record](../logs/2026-10-16-requester-step-7-verification.md)
+maps RQ-A01–07, RQ-AI01–03 and applicable AIS cases to executed test methods.
+REQ-RQ-001/002/005–008/015–016 now also have real Chrome happy-path evidence;
+REQ-RQ-003 has browser zero-match guidance and REQ-RQ-009 foreign-content
+exclusion. REQ-RQ-011 has a graceful app restart/JDBC-session regression.
+Remaining browser qualifications in individual rows include latest-stable
+confirmation, manual accessibility and cases not exercised in Chrome (such as
+full search/filter combinations, AI failure and stale-response paths).
+REQ-RQ-012–017 / AI-SEC-003/010/030 have a versioned 12-case deterministic fake
+evaluation corpus, not a live model usefulness or injection-immunity result.
+AI-SEC-013/014 and REQ-SH-012 have partial browser evidence for review/ordinary
+submission and shared password/logout navigation. AIS-T15 formal poisoned-handoff
+execution, full cross-role lifecycle, human review and hosted/live checks remain
+open. Neither the load task nor section 9 exit is marked passing.
 
 Part 3 storage prerequisites: `V2__maintenance_records.sql`,
 `V3__skills_ai_storage.sql`, `identity/DatabaseInitializer.java`,

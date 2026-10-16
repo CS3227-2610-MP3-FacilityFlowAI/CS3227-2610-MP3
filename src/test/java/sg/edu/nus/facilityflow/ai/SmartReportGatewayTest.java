@@ -16,6 +16,35 @@ class SmartReportGatewayTest {
     @AfterEach void close() { gateway.close(); }
 
     @Test
+    void rqAi0203VersionedEvaluationCorpusHasDeterministicOutcomesWithoutUsefulnessClaims() throws Exception {
+        try (var stream = getClass().getResourceAsStream("/ai/smart-report-evaluation-v1.json")) {
+            var corpus = SmartReportSchema.JSON.readTree(stream);
+            assertEquals("requester-eval-v1", corpus.get("version").asString());
+            assertEquals(12, corpus.get("cases").size());
+            for (var scenario : corpus.get("cases")) {
+                String input = scenario.get("input").asString().repeat(scenario.has("repeat") ? scenario.get("repeat").asInt() : 1);
+                boolean description = scenario.get("field").asString().equals("description");
+                var data = new AiGateway.Context(description ? "Maintenance report" : input, "", description ? input : "", "", null, null, List.of("Electrical"));
+                String raw = switch (scenario.get("response").asString()) {
+                    case "questions" -> "{\"missingInformationQuestions\":[\"Where is the problem?\"],\"rationale\":\"The description needs details.\"}";
+                    case "system-canary" -> FakeAiTransport.VALID.replace("Clarify the affected room.", "SYSTEM_ONLY_FACILITYFLOW_SMART_REPORT_V1");
+                    case "private-canary" -> FakeAiTransport.VALID.replace("Clarify the affected room.", "UNAUTHORIZED_PRIVATE_CANARY_791");
+                    case "malformed" -> "{broken";
+                    case "markup" -> FakeAiTransport.VALID.replace("Clarify the affected room.", "<script>alert(1)</script>");
+                    case "invented-category" -> FakeAiTransport.VALID.replace("Electrical", "Imaginary");
+                    default -> FakeAiTransport.VALID;
+                };
+                transport.behavior = (s, u, d) -> FakeAiTransport.success(raw);
+                var result = gateway.suggest(call(data));
+                assertEquals(scenario.get("expected").asString(), result.status().name(), scenario.get("id").asString());
+                assertEquals(input, SmartReportSchema.JSON.readTree(transport.user).get("UNTRUSTED_REPORT_DATA")
+                        .get(description ? "description" : "roughText").asString());
+                if (result.status() != SUCCEEDED) assertNull(result.suggestion());
+            }
+        }
+    }
+
+    @Test
     void reqRq014SchemaBoundariesAndUnicodeCodePoints() {
         String json = SmartReportSchema.JSON.writeValueAsString(java.util.Map.of(
                 "draftTitle", "😀".repeat(100), "draftDescription", "d".repeat(2000), "draftLocation", "l".repeat(120),

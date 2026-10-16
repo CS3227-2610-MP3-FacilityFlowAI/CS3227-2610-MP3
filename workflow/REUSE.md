@@ -1,5 +1,15 @@
 # MP2 Reuse Ledger
 
+16 October Requester step 7: the Node/CDP browser/load runner, opt-in Gradle
+task, graceful application/session restart regression, versioned 12-case AI
+corpus and gateway evaluation test are **new** MP3 test/build work. The related
+DeveloperGuide, plan, traceability, session evidence and handoff sections are
+**new** documentation. No MP2 source was consulted or copied in this step
+(zero copied MP2 lines). Acceptance/security scenarios come from approved MP3
+specifications; no third-party implementation source was copied. Existing MP3
+fixtures and standard Node/Chrome interfaces are reused internally. Exact
+final code/test/documentation line totals and teammate review remain pending.
+
 ## Baseline
 
 - Source repository: `CS3227-2610-MP2-FacilityFlow/CS3227-2610-MP2`

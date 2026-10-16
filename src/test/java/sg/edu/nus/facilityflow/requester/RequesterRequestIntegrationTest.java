@@ -64,6 +64,10 @@ class RequesterRequestIntegrationTest {
         Flyway.configure().dataSource(migrator).schemas("facilityflow").defaultSchema("facilityflow")
                 .ignoreMigrationPatterns(new String[0]).load().migrate();
 
+        startWebApplication();
+    }
+
+    private void startWebApplication() {
         var application = new SpringApplication(FacilityFlowApplication.class);
         var environment = new StandardServletEnvironment();
         environment.getPropertySources().remove(org.springframework.core.env.StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME);
@@ -78,6 +82,8 @@ class RequesterRequestIntegrationTest {
         context = (ConfigurableWebApplicationContext) application.run(
                 "--spring.profiles.active=test", "--spring.flyway.enabled=false",
                 "--AI_ENABLED=true", "--AI_TIMEOUT_SECONDS=1",
+                "--server.servlet.session.cookie.secure=" + !Boolean.getBoolean("facilityflow.verifyRequester"),
+                "--spring.datasource.hikari.maximum-pool-size=" + System.getProperty("facilityflow.verificationPoolSize", "2"),
                 "--server.address=127.0.0.1", "--server.port=0",
                 "--spring.datasource.url=jdbc:postgresql://127.0.0.1:" + postgres.getPort() + "/postgres",
                 "--spring.datasource.username=facilityflow_app", "--spring.datasource.password=",
@@ -848,6 +854,54 @@ class RequesterRequestIntegrationTest {
         return new SmartReportService(() -> new CurrentAccount(id, "synthetic", "Synthetic", role, version),
                 context.getBean(RequesterRequestRepository.class), context.getBean(PlatformTransactionManager.class),
                 context.getBean(JdbcAiOperations.class), context.getBean(AiGateway.class));
+    }
+
+    @Test
+    void reqRq011Rel001SavedReportAndJdbcSessionSurviveApplicationRestart() throws Exception {
+        String id = service(OWNER, AccountRole.REQUESTER, 0).create(draft(), UUID.randomUUID().toString());
+        Cookie cookie = login("requester1", "/requester");
+        context.close();
+        startWebApplication();
+        mvc.perform(get("/requester/requests/" + id).cookie(cookie))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("The ceiling light is flickering.")));
+        assertEquals(1, count("maintenance_request"));
+        assertEquals(1, requestAuditCount());
+        assertEquals("OPEN", service(OWNER, AccountRole.REQUESTER, 0).detail(id).orElseThrow().status());
+    }
+
+    @Test
+    @Tag("requester-verification")
+    void rqAcceptanceChromeAndFiftyUserLocalVerification() throws Exception {
+        for (int i = 0; i < 50; i++) {
+            UUID id = UUID.nameUUIDFromBytes(("verification-user-" + i).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            app.update("INSERT INTO facilityflow.user_account (id, username, display_name, password_hash, role) VALUES (?, ?, ?, ?, 'REQUESTER')",
+                    id, "load" + i, "Load " + i, passwordHash);
+            managerRecorded(id, "Synthetic load report " + i);
+        }
+        String foreign = managerRecorded(OTHER, "FOREIGN_BROWSER_CANARY");
+        var output = java.nio.file.Path.of("build/verification/requester");
+        java.nio.file.Files.createDirectories(output);
+        int port = context.getEnvironment().getRequiredProperty("local.server.port", Integer.class);
+        var pool = context.getBean(com.zaxxer.hikari.HikariDataSource.class);
+        var peakWaiting = new java.util.concurrent.atomic.AtomicInteger();
+        var peakActive = new java.util.concurrent.atomic.AtomicInteger();
+        var sampler = Executors.newSingleThreadScheduledExecutor();
+        sampler.scheduleAtFixedRate(() -> {
+            peakWaiting.accumulateAndGet(pool.getHikariPoolMXBean().getThreadsAwaitingConnection(), Math::max);
+            peakActive.accumulateAndGet(pool.getHikariPoolMXBean().getActiveConnections(), Math::max);
+        }, 0, 20, java.util.concurrent.TimeUnit.MILLISECONDS);
+        Process process = null;
+        try {
+            process = new ProcessBuilder("node", "src/test/js/requester-verification.cjs", "http://127.0.0.1:" + port, foreign,
+                    Integer.toString(pool.getMaximumPoolSize()))
+                    .redirectErrorStream(true).redirectOutput(output.resolve("runner.txt").toFile()).start();
+            assertTrue(process.waitFor(240, java.util.concurrent.TimeUnit.SECONDS), "Verification exceeded four minutes; see build/verification/requester/runner.txt");
+            java.nio.file.Files.writeString(output.resolve("pool-metrics.json"), "{\"maximumPoolSize\":" + pool.getMaximumPoolSize()
+                    + ",\"peakActive\":" + peakActive.get() + ",\"peakWaiting\":" + peakWaiting.get() + "}");
+            assertEquals(0, process.exitValue(), "Browser/load verification failed; see build/verification/requester/runner.txt");
+            assertEquals(1, app.queryForObject("SELECT count(*) FROM facilityflow.maintenance_request WHERE requester_id = ?", Integer.class, OWNER));
+            assertEquals("CANCELLED", app.queryForObject("SELECT status FROM facilityflow.maintenance_request WHERE requester_id = ?", String.class, OWNER));
+        } finally { sampler.shutdownNow(); if (process != null && process.isAlive()) process.destroyForcibly(); }
     }
 
     @Test

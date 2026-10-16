@@ -385,6 +385,32 @@ from applied production migrations, and cover seeded PBKDF2 login as well as
 Argon2, session invalidation, role denial and CSRF. Browser/hosted checks remain
 required before release; local tests do not connect to Supabase.
 
+Requester browser/load verification is opt-in:
+
+```powershell
+.\gradlew.bat requesterVerification
+# Diagnostic override only; does not change application configuration:
+.\gradlew.bat requesterVerification -PrequesterPoolSize=5
+```
+
+This needs Node with built-in fetch/WebSocket (verified with 24.19.0) and desktop
+Chrome. Set `CHROME_PATH` if Chrome is outside the usual Windows installation
+paths. The runner creates its own ignored profile and synthetic accounts in
+disposable PostgreSQL; it never uses a personal profile or hosted database.
+It exercises real HTTP/browser manual and fake-AI workflows, three desktop
+viewports and 50 distinct authenticated users. Normal `test` excludes the tagged
+browser task and needs neither Chrome nor Node. Results/screenshots are under
+`build/verification/requester/`; cookie/CSRF values are not written to reports.
+The versioned `src/test/resources/ai/smart-report-evaluation-v1.json` corpus is
+deterministic fake-model safety evidence; it does not measure live usefulness.
+The restart test retains saved requests/JDBC sessions across a graceful app
+restart, not a database crash or restore. See the
+[step 7 evidence](../logs/2026-10-16-requester-step-7-verification.md): browser
+checks passed, but both local pool configurations missed the 1,000 ms load gate.
+Timings include loopback networking; server-only and deployed performance,
+latest-stable Chrome confirmation, manual accessibility and cross-role
+lifecycle verification remain required. The task retains its failing gate.
+
 Follow the database guides for setup. Ordinary startup does not migrate or seed;
 use the app role for `./gradlew bootRun`, then open `/login`.
 

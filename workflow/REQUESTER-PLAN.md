@@ -7,6 +7,20 @@ they are not evidence available when it was first prepared.
 
 ## Progress notes
 
+- **16 October Requester step 7:** Step 6 committed as `7cc20eb` at the user's
+  request. Added graceful application/session restart coverage, a 12-case
+  versioned fake-model evaluation corpus and an opt-in real Chrome/50-user
+  runner. All 67 browser checks passed; the local load gate failed (p95
+  1,733 ms with development pool 2; 1,467 ms with test-only pool 5; 400 HTTP
+  successes each). Independent final pool-2 retest again passed all 67 browser
+  assertions and failed load at p95 1,413 ms. Normal suite/build passed with
+  114 tests and no failures/skips. Runtime defaults are unchanged. Section 9 exit remains open:
+  performance, full cross-role services, latest-stable confirmation, remaining
+  manual accessibility and teammate review. See
+  `logs/2026-10-16-requester-step-7-verification.md` for exact evidence/limits.
+  Next planned checkpoint is documentation/reflection/reuse (section 10), keeping
+  unresolved verification gates visible. Live SoCLaaS remains user-deferred.
+
 - **16 October Requester step 6:** Step 5 committed as `3dc3a60` at the user's
   request. Create/OPEN-edit AI review, explicit field acceptance/discard, stale
   input protection and live SoCLaaS adapter/model readiness are implemented.
@@ -350,6 +364,7 @@ each PR. Step 9 adds integration evidence; it does not delay earlier tests.
 - [ ] Guides, traceability, reuse, logs, handoffs and individual reflection current.
 - [ ] Teammate review, CI and deployed-release checks complete on public master.
 
-All completion boxes remain unchecked: Part 1 is a build scaffold, not the
-complete walking skeleton. See the Part 1 log for executed evidence. No commits,
-deployment or changes to `MP3 instructions/` have been performed.
+Completion boxes remain unchecked until their full exits are evidenced. The
+progress notes and dated logs record local implementation and commits; full
+cross-role, live/hosted and review gates remain open. No deployment or changes
+to `MP3 instructions/` have been performed in these Requester steps.
