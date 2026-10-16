@@ -5,7 +5,12 @@ revision candidate v0.2 received stakeholder approval on 16 October 2026;
 Security Reviewer, affected role-owner, and teammate review of the revision
 remains pending. This status is not an implementation or verification claim.
 Business eligibility remains in role specifications; this document owns
-transport and typed contracts.
+transport and typed contracts. Iteration 2A provider-core/readiness decisions
+received stakeholder direction and approval on 16 October 2026; specification
+Security Reviewer findings were incorporated on 16 October 2026; re-review and
+teammate review remain pending. The implementation Security Reviewer currently
+records a NO-GO; the remediation requirements below are specified but their
+implementation, tests and security re-review remain pending.
 
 ## SoCLaaS transport
 
@@ -32,7 +37,12 @@ transport and typed contracts.
   tokens, five in-flight calls, five Account calls per rolling minute and 30 per
   rolling hour. Missing, placeholder, malformed or security-weakening
   configuration marks AI unavailable without loading protected context or
-  blocking core application startup. Secrets have no committed default.
+  blocking core application startup. Secrets have no committed default. Only a
+  validated enabled `AiConfiguration.Available` may construct a provider core.
+  Disabled or unavailable configuration constructs no core, schedules no
+  executor/timer work and makes zero internal-provider-port calls. Configuration
+  is immutable for the process lifetime in Iteration 2A; runtime replacement is
+  out of scope.
 - **REQ-AI-005:** The external interfaces are the feature-specific
   `SmartReportAssistant`, `WorkPlanAssistant` and `TriageAssistant`. They return
   either the feature's validated typed suggestion or a safe categorized failure.
@@ -43,19 +53,99 @@ transport and typed contracts.
   persisted eligibility probe, lazy allowlisted context loader, freshness
   snapshot and post-call eligibility recheck from the role module. Callers never
   handle bearer headers, raw provider JSON, retry logic or usage extraction.
+  Behind that coordinator, an internal provider port exposes only `listModels`
+  and `complete`. The provider core exposes a non-blocking readiness-start
+  operation and permits completion only after the configured model is in the
+  `READY` state. Actual Spring lifecycle/startup invocation is deferred to the
+  HTTPS adapter/configuration-bean increment and must occur only for
+  `AiConfiguration.Available`. Raw transport bodies and provider envelope details
+  never cross the provider-core seam. In Iteration 2A, `SocLlmProviderCore`,
+  `SocLlmProviderPort`, provider decoder/body/failure types, their constructors
+  and every mutable input are package-private implementation details. Role and
+  web packages must not import `ai.provider`. The later shared coordinator or
+  factory will be implemented inside the provider package and expose only the
+  three feature-specific assistant APIs; it does not exist in Iteration 2A.
 - **REQ-AI-006:** The production adapter uses HTTPS SoCLaaS; automated tests use
   a local fake adapter capable of success, invalid JSON, delayed response, 400,
   401, 403, 429, 503, connection failure, invalid or oversized envelopes,
-  cancellation, usage present/absent and model-discovery outcomes.
+  cancellation, usage present/absent and model-discovery outcomes. The
+  deterministic fake completes caller-controlled pending futures and uses no
+  sleeping or wall-clock delay. Fake raw bodies pass through the same bounded
+  UTF-8 decoder and envelope validation used for production responses.
 
-### Readiness, deadline and provider envelope
+### Provider-core readiness
 
-The application makes a non-blocking model-discovery attempt during startup. A
-failed result is negative-cached for 60 seconds. When no result exists or that
-negative cache has expired, the first use performs one single-flight readiness
-retry while concurrent callers observe the same result. A successful
-configured-model validation is cached for the process/configuration lifetime.
-Chat is forbidden until the configured model has been validated.
+Readiness has exactly four states: `UNVALIDATED`, `CHECKING`, `NEGATIVE` and
+`READY`. Each readiness attempt has an immutable generation/identity. Only the
+current generation that still owns `CHECKING` may publish a state transition.
+Timeout or provider-core closure invalidates that ownership; every late callback
+is ignored. Closure adds no public readiness state. The provider core uses a
+separately injected `Executor` for discovery dispatch and deterministic
+`ScheduledExecutorService`, or a narrower equivalent scheduler abstraction, for
+timeout/deadline events. Executor saturation therefore cannot suppress timeout.
+Tests inject both dependencies and do not depend on wall-clock sleeps.
+
+The provider-dispatch `Executor` runs both `listModels` and `complete` port
+method invocations. Neither a public/core entry point nor its caller assumes
+that a port method is non-blocking. Readiness and chat use a two-phase
+reserve/invoke/install protocol: reserve ownership under the applicable monitor,
+release it, invoke the port on the provider-dispatch executor, then install or
+attach the returned provider stage only if ownership is still current. No port
+method, provider-stage attachment or cancellation, internal future completion,
+or caller/dependent callback executes while a readiness or call monitor is held.
+Deadline, cancellation and core closure can therefore publish a terminal result
+while a port invocation is synchronously blocked. If a stage arrives after its
+generation or call has lost ownership, cancel it best-effort outside the monitor
+and ignore it. Executor rejection is a safe failure with zero port work. Every
+internal future is completed only after releasing the applicable monitor.
+
+`CHECKING` owns one shared future and one absolute expiry fixed when the check
+starts. Joiners never reset it. Concurrent readiness-start or first-use requests
+join that generation rather than issuing duplicate `listModels` calls. Caller
+cancellation or timeout detaches only that caller and must not cancel or mutate
+the shared check. Readiness-start exposes only a read-only completion-stage view;
+callers cannot obtain or mutate the shared future, and caller detachment cannot
+complete, replay or otherwise alter shared readiness. The core must successfully
+schedule that generation's shared
+absolute-expiry timeout before submitting discovery work to the executor or
+invoking `listModels`. Shared-timeout scheduling rejection transitions the owned
+generation directly to `NEGATIVE` and performs zero discovery-executor and port
+work. If later discovery-executor submission rejects, cancel the installed timer
+and transition the still-owned generation to `NEGATIVE`.
+
+Every check uses the configured timeout. Timeout, malformed discovery data,
+missing configured model, provider/transport failure, discovery-executor
+rejection or shared-timeout scheduling rejection may transition the current
+owned `CHECKING` generation to `NEGATIVE`. The 60-second negative-cache interval
+starts at the accepted terminal transition, not at attempt start or late callback.
+While it is active, completion is unavailable and no discovery call starts. At
+or after expiry, next use starts or joins one new generation. Exact configured-
+model discovery may transition the current generation to `READY`, cached for the
+process lifetime.
+
+Public completion receives an absolute caller deadline. A caller joins readiness
+only until the earlier of that deadline or the shared check expiry. After
+`READY`, the core rechecks that deadline and must successfully install per-call
+deadline/cancellation enforcement before invoking port `complete`. An expired
+deadline, prior cancellation or scheduling rejection returns a safe caller
+failure and makes zero chat port calls. `ProviderChatRequest` carries the same
+absolute deadline for later adapter enforcement.
+
+Core completion returns a narrow, read-only cancellable call handle. The handle
+exposes only a read-only completion-stage/result view and an explicit `cancel`
+operation. It exposes no internal `CompletableFuture` and no externally reachable
+`complete`, `completeExceptionally`, `obtrude`, timeout-mutation or replay path;
+external actions cannot alter internal call state or manufacture a result.
+
+Each chat call has one unique, non-shared provider stage. After dispatch, caller
+cancellation or deadline atomically competes with provider completion for one
+terminal outcome. If cancellation/deadline wins, it detaches and terminates that
+caller, makes a best-effort cancellation request to the unique provider stage,
+ignores every late provider/decode completion and returns no content. If safe
+provider completion wins first, its result is returned and later cancellation
+has no effect. The port stage exposes cancellation without including request or
+response content in diagnostics. No chat cancellation, timeout, transport or
+decode result demotes `READY`.
 
 One configured deadline starts at AI use-case entry after web authentication and
 CSRF checks. It covers eligibility, admission, context collection, readiness,
@@ -66,13 +156,68 @@ retry. HTTP 429 is retried only when a `Retry-After` delta-seconds value or
 RFC-1123 date resolves to 0–2 seconds inclusive and at least five seconds remain
 under the original deadline. All other existing no-retry rules remain in force.
 
-The decompressed provider body is limited to 256 KiB. A successful response has
-exactly one choice, no tool/function call, one non-empty assistant-message string
-and `finish_reason` exactly `stop`. Reject a 200 response containing an error
-envelope, empty or multiple choices, missing/malformed content, truncation and
-any envelope outside this contract. Usage may be absent. When present, supplied
-token counts are non-negative integers and `total_tokens` must equal the sum of
-supplied input and output counts when both are present.
+### Bounded provider decoding
+
+The decoder receives a streaming post-decompression body, reads at most 262,145
+bytes and aborts as soon as byte 262,145 is observed, before full-body
+materialization or JSON parsing. It never parses a truncated prefix. Decoded
+bytes must be strict UTF-8. Parsing is streaming/bounded before any unrestricted
+tree is built and rejects duplicate keys, trailing content and a root-level
+error member. Limits are maximum nesting depth 64, JSON string length 262,144,
+numeric token length 20, total JSON tokens 8,192 and model entries 1,000. A
+compressed-wire byte limit remains deferred to the HTTPS adapter.
+
+Envelope fields use location allowlists; every unlisted member rejects on
+presence. Permitted inert metadata may have any JSON type but is never consumed:
+
+- models root: only `object`, `data`;
+- each model entry: only `id`, `object`, `created`, `owned_by`;
+- chat root: only `id`, `object`, `created`, `model`, `system_fingerprint`,
+  `service_tier`, `choices`, `usage`;
+- choice: only `index`, `message`, `finish_reason`, `logprobs`;
+- message: only `role`, `content`;
+- usage: only `prompt_tokens`, `completion_tokens`, `total_tokens`.
+
+`listModels` requires a root object with a non-null `data` array. Every array
+entry is a non-null object containing a non-empty string `id`; IDs must be unique.
+Any malformed/null entry, empty/non-string ID, duplicate ID or 1,001st entry
+rejects the entire envelope. Readiness succeeds only on an exact configured-
+model ID match.
+
+A completion response contains exactly one assistant choice. `message.role` is
+exactly `assistant`, `message.content` is one non-empty string and
+`finish_reason` is exactly `stop`. Because the message allowlist contains only
+role/content, `refusal`, `audio`, `name`, `tool_calls`, `function_call` and every
+other unknown member reject on presence even when null or empty. Reject root
+error members, empty/multiple choices, non-assistant messages,
+missing/malformed content and truncated completion.
+
+`usage` may be absent. When present it is non-null, non-empty and contains only a
+non-empty subset of the standard `prompt_tokens`, `completion_tokens` and
+`total_tokens` fields. Partial standard usage is allowed. Each supplied value is
+a non-negative integral signed-64-bit value; arbitrary aliases and fractional,
+overflowing or negative values reject the envelope. When all three standard
+fields are present, total must equal prompt plus completion without overflow.
+
+Iteration 2A defines the provider-neutral port, readiness and decoder behavior.
+Production HTTPS mapping for response statuses not already specified in the
+failure table remains unresolved for the later HTTPS adapter and is not inferred
+from the fake or decoder contract.
+
+Decoder failures expose only closed, stable error codes. Exceptions, return
+values and logs exclude raw bodies, model/provider responses, provider error
+content, attacker-controlled values, parser messages, source locations, excerpts,
+arbitrary causes and object `toString()` output. Parser source-in-location is
+disabled where supported. No cause chain crossing the provider-core seam may
+retain sensitive provider/parser content.
+
+A checked or unchecked streaming-body read failure maps to the stable
+`BODY_UNREADABLE` code without retaining or exposing its cause or message;
+canary-bearing unchecked failures receive the same treatment. An already-safe
+`ProviderFailure` code is preserved rather than wrapped with unsafe diagnostic
+data. Checked and unchecked body-close failures are suppressed on every path:
+they neither replace the primary result/failure nor enter a cause chain, return
+value or log.
 
 ## Prompt contract
 
@@ -238,3 +383,42 @@ present/absent/inconsistent, no raw-content logging, readiness caching and
 single-flight recovery, exact role context allowlists/update ordering, quota and
 fenced-lease behavior, telemetry failures, freshness loss and zero context loads,
 readiness calls and provider calls on early denied authorization.
+
+Provider-core contract tests additionally cover every readiness transition,
+generation ownership, timeout-versus-late-callback races, closure, single-flight
+joining, immutable shared expiry, configured timeout, negative-cache start and
+boundaries, separate discovery/scheduler rejection, caller-deadline scheduling
+rejection, cancellation isolation and process-lifetime success caching using an
+injected clock, executor and scheduler. Disabled/unavailable configuration tests
+assert no provider core, executor/timer work or port call. Tests prove caller
+timeout/cancellation never cancels a shared check and never permits a late chat
+call, absolute deadlines reach `ProviderChatRequest`, and chat/decode failure
+does not demote `READY`. No-sleep readiness tests assert timeout scheduling
+precedes discovery submission/`listModels`, scheduling rejection performs zero
+executor/port work, and later discovery-submission rejection cancels the timer.
+No-sleep chat race tests cover cancellation/deadline before dispatch, both after
+dispatch, provider-response wins, cancellation wins, best-effort unique-stage
+cancellation and every late provider/decode completion being ignored.
+
+Additional deterministic no-sleep tests block a synchronous `listModels`
+invocation and prove timeout and core closure complete without releasing it;
+block synchronous `complete` and prove cancellation/deadline returns promptly,
+then cancel and ignore any late stage. Tests prove port invocation, stage
+attachment/cancellation, internal completion and dependent callbacks never run
+under readiness/call monitors, and executor rejection performs zero port work.
+API tests prove readiness and call results expose no external mutation, timeout
+mutation or replay path. Visibility/architecture tests prove all Iteration 2A
+provider implementation types and mutating inputs are package-private and no
+role/web package depends on `ai.provider`.
+
+Model/completion decoder tests use fake streaming raw bodies and cover strict
+UTF-8, abort at byte 262,145 before materialization, depth/string/number/token and
+1,000/1,001-model limits, duplicate/trailing/root-error input, every location
+allowlist and unlisted-field rejection, malformed/null/duplicate model entries,
+exact model matching, every choice/content/finish rule and all permitted/invalid
+usage shapes. Full cause-chain and captured-log canaries prove raw, attacker and
+parser content cannot escape stable error codes. Pending futures provide
+deterministic delay/cancellation coverage without sleeps. Read and close-failure
+tests throw checked and unchecked canary-bearing failures and prove the result is
+`BODY_UNREADABLE` where applicable, safe `ProviderFailure` codes are preserved,
+and no canary appears in a result, cause chain or captured log.
