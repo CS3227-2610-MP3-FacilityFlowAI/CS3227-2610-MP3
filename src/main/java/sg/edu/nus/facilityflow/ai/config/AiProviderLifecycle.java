@@ -47,11 +47,11 @@ public interface AiProviderLifecycle extends AutoCloseable {
     }
 
     /** Small immutable no-work implementation for startup-safe configuration. */
-    final class Inert implements AiProviderLifecycle {
+    class Inert implements AiProviderLifecycle {
         private final State state;
         private final CompletionStage<State> readiness;
 
-        private Inert(State state) {
+        protected Inert(State state) {
             this.state = Objects.requireNonNull(state, "state");
             this.readiness = CompletableFuture.completedFuture(state).minimalCompletionStage();
         }

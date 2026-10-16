@@ -1,8 +1,10 @@
 # SoCLaaS Gateway Pre-implementation Plan
 
-Status: draft architecture plan for human review, 16 October 2026. No gateway
-implementation, test, schema change, environment binding, credential use or live
-provider call is authorized or claimed by this document.
+Status: historical pre-implementation architecture plan, 16 October 2026. The
+plan itself authorized no implementation; subsequent approved increments 2A–2D
+now provide the provider core, HTTPS adapter, lifecycle wiring and the first
+Technician Work Plan slice. Remaining coordinator, quota/lease, retry, telemetry
+and compressed-response work is still out of scope for 2D.
 
 This plan sequences the approved requirements in `workflow/specs/` without
 changing them. Material behavior that the approved v0.1 specifications do not

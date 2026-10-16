@@ -16,6 +16,10 @@ commit `897937d`; the adapter, focused tests and fresh Security Reviewer approva
 are complete. Iteration 2C adds production lifecycle/readiness wiring and has a
 fresh Security Reviewer GO; role gateway/coordinator, retries, rate/lease
 controls, telemetry and compressed-response support remain later increments.
+Iteration 2D adds the first role-facing Technician Work Plan vertical slice;
+focused implementation tests pass, while teammate and fresh Security Reviewer
+review remain pending. This slice intentionally does not claim the later shared
+coordinator, retry, quota/lease, telemetry or compressed-response controls.
 
 ## SoCLaaS transport
 
@@ -176,6 +180,37 @@ the provider-dispatch executor. Readiness timeout, negative caching, generation
 fencing and late-callback handling remain the provider-core rules from
 Iteration 2A. The runtime factory has a package-private deterministic seam for
 tests; no role or web package may depend on provider implementation types.
+
+### Iteration 2D Technician Work Plan vertical slice
+
+Iteration 2D connects the startup-safe provider runtime to the first role-facing
+feature without exposing provider implementation types. `WorkPlanAssistant` is
+the public typed seam; its result is either a bounded read-only `WorkPlanResult`
+or a stable `WorkPlanFailureCode`. `AiProviderLifecycle` and the assistant are
+registered as separate Spring seams so lifecycle injection remains unambiguous
+for disabled, unavailable and available configurations.
+
+`POST /technician/requests/{displayId}/work-plan` is the manual HTTP entry point.
+The service checks the authenticated Technician role before loading protected
+context, loads only an assigned `ASSIGNED` or `IN_PROGRESS` Request and its
+latest ten Requester Updates, and sends an allowlisted projection. Request and
+Account identifiers, Work Logs, playbooks, credentials and unrelated records
+are not serialized into the model prompt. The provider response is parsed with
+exact fields, strict duplicate/unknown-field rejection, size/control/markup
+limits and mandatory safety/evidence/stop sections. Unsafe or malformed output
+is discarded as `AI_INVALID_OUTPUT`.
+
+After a successful model response, the service rechecks the assignment, active
+status and Request version. A changed eligibility snapshot discards the entire
+result as `DISCARDED_ACCESS_CHANGED`; no business record is written. Provider
+failure, readiness failure and repository failure map to safe typed failures and
+leave the deterministic Technician workflow available. The endpoint remains
+subject to the existing authenticated `/technician/**` security rules and POST
+CSRF protection.
+
+This vertical slice deliberately leaves the shared multi-feature coordinator,
+provider retry execution, Account/global rate and lease enforcement, durable AI
+telemetry and compressed-response support for subsequent increments.
 
 ### Provider-core readiness
 

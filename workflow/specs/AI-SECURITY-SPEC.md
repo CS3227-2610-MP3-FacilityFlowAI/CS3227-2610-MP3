@@ -16,7 +16,10 @@ commit `897937d`; the adapter, focused tests and fresh Security Reviewer approva
 are complete. Iteration 2C adds startup-safe Spring lifecycle/readiness wiring;
 fresh Security Reviewer review is GO. Later increments still own retries,
 rate/lease controls, telemetry, role gateway/coordinator and compressed-response
-support.
+support. Iteration 2D adds the first Technician Work Plan vertical slice;
+focused tests pass, but teammate and fresh Security Reviewer review remain
+pending. The slice is intentionally not evidence that the later quota, lease,
+retry, telemetry or compressed-response requirements are implemented.
 
 ## Assets and trust seams
 
@@ -252,6 +255,17 @@ may select a feature, actor, template, parser, model or arbitrary context map.
   callbacks. Discovery and chat dispatch use separate executors; a deterministic
   package-private factory seam is used for tests. No role/web source imports
   provider implementation types.
+- **Iteration 2D Technician Work Plan slice:** The role-facing POST seam enters
+  only after Technician-role authorization, loads an assigned active Request
+  through a server-side allowlisted repository, and sends at most the latest ten
+  Requester Updates without IDs, Work Logs, credentials or unrelated records.
+  The typed decoder rejects unknown/duplicate fields, malformed or oversized
+  strings, markup/control characters, missing safety/evidence/stop sections and
+  the initial prohibited-action corpus. The service rechecks assignment, active
+  status and Request version before returning a success; changed eligibility is
+  discarded as `DISCARDED_ACCESS_CHANGED`. Focused tests pass. This is the first
+  role vertical slice, not completion of AI-SEC-021 quota/lease, durable
+  telemetry, retry execution or the shared multi-feature coordinator.
 - **AI-SEC-020:** A configured model is checked against GET /v1/models without
   blocking core application startup. Readiness states are exactly `UNVALIDATED`,
   `CHECKING`, `NEGATIVE` and `READY`. The core exposes only a non-blocking

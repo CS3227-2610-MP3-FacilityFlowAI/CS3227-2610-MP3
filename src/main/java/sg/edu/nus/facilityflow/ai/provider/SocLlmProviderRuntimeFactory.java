@@ -10,8 +10,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import sg.edu.nus.facilityflow.ai.config.AiConfiguration;
+import sg.edu.nus.facilityflow.ai.config.AiProviderRuntime;
 import sg.edu.nus.facilityflow.ai.config.AiProviderLifecycle;
 import sg.edu.nus.facilityflow.ai.config.AiProviderLifecycle.State;
+import sg.edu.nus.facilityflow.ai.technician.WorkPlanAssistant;
+import sg.edu.nus.facilityflow.ai.technician.WorkPlanContext;
+import sg.edu.nus.facilityflow.ai.technician.WorkPlanResponse;
 import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderCore.Readiness;
 
 /**
@@ -27,7 +31,7 @@ public final class SocLlmProviderRuntimeFactory {
      * Creates and starts an available provider runtime without waiting for
      * network readiness. The first provider call is dispatched asynchronously.
      */
-    public static AiProviderLifecycle start(AiConfiguration.Available configuration) {
+    public static AiProviderRuntime start(AiConfiguration.Available configuration) {
         AiConfiguration.Available available = Objects.requireNonNull(configuration, "configuration");
         ExecutorService discovery = Executors.newSingleThreadExecutor(named("facilityflow-ai-discovery"));
         ExecutorService provider = Executors.newSingleThreadExecutor(named("facilityflow-ai-provider"));
@@ -35,15 +39,17 @@ public final class SocLlmProviderRuntimeFactory {
                 named("facilityflow-ai-scheduler"));
         try {
             SocLlmHttpsProviderAdapter adapter = new SocLlmHttpsProviderAdapter(available);
+            Clock clock = Clock.systemUTC();
             SocLlmProviderCore core = new SocLlmProviderCore(
                     available,
                     adapter,
-                    Clock.systemUTC(),
+                    clock,
                     discovery,
                     provider,
                     scheduler);
             CompletionStage<Readiness> readiness = core.beginStartupReadinessCheck();
-            return new Runtime(core, readiness, discovery, provider, scheduler, true);
+            WorkPlanAssistant assistant = new SocLlmWorkPlanAssistant(available, core, clock);
+            return new Runtime(core, readiness, assistant, discovery, provider, scheduler, true);
         } catch (RuntimeException failure) {
             shutdown(discovery);
             shutdown(provider);
@@ -56,7 +62,7 @@ public final class SocLlmProviderRuntimeFactory {
      * Package-private deterministic seam for provider-package tests. It never
      * creates threads or performs network work outside the supplied seams.
      */
-    static AiProviderLifecycle startForTests(
+    static AiProviderRuntime startForTests(
             AiConfiguration.Available configuration,
             SocLlmProviderPort port,
             Clock clock,
@@ -72,7 +78,8 @@ public final class SocLlmProviderRuntimeFactory {
                 Objects.requireNonNull(provider, "provider"),
                 Objects.requireNonNull(scheduler, "scheduler"));
         CompletionStage<Readiness> readiness = core.beginStartupReadinessCheck();
-        return new Runtime(core, readiness, discovery, provider, scheduler, false);
+        WorkPlanAssistant assistant = new SocLlmWorkPlanAssistant(available, core, clock);
+        return new Runtime(core, readiness, assistant, discovery, provider, scheduler, false);
     }
 
     private static ThreadFactory named(String prefix) {
@@ -87,9 +94,10 @@ public final class SocLlmProviderRuntimeFactory {
         executor.shutdownNow();
     }
 
-    private static final class Runtime implements AiProviderLifecycle {
+    private static final class Runtime implements AiProviderRuntime {
         private final SocLlmProviderCore core;
         private final CompletionStage<Readiness> readiness;
+        private final WorkPlanAssistant assistant;
         private final Executor discovery;
         private final Executor provider;
         private final ScheduledExecutorService scheduler;
@@ -99,12 +107,14 @@ public final class SocLlmProviderRuntimeFactory {
         private Runtime(
                 SocLlmProviderCore core,
                 CompletionStage<Readiness> readiness,
+                WorkPlanAssistant assistant,
                 Executor discovery,
                 Executor provider,
                 ScheduledExecutorService scheduler,
                 boolean ownsResources) {
             this.core = core;
             this.readiness = readiness;
+            this.assistant = assistant;
             this.discovery = discovery;
             this.provider = provider;
             this.scheduler = scheduler;
@@ -125,6 +135,11 @@ public final class SocLlmProviderRuntimeFactory {
         public CompletionStage<State> readiness() {
             CompletionStage<State> mapped = readiness.thenApply(SocLlmProviderRuntimeFactory::map);
             return mapped.toCompletableFuture().minimalCompletionStage();
+        }
+
+        @Override
+        public CompletionStage<WorkPlanResponse> request(WorkPlanContext context) {
+            return assistant.request(context);
         }
 
         @Override
