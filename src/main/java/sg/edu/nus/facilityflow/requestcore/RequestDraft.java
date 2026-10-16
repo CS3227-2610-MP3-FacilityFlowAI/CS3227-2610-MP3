@@ -36,6 +36,14 @@ public record RequestDraft(String title, String description, String location,
         }
     }
 
+    public static String validatedText(String field, String label, String value, int minimum, int maximum) {
+        String text = trim(value);
+        var errors = new LinkedHashMap<String, String>();
+        length(errors, field, label, text, minimum, maximum);
+        if (!errors.isEmpty()) throw new RequestValidationException(errors);
+        return text;
+    }
+
     private static String trim(String value) {
         return value == null ? "" : value.strip();
     }

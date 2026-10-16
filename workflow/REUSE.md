@@ -39,6 +39,17 @@ The source commit was verified against the MP2 `master` branch on 12 October
 
 ## Current evidence and measurement detail
 
+Requester step 3 (16 October): edit/cancel/Requester Update use cases, Request
+version/state locking, reason/note validation, shared form/action templates and
+tests are **concept-only** reuse of behaviors already approved in MP3 product/
+Requester specs and retained MP2 lifecycle concepts (zero copied code lines).
+No additional MP2 source consulted or copied this step. The Spring/JDBC service
+and repository additions, typed failure classes, view-model version/category
+fields, shared error handling, named-submitter pending protection, tests and
+guide/session/handoff updates are **new** MP3 implementation. No migrations,
+dependencies or additional role operations added. Final line measurements and
+teammate review remain pending on `feat/requester-workflow`.
+
 Requester step 2 (16 October): `RequestDraft`, Requester use cases/repository,
 controller, templates and tests are **concept-only** reuse of the approved MP2
 Requester workflow/field rules and `RequesterDashboardView.showDetail` at the

@@ -14,6 +14,9 @@ public interface RequesterRequests {
     List<Summary> list();
     Optional<Detail> detail(String displayId);
     String create(RequestDraft draft, String submissionId);
+    String edit(String displayId, RequestDraft draft, String version);
+    String cancel(String displayId, String reason, boolean confirmed, String version);
+    String addUpdate(String displayId, String note, String version);
 
     record Category(UUID id, String name) { }
 
@@ -24,7 +27,7 @@ public interface RequesterRequests {
 
     record Detail(String displayId, String title, String description, String location,
             String category, String reportedUrgency, String status, String managerPriority,
-            Instant createdAt, Instant updatedAt, List<History> history) {
+            Instant createdAt, Instant updatedAt, String categoryId, long version, List<History> history) {
         public String createdTime() { return localTime(createdAt); }
         public String updatedTime() { return localTime(updatedAt); }
     }

@@ -28,6 +28,14 @@
             <p class="free-text" th:if="${!entry.note.isEmpty()}" th:text="${entry.note}"></p>
         </li>
     </ol>
+    <nav aria-label="Request actions">
+        <span th:if="${request.status == 'OPEN'}">
+            <a th:href="@{/requester/requests/{id}/edit(id=${request.displayId})}">Edit request</a>
+            <a th:href="@{/requester/requests/{id}/cancel(id=${request.displayId})}">Cancel request</a>
+        </span>
+        <a th:if="${request.status != 'CLOSED' and request.status != 'CANCELLED'}"
+           th:href="@{/requester/requests/{id}/updates/new(id=${request.displayId})}">Add Requester Update</a>
+    </nav>
     <a th:href="@{/requester/requests}">Back to My requests</a>
 </main>
 </body>

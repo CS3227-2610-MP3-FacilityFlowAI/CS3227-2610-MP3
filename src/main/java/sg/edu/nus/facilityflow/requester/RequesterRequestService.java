@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.BiConsumer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -60,10 +61,63 @@ public class RequesterRequestService implements RequesterRequests {
         });
     }
 
-    private <T> T authorized(boolean creating, Function<CurrentAccount, T> operation) {
+    /** REQ-RQ-006–011: state/version checks and audit stay within the locked transaction. */
+    @Override
+    public String edit(String displayId, RequestDraft draft, String version) {
+        return change(displayId, version, true, (actor, request) -> {
+            var errors = draft.errors();
+            if (!errors.isEmpty()) throw new RequestValidationException(errors);
+            if (!requests.activeCategory(UUID.fromString(draft.categoryId()))) {
+                throw new RequestValidationException(Map.of("categoryId", "This category is no longer active. Choose another category."));
+            }
+            requests.edit(request, draft);
+            requests.auditMutation(actor.id(), request.id(), "REQUEST_EDITED", null);
+        });
+    }
+
+    @Override
+    public String cancel(String displayId, String reason, boolean confirmed, String version) {
+        return change(displayId, version, true, (actor, request) -> {
+            String validReason = RequestDraft.validatedText("reason", "Cancellation reason", reason, 5, 500);
+            if (!confirmed) throw new RequestValidationException(Map.of("confirmed", "Confirm that you want to cancel this request."));
+            requests.cancel(request);
+            requests.auditMutation(actor.id(), request.id(), "REQUEST_CANCELLED", validReason);
+        });
+    }
+
+    @Override
+    public String addUpdate(String displayId, String note, String version) {
+        return change(displayId, version, false, (actor, request) -> {
+            String validNote = RequestDraft.validatedText("note", "Update", note, 1, 1000);
+            requests.addUpdate(actor.id(), request, validNote);
+            requests.auditMutation(actor.id(), request.id(), "REQUESTER_UPDATE_ADDED", null);
+        });
+    }
+
+    private String change(String displayId, String version, boolean openOnly,
+            BiConsumer<CurrentAccount, RequesterRequestRepository.Locked> operation) {
+        return authorized(true, actor -> {
+            var request = requests.lockOwned(actor.id(), displayId).orElseThrow(RequestUnavailableException::new);
+            long expected;
+            try {
+                expected = Long.parseLong(version);
+                if (expected < 0) throw new NumberFormatException();
+            } catch (NumberFormatException exception) {
+                throw new RequestValidationException(Map.of("version", "Reload the current request before submitting."));
+            }
+            if (request.version() != expected || (openOnly && !request.status().equals("OPEN"))
+                    || request.status().equals("CLOSED") || request.status().equals("CANCELLED")) {
+                throw new StaleRequestException();
+            }
+            operation.accept(actor, request);
+            return displayId;
+        });
+    }
+
+    private <T> T authorized(boolean writing, Function<CurrentAccount, T> operation) {
         var actor = accounts.requireCurrentAccount();
         return transactions.execute(transaction -> {
-            requests.requireRequester(actor, creating);
+            requests.requireRequester(actor, writing);
             return operation.apply(actor);
         });
     }

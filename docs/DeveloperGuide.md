@@ -44,7 +44,7 @@ latest release rather than the intended design.
 ## Project overview
 
 FacilityFlow AI, CS3227 MP3. Database and authentication foundations integrated;
-Requester create/list/detail are implemented locally; the remaining role
+Requester create/list/detail and eligible mutations are implemented locally; the remaining role
 business workflows are pending. See README and AGENTS.md.
 
 ## Repository structure
@@ -105,7 +105,7 @@ failure and display-number exhaustion leave no partial business record.
 Queries scope by owner before selecting detail/history. History projects only
 approved lifecycle/edit labels, public transition reasons and Requester Updates;
 it never selects Work Logs or returns the audit details object. Returned page
-records omit internal IDs, credentials, assignments and completion metadata,
+records omit internal Request UUIDs, credentials, assignments and completion metadata,
 following retained MP2 Requester detail behavior. Thymeleaf encodes user text.
 History action names are the `REQUEST_CREATED/EDITED/ASSIGNED/REASSIGNED/STARTED/
 COMPLETED/CLOSED/CANCELLED/RETURNED/REOPENED` variants enumerated in the repository;
@@ -125,6 +125,37 @@ only with a clearly marked readiness fixture. Run `gradlew.bat test bootJar` and
 `node src/test/js/request-form.test.cjs`; the Node check uses only standard APIs.
 No new application dependency was added. Browser/hosted/performance verification
 and human review remain pending.
+
+## Requester eligible mutations (step 3)
+
+REQ-RQ-006–011: the existing use-case/repository interfaces now expose bounded
+edit, cancellation and append-update operations. Each transaction rechecks the
+active Requester/session version, locks only an owned Request, validates its
+persisted state and compares the submitted non-negative version. Edit/cancel are
+OPEN-only; updates reject CLOSED/CANCELLED. A missing/foreign Request yields the
+same unavailable result. The SQL writes also assert expected version/state.
+
+Every successful mutation increments Request.version, including an append update.
+Repeated or concurrent submissions with the same version reject the second
+operation. Request fields/state/update insertion and audit append share one
+transaction; audit failure restores the prior row, version and history. Edit
+rechecks/locks the selected active category. Public cancellation reasons are
+stored in `details.reason`; update text and report free text are never copied
+into audit details. Updated timestamps use PostgreSQL clock_timestamp after lock
+acquisition. No migration or application dependency was added in this step.
+
+The create template is reused for edit with a version field. A shared action
+page handles cancellation and updates. Cancellation requires a server-validated
+reason, checkbox and explicit cancel decision; missing/implicit decisions keep
+the report. Keep is the first submit action. The shared pending-submit script
+leaves named decision buttons enabled so their values remain in the browser's
+payload, while rejecting a second pending submit. Node checks cover that case.
+
+Centralized mutation error handling preserves submitted values and their original
+version; it never substitutes a fresh version behind stale user input. Reloading
+is explicit. Tests cover all states, replay, foreign/wrong-role/CSRF denial,
+post-load assignment/category changes, concurrent edits/cancel-update races,
+all-mutation audit rollback/retry and inactive/invalidated direct-service access.
 
 ## Role model
 

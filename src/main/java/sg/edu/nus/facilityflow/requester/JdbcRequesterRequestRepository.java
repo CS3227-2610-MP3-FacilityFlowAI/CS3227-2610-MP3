@@ -20,11 +20,11 @@ public class JdbcRequesterRequestRepository implements RequesterRequestRepositor
     }
 
     @Override
-    public void requireRequester(CurrentAccount account, boolean creating) {
+    public void requireRequester(CurrentAccount account, boolean writing) {
         if (account.role() != AccountRole.REQUESTER || jdbc.queryForList("""
                 SELECT id FROM facilityflow.user_account
                  WHERE id = ? AND active = true AND role = 'REQUESTER' AND session_version = ?
-                """ + (creating ? " FOR UPDATE" : " FOR SHARE"), UUID.class,
+                """ + (writing ? " FOR UPDATE" : " FOR SHARE"), UUID.class,
                 account.id(), account.sessionVersion()).isEmpty()) {
             throw new AccessDeniedException("The requested operation is not available.");
         }
@@ -52,19 +52,19 @@ public class JdbcRequesterRequestRepository implements RequesterRequestRepositor
     public Optional<RequesterRequests.Detail> detail(UUID owner, String displayId) {
         var rows = jdbc.query("""
                 SELECT r.display_id, r.title, r.description, r.location, c.name AS category,
-                       r.reported_urgency, r.status, r.manager_priority, r.created_at, r.updated_at
+                       r.reported_urgency, r.status, r.manager_priority, r.created_at, r.updated_at, r.category_id, r.version
                   FROM facilityflow.maintenance_request r JOIN facilityflow.category c ON c.id = r.category_id
                  WHERE r.requester_id = ? AND r.display_id = ?
                 """, (row, index) -> new RequesterRequests.Detail(row.getString("display_id"), row.getString("title"),
                 row.getString("description"), row.getString("location"), row.getString("category"),
                 row.getString("reported_urgency"), row.getString("status"), row.getString("manager_priority"),
                 row.getObject("created_at", OffsetDateTime.class).toInstant(), row.getObject("updated_at", OffsetDateTime.class).toInstant(),
-                List.of()), owner, displayId);
+                row.getObject("category_id", UUID.class).toString(), row.getLong("version"), List.of()), owner, displayId);
         if (rows.isEmpty()) return Optional.empty();
         var request = rows.getFirst();
         return Optional.of(new RequesterRequests.Detail(request.displayId(), request.title(), request.description(),
                 request.location(), request.category(), request.reportedUrgency(), request.status(), request.managerPriority(),
-                request.createdAt(), request.updatedAt(), history(owner, displayId)));
+                request.createdAt(), request.updatedAt(), request.categoryId(), request.version(), history(owner, displayId)));
     }
 
     private List<RequesterRequests.History> history(UUID owner, String displayId) {
@@ -123,5 +123,51 @@ public class JdbcRequesterRequestRepository implements RequesterRequestRepositor
     @Override
     public void recordSubmission(UUID owner, UUID command, UUID request) {
         jdbc.update("INSERT INTO facilityflow.request_submission (requester_id, command_id, request_id) VALUES (?, ?, ?)", owner, command, request);
+    }
+
+    @Override
+    public Optional<Locked> lockOwned(UUID owner, String displayId) {
+        return jdbc.query("SELECT id, status, version FROM facilityflow.maintenance_request WHERE requester_id = ? AND display_id = ? FOR UPDATE",
+                (row, index) -> new Locked(row.getObject("id", UUID.class), row.getString("status"), row.getLong("version")),
+                owner, displayId).stream().findFirst();
+    }
+
+    @Override
+    public void edit(Locked request, RequestDraft draft) {
+        requireChanged(jdbc.update("""
+                UPDATE facilityflow.maintenance_request SET title = ?, description = ?, location = ?, category_id = ?,
+                    reported_urgency = ?, version = version + 1, updated_at = clock_timestamp()
+                 WHERE id = ? AND version = ? AND status = 'OPEN'
+                """, draft.title(), draft.description(), draft.location(), UUID.fromString(draft.categoryId()),
+                draft.reportedUrgency(), request.id(), request.version()));
+    }
+
+    @Override
+    public void cancel(Locked request) {
+        requireChanged(jdbc.update("""
+                UPDATE facilityflow.maintenance_request SET status = 'CANCELLED', version = version + 1, updated_at = clock_timestamp()
+                 WHERE id = ? AND version = ? AND status = 'OPEN'
+                """, request.id(), request.version()));
+    }
+
+    @Override
+    public void addUpdate(UUID owner, Locked request, String note) {
+        requireChanged(jdbc.update("""
+                UPDATE facilityflow.maintenance_request SET version = version + 1, updated_at = clock_timestamp()
+                 WHERE id = ? AND version = ? AND status NOT IN ('CLOSED', 'CANCELLED')
+                """, request.id(), request.version()));
+        jdbc.update("INSERT INTO facilityflow.requester_update (request_id, author_id, note) VALUES (?, ?, ?)", request.id(), owner, note);
+    }
+
+    @Override
+    public void auditMutation(UUID owner, UUID request, String action, String reason) {
+        jdbc.update("""
+                INSERT INTO facilityflow.audit_event (actor_id, action, target_type, target_id, details)
+                VALUES (?, ?, 'REQUEST', ?, jsonb_strip_nulls(jsonb_build_object('reason', ?::text)))
+                """, owner, action, request, reason);
+    }
+
+    private static void requireChanged(int count) {
+        if (count != 1) throw new StaleRequestException();
     }
 }

@@ -314,6 +314,259 @@ class RequesterRequestIntegrationTest {
                 context.getBean(RequesterRequestRepository.class), context.getBean(PlatformTransactionManager.class));
     }
 
+    @Test
+    void reqRq006OwnOpenEditIsAuditedAndDoesNotChangeOwnershipOrAcceptStaleReplay() throws Exception {
+        String id = managerRecorded(OWNER, "Manager recorded original");
+        Cookie cookie = login("requester1", "/requester");
+        mvc.perform(get("/requester/requests/" + id + "/edit").cookie(cookie)).andExpect(status().isOk())
+                .andExpect(content().string(containsString("Manager recorded original")))
+                .andExpect(content().string(containsString("name=\"version\" value=\"0\"")));
+        mvc.perform(post("/requester/requests/" + id + "/edit").cookie(cookie).with(csrf())
+                        .param("version", "0").param("title", " Updated light ").param("description", "Updated detailed description")
+                        .param("location", "Block B").param("categoryId", category).param("reportedUrgency", "EMERGENCY")
+                        .param("status", "CLOSED").param("requesterId", OTHER.toString()).param("recordedBy", OWNER.toString())
+                        .param("managerPriority", "CRITICAL").param("assignedTechnicianId", TECHNICIAN.toString()))
+                .andExpect(redirectedUrl("/requester/requests/" + id));
+        var saved = service(OWNER, AccountRole.REQUESTER, 0).detail(id).orElseThrow();
+        assertEquals("Updated light", saved.title());
+        assertEquals("OPEN", saved.status());
+        assertEquals(1, saved.version());
+        assertNull(saved.managerPriority());
+        assertEquals(MANAGER, app.queryForObject("SELECT recorded_by FROM facilityflow.maintenance_request WHERE display_id = ?", UUID.class, id));
+        mvc.perform(post("/requester/requests/" + id + "/edit").cookie(cookie).with(csrf())
+                        .param("version", "0").param("title", "Retained stale title").param("description", "Retained stale description")
+                        .param("location", "Block A").param("categoryId", category).param("reportedUrgency", "NORMAL"))
+                .andExpect(status().isConflict()).andExpect(content().string(containsString("Retained stale title")))
+                .andExpect(content().string(containsString("name=\"version\" value=\"0\"")));
+        assertEquals(1, mutationAudits("REQUEST_EDITED"));
+        assertEquals("Updated light", service(OWNER, AccountRole.REQUESTER, 0).detail(id).orElseThrow().title());
+    }
+
+    @Test
+    void reqRq007CancellationRequiresExplicitDecisionConfirmationAndReasonThenRejectsLaterWrites() throws Exception {
+        String id = managerRecorded(OWNER, "Open cancellation report");
+        Cookie cookie = login("requester1", "/requester");
+        String page = mvc.perform(get("/requester/requests/" + id + "/cancel").cookie(cookie)).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertTrue(page.indexOf("value=\"keep\"") < page.indexOf("value=\"cancel\""));
+        mvc.perform(post("/requester/requests/" + id + "/cancel").cookie(cookie).with(csrf())
+                        .param("version", "0").param("reason", "Reason provided").param("confirmed", "true"))
+                .andExpect(redirectedUrl("/requester/requests/" + id));
+        assertEquals("OPEN", service(OWNER, AccountRole.REQUESTER, 0).detail(id).orElseThrow().status());
+        mvc.perform(post("/requester/requests/" + id + "/cancel").cookie(cookie).with(csrf())
+                        .param("decision", "cancel").param("version", "0").param("reason", "Reason provided"))
+                .andExpect(status().isUnprocessableContent()).andExpect(content().string(containsString("Confirm that you want")));
+        mvc.perform(post("/requester/requests/" + id + "/cancel").cookie(cookie).with(csrf())
+                        .param("decision", "cancel").param("version", "0").param("confirmed", "true").param("reason", "bad"))
+                .andExpect(status().isUnprocessableContent()).andExpect(content().string(containsString("Cancellation reason must contain")));
+        String reason = "Problem resolved — cancellation requested";
+        mvc.perform(post("/requester/requests/" + id + "/cancel").cookie(cookie).with(csrf())
+                        .param("decision", "cancel").param("version", "0").param("confirmed", "true").param("reason", reason))
+                .andExpect(redirectedUrl("/requester/requests/" + id));
+        var requester = service(OWNER, AccountRole.REQUESTER, 0);
+        var saved = requester.detail(id).orElseThrow();
+        assertEquals("CANCELLED", saved.status());
+        assertEquals(1, saved.version());
+        assertTrue(saved.history().stream().anyMatch(entry -> entry.note().equals(reason)));
+        mvc.perform(get("/requester/requests/" + id).cookie(cookie))
+                .andExpect(content().string(not(containsString(">Edit request</a>"))))
+                .andExpect(content().string(not(containsString(">Add Requester Update</a>"))));
+        assertThrows(StaleRequestException.class, () -> requester.edit(id, draft(), "1"));
+        assertThrows(StaleRequestException.class, () -> requester.cancel(id, reason, true, "1"));
+        assertThrows(StaleRequestException.class, () -> requester.addUpdate(id, "Late update", "1"));
+        assertEquals(1, mutationAudits("REQUEST_CANCELLED"));
+        assertEquals(0, count("requester_update"));
+    }
+
+    @Test
+    void reqRq008UpdatesAllowedInEveryNonTerminalStateAndReplayCreatesNoDuplicate() throws Exception {
+        var requester = service(OWNER, AccountRole.REQUESTER, 0);
+        Cookie cookie = login("requester1", "/requester");
+        for (String state : List.of("OPEN", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "CLOSED", "CANCELLED")) {
+            String id = managerRecorded(OWNER, "Report for " + state);
+            setState(id, state);
+            String version = Long.toString(requester.detail(id).orElseThrow().version());
+            if (state.equals("CLOSED") || state.equals("CANCELLED")) {
+                assertThrows(StaleRequestException.class, () -> requester.addUpdate(id, "Not permitted", version));
+                mvc.perform(get("/requester/requests/" + id + "/updates/new").cookie(cookie)).andExpect(status().isConflict());
+            } else {
+                mvc.perform(get("/requester/requests/" + id + "/updates/new").cookie(cookie)).andExpect(status().isOk());
+                String note = state.equals("ASSIGNED") ? "😀".repeat(1000) : "  <script>visible update</script>  ";
+                mvc.perform(post("/requester/requests/" + id + "/updates").cookie(cookie).with(csrf())
+                                .param("version", version).param("note", note).param("authorId", OTHER.toString()))
+                        .andExpect(redirectedUrl("/requester/requests/" + id));
+                assertThrows(StaleRequestException.class, () -> requester.addUpdate(id, note, version));
+                var updated = requester.detail(id).orElseThrow();
+                assertEquals(state, updated.status());
+                assertTrue(updated.history().stream().anyMatch(entry -> entry.note().equals(note.strip())));
+            }
+        }
+        assertEquals(4, count("requester_update"));
+        assertEquals(4, mutationAudits("REQUESTER_UPDATE_ADDED"));
+        assertEquals(0, app.queryForObject("SELECT count(*) FROM facilityflow.requester_update WHERE author_id <> ?", Integer.class, OWNER));
+        assertEquals(0, app.queryForObject("SELECT count(*) FROM facilityflow.audit_event WHERE action = 'REQUESTER_UPDATE_ADDED' AND details::text LIKE '%visible update%'", Integer.class));
+    }
+
+    @Test
+    void reqRq006011AssignmentAndCategoryChangesBetweenLoadAndSaveCannotBeBypassed() throws Exception {
+        Cookie cookie = login("requester1", "/requester");
+        String assigned = managerRecorded(OWNER, "Assignment race original");
+        mvc.perform(get("/requester/requests/" + assigned + "/edit").cookie(cookie)).andExpect(status().isOk());
+        setState(assigned, "ASSIGNED");
+        mvc.perform(post("/requester/requests/" + assigned + "/edit").cookie(cookie).with(csrf())
+                        .param("version", "0").param("title", "Retain assignment draft").param("description", "Retained description")
+                        .param("location", "Block B").param("categoryId", category).param("reportedUrgency", "HIGH"))
+                .andExpect(status().isConflict()).andExpect(content().string(containsString("Retain assignment draft")));
+        mvc.perform(get("/requester/requests/" + assigned + "/edit").cookie(cookie)).andExpect(status().isConflict());
+        assertThrows(StaleRequestException.class, () -> service(OWNER, AccountRole.REQUESTER, 0).cancel(assigned, "Attempt stale cancellation", true, "1"));
+        assertEquals("Assignment race original", service(OWNER, AccountRole.REQUESTER, 0).detail(assigned).orElseThrow().title());
+        String inactive = managerRecorded(OWNER, "Category race original");
+        mvc.perform(get("/requester/requests/" + inactive + "/edit").cookie(cookie)).andExpect(status().isOk());
+        admin.update("UPDATE facilityflow.category SET active = false WHERE id = ?::uuid", category);
+        mvc.perform(post("/requester/requests/" + inactive + "/edit").cookie(cookie).with(csrf())
+                        .param("version", "0").param("title", "Retain category draft").param("description", "Retained description")
+                        .param("location", "Block B").param("categoryId", category).param("reportedUrgency", "HIGH"))
+                .andExpect(status().isUnprocessableContent()).andExpect(content().string(containsString("no longer active")))
+                .andExpect(content().string(containsString("Retain category draft")));
+        assertEquals("Category race original", service(OWNER, AccountRole.REQUESTER, 0).detail(inactive).orElseThrow().title());
+        assertEquals(0, mutationAudits("REQUEST_EDITED"));
+    }
+
+    @Test
+    void reqRq011ConcurrentEditsAndCancellationUpdateRacesHaveOneWinner() throws Exception {
+        var requester = service(OWNER, AccountRole.REQUESTER, 0);
+        String editId = managerRecorded(OWNER, "Concurrent edit original");
+        Callable<Boolean> edit = () -> {
+            try { requester.edit(editId, draft(), "0"); return true; }
+            catch (StaleRequestException exception) { return false; }
+        };
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var edits = executor.invokeAll(List.of(edit, edit));
+            assertEquals(1, (edits.get(0).get() ? 1 : 0) + (edits.get(1).get() ? 1 : 0));
+            String raceId = managerRecorded(OWNER, "Cancellation update race");
+            Callable<Boolean> cancel = () -> {
+                try { requester.cancel(raceId, "No longer needed", true, "0"); return true; }
+                catch (StaleRequestException exception) { return false; }
+            };
+            Callable<Boolean> update = () -> {
+                try { requester.addUpdate(raceId, "Follow-up update", "0"); return true; }
+                catch (StaleRequestException exception) { return false; }
+            };
+            var results = executor.invokeAll(List.of(cancel, update));
+            assertEquals(1, (results.get(0).get() ? 1 : 0) + (results.get(1).get() ? 1 : 0));
+            var after = requester.detail(raceId).orElseThrow();
+            assertEquals(1, after.version());
+            if (after.status().equals("CANCELLED")) assertEquals(0, count("requester_update"));
+            else assertEquals(1, count("requester_update"));
+        }
+        assertEquals(1, mutationAudits("REQUEST_EDITED"));
+        assertEquals(1, mutationAudits("REQUEST_CANCELLED") + mutationAudits("REQUESTER_UPDATE_ADDED"));
+    }
+
+    @Test
+    void reqRq006008011EveryMutationRollsBackOnAuditFailureAndRetainsInputForRetry() throws Exception {
+        Cookie cookie = login("requester1", "/requester");
+        var requester = service(OWNER, AccountRole.REQUESTER, 0);
+        for (String operation : List.of("edit", "cancel", "updates")) {
+            String action = operation.equals("edit") ? "REQUEST_EDITED" : operation.equals("cancel") ? "REQUEST_CANCELLED" : "REQUESTER_UPDATE_ADDED";
+            String id = managerRecorded(OWNER, "Rollback original " + operation);
+            var before = requester.detail(id).orElseThrow();
+            admin.execute("ALTER TABLE facilityflow.audit_event ADD CONSTRAINT reject_mutation_test CHECK (action <> '" + action + "')");
+            try {
+                var post = post("/requester/requests/" + id + "/" + operation).cookie(cookie).with(csrf()).param("version", "0");
+                if (operation.equals("edit")) post.param("title", "Retained rollback draft").param("description", "Retained detailed description")
+                        .param("location", "Block B").param("categoryId", category).param("reportedUrgency", "HIGH");
+                else if (operation.equals("cancel")) post.param("reason", "Retained rollback draft").param("confirmed", "true").param("decision", "cancel");
+                else post.param("note", "Retained rollback draft");
+                mvc.perform(post).andExpect(status().isServiceUnavailable())
+                        .andExpect(content().string(containsString("Retained rollback draft")))
+                        .andExpect(content().string(not(containsString("reject_mutation_test"))));
+                assertEquals(before, requester.detail(id).orElseThrow());
+                assertEquals(0, mutationAudits(action));
+                assertEquals(0, count("requester_update"));
+            } finally {
+                admin.execute("ALTER TABLE facilityflow.audit_event DROP CONSTRAINT reject_mutation_test");
+            }
+            if (operation.equals("edit")) requester.edit(id, draft(), "0");
+            else if (operation.equals("cancel")) requester.cancel(id, "Valid cancellation reason", true, "0");
+            else requester.addUpdate(id, "Valid follow-up update", "0");
+            assertEquals(1, mutationAudits(action));
+        }
+    }
+
+    @Test
+    void reqRq009010MutationsDenyForeignObjectsWrongRolesAndMissingCsrf() throws Exception {
+        String id = managerRecorded(OTHER, "FOREIGN PRIVATE REPORT");
+        Cookie owner = login("requester1", "/requester");
+        for (String operation : List.of("edit", "cancel", "updates")) {
+            mvc.perform(post("/requester/requests/" + id + "/" + operation).cookie(owner).with(csrf())
+                            .param("version", "0").param("decision", "cancel").param("confirmed", "true")
+                            .param("reason", "Valid cancellation reason").param("note", "Valid update")
+                            .param("title", "Forged report title").param("description", "Valid report description")
+                            .param("location", "Block A").param("categoryId", category).param("reportedUrgency", "HIGH"))
+                    .andExpect(status().isNotFound()).andExpect(content().string(not(containsString("FOREIGN PRIVATE REPORT"))));
+            mvc.perform(post("/requester/requests/" + id + "/" + operation).cookie(owner)).andExpect(status().isForbidden());
+        }
+        for (String role : List.of("technician1", "manager1")) {
+            Cookie otherRole = login(role, role.equals("technician1") ? "/technician" : "/manager");
+            for (String operation : List.of("edit", "cancel", "updates")) {
+                mvc.perform(post("/requester/requests/" + id + "/" + operation).cookie(otherRole).with(csrf())).andExpect(status().isForbidden());
+            }
+        }
+        assertEquals(0, count("requester_update"));
+        assertEquals(0, mutationAudits("REQUEST_EDITED") + mutationAudits("REQUEST_CANCELLED") + mutationAudits("REQUESTER_UPDATE_ADDED"));
+    }
+
+    @Test
+    void reqRq011MalformedVersionsAndInvalidUpdatesWriteNothing() {
+        var requester = service(OWNER, AccountRole.REQUESTER, 0);
+        String id = managerRecorded(OWNER, "Input validation original");
+        for (String version : new String[]{"", "-1", "not-a-version", "9223372036854775808"}) {
+            assertThrows(RequestValidationException.class, () -> requester.edit(id, draft(), version));
+        }
+        for (String note : List.of("", "  ", "😀".repeat(1001))) {
+            assertThrows(RequestValidationException.class, () -> requester.addUpdate(id, note, "0"));
+        }
+        assertEquals(0, requester.detail(id).orElseThrow().version());
+        assertEquals(0, count("requester_update"));
+    }
+
+    private int mutationAudits(String action) {
+        return app.queryForObject("SELECT count(*) FROM facilityflow.audit_event WHERE action = ?", Integer.class, action);
+    }
+
+    @Test
+    void reqSh002EveryMutationRechecksPersistedAccountAndRoleOutsideHttp() {
+        String id = managerRecorded(OWNER, "Account access checks");
+        var requester = service(OWNER, AccountRole.REQUESTER, 0);
+        app.update("UPDATE facilityflow.user_account SET active = false WHERE id = ?", OWNER);
+        assertThrows(AccessDeniedException.class, () -> requester.edit(id, draft(), "0"));
+        assertThrows(AccessDeniedException.class, () -> requester.cancel(id, "Valid cancellation reason", true, "0"));
+        assertThrows(AccessDeniedException.class, () -> requester.addUpdate(id, "Valid update", "0"));
+        app.update("UPDATE facilityflow.user_account SET active = true, session_version = 1 WHERE id = ?", OWNER);
+        assertThrows(AccessDeniedException.class, () -> requester.edit(id, draft(), "0"));
+        assertThrows(AccessDeniedException.class, () -> requester.cancel(id, "Valid cancellation reason", true, "0"));
+        assertThrows(AccessDeniedException.class, () -> requester.addUpdate(id, "Valid update", "0"));
+        for (var role : List.of(AccountRole.TECHNICIAN, AccountRole.FACILITIES_MANAGER)) {
+            var wrongRole = service(role == AccountRole.TECHNICIAN ? TECHNICIAN : MANAGER, role, 0);
+            assertThrows(AccessDeniedException.class, () -> wrongRole.edit(id, draft(), "0"));
+            assertThrows(AccessDeniedException.class, () -> wrongRole.cancel(id, "Valid cancellation reason", true, "0"));
+            assertThrows(AccessDeniedException.class, () -> wrongRole.addUpdate(id, "Valid update", "0"));
+        }
+        assertEquals(0, count("requester_update"));
+        assertEquals(0, mutationAudits("REQUEST_EDITED") + mutationAudits("REQUEST_CANCELLED") + mutationAudits("REQUESTER_UPDATE_ADDED"));
+    }
+
+    private void setState(String id, String status) {
+        boolean assigned = List.of("ASSIGNED", "IN_PROGRESS", "COMPLETED", "CLOSED").contains(status);
+        boolean completed = status.equals("COMPLETED") || status.equals("CLOSED");
+        admin.update("UPDATE facilityflow.maintenance_request SET status = ?, manager_priority = ?, assigned_technician_id = ?, "
+                        + "assigned_at = ?::timestamptz, resolution_summary = ?, completed_by = ?, completed_at = ?::timestamptz, version = version + 1 WHERE display_id = ?",
+                status, assigned ? "MEDIUM" : null, assigned ? TECHNICIAN : null, assigned ? "2026-01-01T00:00:00Z" : null,
+                completed ? "Synthetic completed repair summary" : null, completed ? TECHNICIAN : null,
+                completed ? "2026-01-02T00:00:00Z" : null, id);
+    }
+
     private RequestDraft draft() { return new RequestDraft("Broken light", "The ceiling light is flickering.", "Block A", category, "NORMAL"); }
 
     private int count(String table) {

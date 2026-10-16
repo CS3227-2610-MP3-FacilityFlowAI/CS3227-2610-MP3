@@ -29,4 +29,18 @@ class RequestDraftTest {
         assertEquals(5, new RequestDraft("     ", "          ", "  ", "1-1-1-1-1", "CRITICAL").errors().size());
         assertTrue(new RequestDraft("Null\0title", "Valid description", "Block A", category, "NORMAL").errors().containsKey("title"));
     }
+
+    @Test
+    void reqRq007008ReasonAndUpdateUnicodeBoundariesAndTrimming() {
+        assertEquals("😀".repeat(5), RequestDraft.validatedText("reason", "Reason", "\u2003" + "😀".repeat(5) + " ", 5, 500));
+        assertEquals(500, RequestDraft.validatedText("reason", "Reason", "😀".repeat(500), 5, 500).codePointCount(0, 1000));
+        assertEquals("x", RequestDraft.validatedText("note", "Update", " x ", 1, 1000));
+        assertEquals("😀".repeat(1000), RequestDraft.validatedText("note", "Update", "😀".repeat(1000), 1, 1000));
+        for (String reason : new String[]{"four", "😀".repeat(501), " \n ", "reason\0"}) {
+            assertThrows(RequestValidationException.class, () -> RequestDraft.validatedText("reason", "Reason", reason, 5, 500));
+        }
+        for (String note : new String[]{"", " \n ", "😀".repeat(1001)}) {
+            assertThrows(RequestValidationException.class, () -> RequestDraft.validatedText("note", "Update", note, 1, 1000));
+        }
+    }
 }

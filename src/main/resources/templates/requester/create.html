@@ -2,20 +2,22 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Report a problem · FacilityFlow AI</title>
+    <title th:text="${editing ? 'Edit request' : 'Report a problem'} + ' · FacilityFlow AI'">Report a problem · FacilityFlow AI</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <script defer th:src="@{/js/request-form.js}"></script>
 </head>
 <body>
 <header th:replace="~{dashboard :: header}"></header>
 <main>
-    <h1>Report a problem</h1>
-    <p>All fields are required. Your report will be submitted for facilities triage.</p>
+    <h1 th:text="${editing ? 'Edit request ' + displayId : 'Report a problem'}">Report a problem</h1>
+    <p>All fields are required.</p>
     <p th:if="${message}" th:text="${message}" role="alert"></p>
     <p th:if="${!errors.isEmpty()}" role="alert">Check the marked fields and try again.</p>
     <p th:if="${errors.containsKey('submissionId')}" th:text="${errors['submissionId']}" role="alert"></p>
-    <form method="post" th:action="@{/requester/requests}" data-request-form>
-        <input type="hidden" name="submissionId" th:value="${submissionId}">
+    <p th:if="${errors.containsKey('version')}" th:text="${errors['version']}" role="alert"></p>
+    <form method="post" th:action="${editing} ? @{/requester/requests/{id}/edit(id=${displayId})} : @{/requester/requests}" data-request-form>
+        <input th:unless="${editing}" type="hidden" name="submissionId" th:value="${submissionId}">
+        <input th:if="${editing}" type="hidden" name="version" th:value="${version}">
         <label for="title">Title (5–100 characters)</label>
         <input id="title" name="title" th:value="${form.title}" required
                th:attr="aria-invalid=${errors.containsKey('title')},aria-describedby=${errors.containsKey('title') ? 'title-error' : null}">
@@ -45,9 +47,10 @@
                     th:text="${urgency}" th:selected="${form.reportedUrgency == urgency}"></option>
         </select>
         <p id="urgency-error" class="error" th:if="${errors.containsKey('reportedUrgency')}" th:text="${errors['reportedUrgency']}"></p>
-        <button type="submit">Submit request</button>
-        <p data-submitting hidden role="status">Submitting your request…</p>
+        <button type="submit" th:text="${editing ? 'Save changes' : 'Submit request'}">Submit request</button>
+        <p data-submitting hidden role="status">Saving your request…</p>
     </form>
+    <p th:if="${editing}"><a th:href="@{/requester/requests/{id}(id=${displayId})}">Reload current request details</a></p>
     <a th:href="@{/requester/requests}">Back to My requests</a>
 </main>
 </body>

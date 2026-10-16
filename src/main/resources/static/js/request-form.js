@@ -5,7 +5,9 @@ document.querySelectorAll('[data-request-form]').forEach(form => {
             return;
         }
         form.dataset.pending = 'true';
-        form.querySelector('button[type="submit"]').disabled = true;
+        // Named submitters must stay enabled so the browser includes the explicit decision.
+        const button = form.querySelector('button[type="submit"]');
+        if (!button.name) button.disabled = true;
         form.querySelector('[data-submitting]').hidden = false;
     });
     window.addEventListener('pageshow', () => {

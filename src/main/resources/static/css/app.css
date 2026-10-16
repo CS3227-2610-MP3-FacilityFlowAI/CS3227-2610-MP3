@@ -7,6 +7,7 @@ h1 { overflow-wrap: anywhere; }
 a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid #174f91; outline-offset: 3px; }
 label, dt { display: block; font-weight: 650; margin-top: 1rem; }
 input:not([type=hidden]), textarea, select { display: block; box-sizing: border-box; width: 100%; max-width: 42rem; padding: .6rem; font: inherit; }
+input[type=checkbox] { display: inline; width: auto; }
 button { padding: .6rem 1rem; margin: 1rem 0; font: inherit; cursor: pointer; }
 button:disabled { cursor: wait; }
 dd { margin-left: 0; }

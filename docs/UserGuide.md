@@ -1,6 +1,6 @@
 # User Guide
 
-Status: authentication and Requester create/list/detail implemented locally;
+Status: authentication and Requester create/list/detail/edit/cancel/updates implemented locally;
 teammate review and hosted verification pending. AI workflows are not yet released.
 
 This guide must be updated continuously to match the deployed product exactly.
@@ -55,8 +55,31 @@ safe message directing you to **My requests**, without creating another report.
 Select a report to view its fields, status, Manager priority when set, timestamps,
 status history, public reasons and Requester Updates. Times display explicitly in
 Asia/Singapore. Other Requesters' reports and internal Work Logs/private Manager
-data are unavailable. Editing, cancellation, adding updates, dashboard counts,
-search/filters and the assistant are still pending.
+data are unavailable. Dashboard counts, search/filters and the assistant are
+still pending.
+
+### Requester: edit, cancel and add updates
+
+An owned **OPEN** report offers **Edit request**. Change the five report fields
+and select **Save changes**. If its category became unavailable, choose another
+active category. You can also edit OPEN reports a Manager recorded for you.
+
+**Cancel request** opens a separate confirmation page. Provide a reason containing
+5–500 characters, tick the confirmation and explicitly select **Cancel request**.
+**Keep request** leaves the report unchanged and is the default action. Cancellation
+preserves the report and reason in history. CANCELLED reports reject later edits
+and updates.
+
+Select **Add Requester Update** to append a 1–1,000-character follow-up. Updates
+are permitted while OPEN, ASSIGNED, IN_PROGRESS or COMPLETED awaiting Manager
+review. CLOSED and CANCELLED reports reject additions. Existing updates remain
+in history with their author and time.
+
+If a report changes after you open a form, saving fails safely and retains your
+input. Follow **Reload current request details**, review the latest report and
+reapply your intended change. Retrying the stale form cannot overwrite newer work
+or add the same update twice. A storage/audit failure retains input and permits
+retry without a partial change. Character limits use Unicode code points.
 
 ### Shared navigation
 
