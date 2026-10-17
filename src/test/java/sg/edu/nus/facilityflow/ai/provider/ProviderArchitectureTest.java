@@ -22,7 +22,6 @@ class ProviderArchitectureTest {
             ProviderEnvelopeDecoder.class,
             ProviderFailure.class,
             DecompressedBody.class,
-            CompressedProviderBody.class,
             SocLlmSmartReportAssistant.class,
             SocLlmTriageAssistant.class);
 

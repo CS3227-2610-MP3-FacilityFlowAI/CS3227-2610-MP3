@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -35,7 +34,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Flow;
-import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
@@ -65,7 +63,7 @@ class SocLlmHttpsProviderAdapterTest {
         assertEquals("GET", request.method());
         assertEquals(MODELS_URI, request.uri());
         assertEquals("application/json", request.headers().firstValue("Accept").orElseThrow());
-        assertEquals("gzip, identity", request.headers().firstValue("Accept-Encoding").orElseThrow());
+        assertEquals("identity", request.headers().firstValue("Accept-Encoding").orElseThrow());
         assertEquals("Bearer test-only-key", request.headers().firstValue("Authorization").orElseThrow());
         assertNotNull(request.timeout());
         assertEquals(Duration.ofSeconds(30), request.timeout().orElseThrow());
@@ -132,55 +130,12 @@ class SocLlmHttpsProviderAdapterTest {
     void reqAi001RejectsUnsupportedContentEncodingAndClosesBody() {
         TrackingInputStream body = new TrackingInputStream("{}".getBytes(StandardCharsets.UTF_8));
         FakeTransport transport = new FakeTransport();
-        transport.completeWith(response(200, body, Map.of("Content-Encoding", List.of("br"))));
+        transport.completeWith(response(200, body, Map.of("Content-Encoding", List.of("gzip"))));
 
         ProviderFailure failure = failureOf(newAdapter(transport).listModels());
 
         assertCode(ProviderFailure.Code.UNSUPPORTED_CONTENT_ENCODING, failure);
         assertTrue(body.closed);
-    }
-
-    @Test
-    void reqAi001DecodesBoundedGzipResponseAndClosesWireBody() throws IOException {
-        TrackingInputStream wireBody = new TrackingInputStream(gzip("{\"data\":[{\"id\":\"gzip-model\"}]}"));
-        FakeTransport transport = new FakeTransport();
-        transport.completeWith(response(200, wireBody, Map.of("Content-Encoding", List.of("gzip"))));
-
-        ProviderModels models = newAdapter(transport).listModels().join();
-
-        assertEquals(java.util.Set.of("gzip-model"), models.modelIds());
-        assertTrue(wireBody.closed);
-    }
-
-    @Test
-    void reqAi001RejectsMalformedGzipAndClosesWireBody() {
-        TrackingInputStream wireBody = new TrackingInputStream(new byte[] {0x1f, (byte) 0x8b, 0x00});
-        FakeTransport transport = new FakeTransport();
-        transport.completeWith(response(200, wireBody, Map.of("Content-Encoding", List.of("gzip"))));
-
-        ProviderFailure failure = failureOf(newAdapter(transport).listModels());
-
-        assertCode(ProviderFailure.Code.BODY_UNREADABLE, failure);
-        assertTrue(wireBody.closed);
-    }
-
-    @Test
-    void reqAi001RejectsCompressedWireBodyAboveHardLimit() throws IOException {
-        ByteArrayOutputStream compressedOutput = new ByteArrayOutputStream();
-        byte[] emptyMember = gzipEmptyMemberWithExtra();
-        int memberCount = (CompressedProviderBody.MAX_COMPRESSED_BYTES / emptyMember.length) + 1;
-        for (int index = 0; index < memberCount; index++) {
-            compressedOutput.write(emptyMember);
-        }
-        byte[] compressed = compressedOutput.toByteArray();
-        TrackingInputStream wireBody = new TrackingInputStream(compressed);
-        FakeTransport transport = new FakeTransport();
-        transport.completeWith(response(200, wireBody, Map.of("Content-Encoding", List.of("gzip"))));
-
-        ProviderFailure failure = failureOf(newAdapter(transport).listModels());
-
-        assertCode(ProviderFailure.Code.BODY_TOO_LARGE, failure);
-        assertTrue(wireBody.closed);
     }
 
     @Test
@@ -253,7 +208,7 @@ class SocLlmHttpsProviderAdapterTest {
 
     @Test
     void reqAi001RejectsIdentityHeaderWithBlankOrNonIdentityValue() {
-        for (String value : List.of("", "br", "identity, gzip")) {
+        for (String value : List.of("", "gzip", "identity, gzip")) {
             FakeTransport transport = new FakeTransport();
             transport.completeWith(response(200, new TrackingInputStream("{}".getBytes(StandardCharsets.UTF_8)),
                     Map.of("Content-Encoding", List.of(value))));
@@ -473,35 +428,6 @@ class SocLlmHttpsProviderAdapterTest {
     private static HttpResponse<InputStream> response(
             int status, InputStream body, Map<String, List<String>> headers, URI uri) {
         return new FakeResponse(status, body, HttpHeaders.of(headers, (name, value) -> true), uri);
-    }
-
-    private static byte[] gzip(String value) throws IOException {
-        return gzip(value.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private static byte[] gzip(byte[] value) throws IOException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        try (GZIPOutputStream gzip = new GZIPOutputStream(output)) {
-            gzip.write(value);
-        }
-        return output.toByteArray();
-    }
-
-    private static byte[] gzipEmptyMemberWithExtra() throws IOException {
-        int extraLength = 65_535;
-        ByteArrayOutputStream output = new ByteArrayOutputStream(10 + 2 + extraLength + 8);
-        output.write(0x1f);
-        output.write(0x8b);
-        output.write(8); // deflate
-        output.write(4); // FEXTRA
-        output.write(new byte[] {0, 0, 0, 0, 0, (byte) 0xff});
-        output.write(extraLength & 0xff);
-        output.write((extraLength >>> 8) & 0xff);
-        output.write(new byte[extraLength]);
-        output.write(3);
-        output.write(0); // empty deflate block
-        output.write(new byte[8]); // empty deflate stream CRC32 and ISIZE
-        return output.toByteArray();
     }
 
     private static final class FakeTransport implements ProviderHttpTransport {
