@@ -78,6 +78,15 @@ class TriageCandidateRankerTest {
                 () -> candidate(ALPHA_ACCOUNT, "alpha", true, Set.of(), -1));
     }
 
+    @Test
+    @DisplayName("REQ-MGR-022/023 duplicate skill tags cannot distort ranking")
+    void duplicateSkillTagsAreRejectedBeforeRanking() {
+        assertThrows(IllegalArgumentException.class,
+                () -> triage(List.of("Electrical", "Electrical"), List.of()));
+        assertThrows(IllegalArgumentException.class,
+                () -> triage(List.of("Electrical"), List.of("Plumbing", "Plumbing")));
+    }
+
     private static TechnicianCandidate candidate(UUID accountId, String username, boolean active,
             Set<String> skills, int workload) {
         return new TechnicianCandidate(accountId, username, active, skills, workload);

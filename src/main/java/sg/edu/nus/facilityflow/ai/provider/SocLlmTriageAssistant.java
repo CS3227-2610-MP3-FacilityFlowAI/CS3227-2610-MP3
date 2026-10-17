@@ -41,6 +41,7 @@ final class SocLlmTriageAssistant implements TriageAssistant {
     private static final Set<String> RESULT_FIELDS = Set.of(
             "suggestedCategory", "suggestedPriority", "clarificationQuestions",
             "requiredSkillTags", "optionalSkillTags", "rationale");
+    private static final Set<String> PRIORITIES = Set.of("Low", "Medium", "High", "Critical");
     private static final Pattern HTML_OR_MARKDOWN = Pattern.compile(
             "<[^>]*>|!\\[[^]]*\\]\\([^)]*\\)|\\[[^]]+\\]\\([^)]*\\)");
     private static final Pattern FORBIDDEN_IDENTIFIER = Pattern.compile(
@@ -176,9 +177,19 @@ final class SocLlmTriageAssistant implements TriageAssistant {
                     throw new IllegalArgumentException("suggested category is not active");
                 }
                 String priority = requiredText(root, "suggestedPriority", 20);
+                if (!PRIORITIES.contains(priority)) {
+                    throw new IllegalArgumentException("suggested priority is not approved");
+                }
                 List<String> questions = textArray(root, "clarificationQuestions", 0, 5, 200);
                 List<String> requiredTags = textArray(root, "requiredSkillTags", 0, 8, 50);
                 List<String> optionalTags = textArray(root, "optionalSkillTags", 0, 8, 50);
+                if (new HashSet<>(requiredTags).size() != requiredTags.size()
+                        || new HashSet<>(optionalTags).size() != optionalTags.size()) {
+                    throw new IllegalArgumentException("skill tags must be unique");
+                }
+                if (requiredTags.stream().anyMatch(optionalTags::contains)) {
+                    throw new IllegalArgumentException("required and optional tags must be disjoint");
+                }
                 if (!new HashSet<>(context.activeSkillLabels()).containsAll(requiredTags)
                         || !new HashSet<>(context.activeSkillLabels()).containsAll(optionalTags)) {
                     throw new IllegalArgumentException("suggested skill is not active");

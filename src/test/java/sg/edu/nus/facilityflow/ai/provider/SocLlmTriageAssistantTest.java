@@ -60,6 +60,8 @@ class SocLlmTriageAssistantTest {
         for (String content : List.of(
                 "{\"suggestedCategory\":\"Plumbing\",\"suggestedPriority\":\"High\",\"clarificationQuestions\":[],\"requiredSkillTags\":[],\"optionalSkillTags\":[],\"rationale\":\"Review.\"}",
                 "{\"suggestedCategory\":\"HVAC\",\"suggestedPriority\":\"High\",\"clarificationQuestions\":[],\"requiredSkillTags\":[\"Electrical\"],\"optionalSkillTags\":[\"Electrical\"],\"rationale\":\"Review.\"}",
+                "{\"suggestedCategory\":\"HVAC\",\"suggestedPriority\":\"Urgent\",\"clarificationQuestions\":[],\"requiredSkillTags\":[],\"optionalSkillTags\":[],\"rationale\":\"Review.\"}",
+                "{\"suggestedCategory\":\"HVAC\",\"suggestedPriority\":\"High\",\"clarificationQuestions\":[],\"requiredSkillTags\":[\"Electrical\",\"Electrical\"],\"optionalSkillTags\":[],\"rationale\":\"Review.\"}",
                 "{\"suggestedCategory\":\"HVAC\",\"suggestedPriority\":\"High\",\"clarificationQuestions\":[\"<b>Need access?</b>\"],\"requiredSkillTags\":[],\"optionalSkillTags\":[],\"rationale\":\"Review.\"}")) {
             Fixture fixture = readyFixture();
             CompletableFuture<SocLlmProviderPort.ProviderCompletion> providerCompletion = fixture.port.enqueueChat();
