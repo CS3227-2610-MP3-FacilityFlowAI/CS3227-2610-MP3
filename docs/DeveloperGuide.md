@@ -120,7 +120,17 @@ configuration, initial limits, retention and typed results are defined in
 `../workflow/specs/INTEGRATION-SPEC.md` and
 `../workflow/specs/AI-SECURITY-SPEC.md`.
 
-The first shared-gateway increment implements startup-safe AI configuration only.
+The shared gateway now includes startup-safe configuration, HTTPS identity-only
+transport, generation-aware readiness recovery, bounded decoding,
+admission/lease coordination, telemetry, bounded retry, a single end-to-end
+Technician deadline, strict typed Work Plan/Smart Report/Triage provider
+contracts, deterministic Manager candidate ranking and server-side output
+disclosure checks. The provider core remains advisory and mutation-free. Only
+the Technician Work Plan currently has a role-facing service/controller seam;
+Requester Smart Report and Manager Triage orchestration remain pending their
+role-owner and teammate approval evidence. Compressed responses remain deferred
+by the authoritative integration specification.
+
 `AI_ENABLED` defaults to `false`. When enabled, the application binds all
 deployment values as raw strings and resolves them to disabled, unavailable or
 validated settings without exposing the API key or allowing malformed values to
@@ -135,8 +145,8 @@ commit a populated file. AI requires `AI_ENABLED=true`, a real
 `SOCLAAS_API_KEY`, and a configured `SOCLAAS_MODEL`. The remaining variables are
 `SOCLAAS_BASE_URL`, `AI_TIMEOUT_SECONDS`, `AI_MAX_OUTPUT_TOKENS`,
 `AI_MAX_IN_FLIGHT`, `AI_RATE_PER_MINUTE` and `AI_RATE_PER_HOUR`. Invalid,
-placeholder or over-limit values make AI unavailable. This increment does not
-call SoCLaaS or validate a live model.
+placeholder or over-limit values make AI unavailable. No local test calls a live
+SoCLaaS provider or validates a hosted model.
 
 ## AI security
 
@@ -144,7 +154,10 @@ Prompts/context/output are untrusted. `AiAccessGuard` implements the
 authorization-before-context seam required by AI-SEC-001 and is verified to
 construct no protected context and make no model call after denial. Configuration
 validation and redaction are implemented and locally verified; typed schemas,
-runtime limits, transport/readiness and assistant endpoints remain unimplemented. See
+runtime limits, transport/readiness, retry, telemetry and provider disclosure
+checks are covered by focused tests. Requester/Manager role orchestration, the
+approved Work Plan multilingual safety corpus, hosted-provider smoke testing
+and final Security Reviewer/teammate verification remain pending. See
 AI-SECURITY-SPEC.md and ../workflow/SECURITY.md.
 
 ## SDD workflow
