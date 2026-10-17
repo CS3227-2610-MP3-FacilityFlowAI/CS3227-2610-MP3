@@ -202,10 +202,13 @@ The service checks the authenticated Technician role before loading protected
 context, loads only an assigned `ASSIGNED` or `IN_PROGRESS` Request and its
 latest ten Requester Updates, and sends an allowlisted projection. Request and
 Account identifiers, Work Logs, playbooks, credentials and unrelated records
-are not serialized into the model prompt. The provider response is parsed with
-exact fields, strict duplicate/unknown-field rejection, size/control/markup
-limits and mandatory safety/evidence/stop sections. Unsafe or malformed output
-is discarded as `AI_INVALID_OUTPUT`.
+are not serialized into the model prompt. The Work Plan system message enumerates
+the exact seven result fields and their array/text bounds, requires raw JSON with
+no additional fields or surrounding markup, and requires a concrete stop or
+escalation condition. The provider response is parsed with exact fields, strict
+duplicate/unknown-field rejection, size/control/markup limits and mandatory
+safety/evidence/stop sections. Unsafe or malformed output is discarded as
+`AI_INVALID_OUTPUT`.
 
 After a successful model response, the service rechecks the assignment, active
 status and Request version. A changed eligibility snapshot discards the entire

@@ -56,6 +56,29 @@ class SocLlmWorkPlanAssistantTest {
     }
 
     @Test
+    @DisplayName("REQ-TECH-014/AI-SEC-010 Work Plan prompt declares the exact bounded JSON result")
+    void workPlanPromptDeclaresExactBoundedJsonResult() {
+        Fixture fixture = readyFixture();
+        CompletableFuture<SocLlmProviderPort.ProviderCompletion> providerCompletion = fixture.port.enqueueChat();
+        CompletionStage<WorkPlanResponse> response = fixture.runtime.request(contextWith(List.of()));
+
+        fixture.provider.runNext();
+        String systemMessage = fixture.port.requests().get(0).systemMessage();
+        for (String field : List.of(
+                "diagnosticSteps", "safetyPrecautions", "suggestedTools", "requesterQuestions",
+                "evidenceChecklist", "stopOrEscalateWhen", "rationale")) {
+            assertTrue(systemMessage.contains("\"" + field + "\""), field);
+        }
+        assertTrue(systemMessage.contains("Return raw JSON only"));
+        assertTrue(systemMessage.contains("no Markdown, code fences, comments, explanation or additional fields"));
+        assertTrue(systemMessage.contains("concrete hazard"));
+
+        providerCompletion.complete(ProviderTestControls.completion(validPlanJson()));
+        assertInstanceOf(WorkPlanResponse.Success.class, await(response));
+        fixture.runtime.close();
+    }
+
+    @Test
     @DisplayName("REQ-TECH-014/015 valid response is typed advisory data and sends only allowlisted context")
     void validResponseIsTypedAndPromptDoesNotContainProtectedIdentifiers() {
         Fixture fixture = readyFixture();
