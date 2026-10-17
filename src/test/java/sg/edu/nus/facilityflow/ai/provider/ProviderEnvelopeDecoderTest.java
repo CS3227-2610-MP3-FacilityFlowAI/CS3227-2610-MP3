@@ -80,6 +80,33 @@ class ProviderEnvelopeDecoderTest {
     }
 
     @Test
+    void reqAi002AndAiSec010AcceptCurrentSoclaasCompletionMetadataAsInert() {
+        String json = """
+                {
+                  "id":"chatcmpl-test","object":"chat.completion","created":1792226496,
+                  "model":"qwen3.8:27b","system_fingerprint":"vllm-test","service_tier":null,
+                  "choices":[{
+                    "index":0,
+                    "message":{"role":"assistant","content":"safe answer","refusal":null,
+                      "annotations":null,"audio":null,"function_call":null,"reasoning":null},
+                    "logprobs":null,"finish_reason":"stop","stop_reason":null,"token_ids":null,
+                    "routed_experts":null
+                  }],
+                  "usage":{"prompt_tokens":262,"completion_tokens":38,"total_tokens":300,
+                    "prompt_tokens_details":{"cached_tokens":0,"created_cache_tokens":0,
+                      "multimodal_tokens":null}},
+                  "prompt_logprobs":null,"prompt_token_ids":null,"prompt_text":null,
+                  "kv_transfer_params":null,"ec_transfer_params":null,"metrics":null
+                }
+                """;
+
+        ProviderCompletion result = decodeCompletion(json);
+
+        assertEquals("safe answer", result.content());
+        assertEquals(Optional.of(new ProviderUsage(262L, 38L, 300L)), result.usage());
+    }
+
+    @Test
     void aiSec010AcceptsExactly256KiBPostDecompression() {
         byte[] body = exactSizeValidModelsBody(ProviderEnvelopeDecoder.MAX_BODY_BYTES);
 
@@ -243,7 +270,7 @@ class ProviderEnvelopeDecoderTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"refusal", "audio", "name", "tool_calls", "function_call", "unknown"})
+    @ValueSource(strings = {"name", "tool_calls", "unknown"})
     void aiSec005RejectsEveryUnlistedMessageMemberEvenWhenNull(String member) {
         String json = completionWithChoice("{\"message\":{\"role\":\"assistant\",\"content\":\"x\",\""
                 + member + "\":null},\"finish_reason\":\"stop\"}");

@@ -37,10 +37,15 @@ final class ProviderEnvelopeDecoder {
             "max_model_len",
             "soclaas");
     private static final Set<String> CHAT_ROOT_FIELDS = Set.of(
-            "id", "object", "created", "model", "system_fingerprint", "service_tier", "choices", "usage");
-    private static final Set<String> CHOICE_FIELDS = Set.of("index", "message", "finish_reason", "logprobs");
-    private static final Set<String> MESSAGE_FIELDS = Set.of("role", "content");
-    private static final Set<String> USAGE_FIELDS = Set.of("prompt_tokens", "completion_tokens", "total_tokens");
+            "id", "object", "created", "model", "system_fingerprint", "service_tier", "choices", "usage",
+            "prompt_logprobs", "prompt_token_ids", "prompt_text", "kv_transfer_params", "ec_transfer_params",
+            "metrics");
+    private static final Set<String> CHOICE_FIELDS = Set.of(
+            "index", "message", "finish_reason", "logprobs", "stop_reason", "token_ids", "routed_experts");
+    private static final Set<String> MESSAGE_FIELDS = Set.of(
+            "role", "content", "refusal", "annotations", "audio", "function_call", "reasoning");
+    private static final Set<String> USAGE_FIELDS = Set.of(
+            "prompt_tokens", "completion_tokens", "total_tokens", "prompt_tokens_details");
 
     private static final JsonMapper MAPPER = JsonMapper.builder(JsonFactory.builder()
                     .streamReadConstraints(StreamReadConstraints.builder()

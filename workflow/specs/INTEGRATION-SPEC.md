@@ -364,10 +364,14 @@ presence. Permitted inert metadata may have any JSON type but is never consumed:
   `context_length`, `context_window`, `max_context_length`, `max_model_len`,
   `soclaas`;
 - chat root: only `id`, `object`, `created`, `model`, `system_fingerprint`,
-  `service_tier`, `choices`, `usage`;
-- choice: only `index`, `message`, `finish_reason`, `logprobs`;
-- message: only `role`, `content`;
-- usage: only `prompt_tokens`, `completion_tokens`, `total_tokens`.
+  `service_tier`, `choices`, `usage`, `prompt_logprobs`, `prompt_token_ids`,
+  `prompt_text`, `kv_transfer_params`, `ec_transfer_params`, `metrics`;
+- choice: only `index`, `message`, `finish_reason`, `logprobs`, `stop_reason`,
+  `token_ids`, `routed_experts`;
+- message: only `role`, `content`, `refusal`, `annotations`, `audio`,
+  `function_call`, `reasoning`;
+- usage: only `prompt_tokens`, `completion_tokens`, `total_tokens`,
+  `prompt_tokens_details`.
 
 `listModels` requires a root object with a non-null `data` array. Every array
 entry is a non-null object containing a non-empty string `id`; IDs must be unique.
@@ -379,10 +383,11 @@ or use them for configuration, authorization, limits or prompt construction.
 
 A completion response contains exactly one assistant choice. `message.role` is
 exactly `assistant`, `message.content` is one non-empty string and
-`finish_reason` is exactly `stop`. Because the message allowlist contains only
-role/content, `refusal`, `audio`, `name`, `tool_calls`, `function_call` and every
-other unknown member reject on presence even when null or empty. Reject root
-error members, empty/multiple choices, non-assistant messages,
+`finish_reason` is exactly `stop`. The additional current SoCLaaS/vLLM root,
+choice, message and detailed-usage members are inert metadata of any JSON type;
+the gateway never traverses, trusts, returns or logs them. `name`, `tool_calls`
+and every other unknown message member reject on presence even when null or
+empty. Reject root error members, empty/multiple choices, non-assistant messages,
 missing/malformed content and truncated completion.
 
 `usage` may be absent. When present it is non-null, non-empty and contains only a

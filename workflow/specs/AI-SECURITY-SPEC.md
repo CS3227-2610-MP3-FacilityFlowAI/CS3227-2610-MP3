@@ -147,21 +147,26 @@ may select a feature, actor, template, parser, model or arbitrary context map.
   `data`; model entries only `id`, `object`, `created`, `owned_by`,
   `context_length`, `context_window`, `max_context_length`, `max_model_len`,
   `soclaas`; chat root only `id`, `object`, `created`, `model`,
-  `system_fingerprint`, `service_tier`, `choices`, `usage`; choice only `index`,
-  `message`, `finish_reason`, `logprobs`; message only `role`, `content`; usage
-  only `prompt_tokens`, `completion_tokens`, `total_tokens`. Permitted inert
-  metadata may have any JSON type but is never consumed or recursively trusted.
-  Every unlisted member rejects on presence.
+  `system_fingerprint`, `service_tier`, `choices`, `usage`, `prompt_logprobs`,
+  `prompt_token_ids`, `prompt_text`, `kv_transfer_params`, `ec_transfer_params`,
+  `metrics`; choice only `index`, `message`, `finish_reason`, `logprobs`,
+  `stop_reason`, `token_ids`, `routed_experts`; message only `role`, `content`,
+  `refusal`, `annotations`, `audio`, `function_call`, `reasoning`; usage only
+  `prompt_tokens`, `completion_tokens`, `total_tokens`, `prompt_tokens_details`.
+  Permitted inert metadata may have any JSON type but is never consumed,
+  recursively trusted, returned or logged. Every unlisted member rejects on
+  presence.
 
   Model discovery requires a root object with a non-null `data` array. Every
   entry is a non-null object with a unique, non-empty string `id`; any malformed
   or null entry or duplicate rejects the whole result. The configured model must
   match one ID exactly, with a maximum 1,000 entries. Completion requires exactly
   one choice, `message.role` exactly `assistant`, one non-empty content string and
-  `finish_reason` exactly `stop`. The message allowlist means `refusal`, `audio`,
-  `name`, `tool_calls`, `function_call` and every unknown member reject even when
-  null/empty. Optional `usage`, when present, is non-null/non-empty and contains only
-  a non-empty subset of `prompt_tokens`, `completion_tokens` and `total_tokens`.
+  `finish_reason` exactly `stop`. The confirmed current SoCLaaS/vLLM metadata
+  members above are ignored; `name`, `tool_calls` and every unknown message member
+  reject even when null/empty. Optional `usage`, when present, is non-null/non-empty
+  and contains a non-empty subset of `prompt_tokens`, `completion_tokens` and
+  `total_tokens`, plus optional inert `prompt_tokens_details`.
   Values are non-negative integral signed-64-bit values; when all three exist,
   total equals prompt plus completion without overflow.
 - **AI-SEC-011:** Reject disallowed Unicode control characters, allowing LF and
