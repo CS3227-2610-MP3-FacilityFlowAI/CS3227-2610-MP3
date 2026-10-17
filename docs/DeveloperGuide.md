@@ -144,12 +144,61 @@ configuration, initial limits, retention and typed results are defined in
 `../workflow/specs/INTEGRATION-SPEC.md` and
 `../workflow/specs/AI-SECURITY-SPEC.md`.
 
+The shared gateway now includes startup-safe configuration, HTTPS identity-only
+transport, generation-aware readiness recovery, bounded decoding,
+admission/lease coordination, telemetry, bounded retry, a single end-to-end
+Technician deadline, strict typed Work Plan/Smart Report/Triage provider
+contracts, deterministic Manager candidate ranking and server-side output
+disclosure checks. The provider core remains advisory and mutation-free. Only
+the Technician Work Plan currently has a role-facing service/controller seam;
+Requester Smart Report and Manager Triage orchestration remain pending their
+role-owner and teammate approval evidence. Compressed responses remain deferred
+by the authoritative integration specification.
+
+`AI_ENABLED` defaults to `false`. When enabled, the application binds all
+deployment values as raw strings and resolves them to disabled, unavailable or
+validated settings without exposing the API key or allowing malformed values to
+prevent the manual application from starting. The configured base must resolve
+to the official HTTPS SoCLaaS `/v1` base. Timeout, output, concurrency and rate
+settings may tighten but not exceed 30 seconds, 800 output tokens, five
+concurrent in-flight calls application-wide, five Account calls per minute and
+30 per hour.
+
+Copy `.env.example` into the developer's approved local secret mechanism; never
+commit a populated file. AI requires `AI_ENABLED=true`, a real
+`SOCLAAS_API_KEY`, and a configured `SOCLAAS_MODEL`. The remaining variables are
+`SOCLAAS_BASE_URL`, `AI_TIMEOUT_SECONDS`, `AI_MAX_OUTPUT_TOKENS`,
+`AI_MAX_IN_FLIGHT`, `AI_RATE_PER_MINUTE` and `AI_RATE_PER_HOUR`. Invalid,
+placeholder or over-limit values make AI unavailable. No local test calls a live
+SoCLaaS provider or validates a hosted model.
+
 ## AI security
+
+Gateway failures include a stable `code` and readable `message`, for example:
+
+```json
+{"code":"AI_INVALID_OUTPUT","message":"The AI response had an invalid format or failed output validation."}
+```
+
+Inspect the server console for `SoCLaaS gateway` entries. Failure entries name
+the feature and code; provider diagnostics additionally identify the stage and
+safe reason, for example `stage=READINESS reason=MODEL_NOT_FOUND`,
+`stage=READINESS reason=INVALID_ENVELOPE`,
+`stage=COMPLETION reason=HTTP_UNAUTHORIZED`, or
+`stage=WORK_PLAN_OUTPUT reason=INVALID_OUTPUT`. Authentication/access rejection
+maps to `AI_CONFIGURATION_ERROR`; invalid format or output validation maps to
+`AI_INVALID_OUTPUT`; timeouts map to `AI_TIMEOUT`. For `AI_UNAVAILABLE`,
+check the startup disabled/configuration log and readiness diagnostics.
+Logs omit credentials, raw prompts/responses, context and exception messages.
 
 Prompts/context/output are untrusted. `AiAccessGuard` implements the
 authorization-before-context seam required by AI-SEC-001 and is verified to
-construct no protected context and make no model call after denial. Typed
-schemas, limits, transport and assistant endpoints remain unimplemented. See
+construct no protected context and make no model call after denial. Configuration
+validation and redaction are implemented and locally verified; typed schemas,
+runtime limits, transport/readiness, retry, telemetry and provider disclosure
+checks are covered by focused tests. Requester/Manager role orchestration, the
+approved Work Plan multilingual safety corpus, hosted-provider smoke testing
+and final Security Reviewer/teammate verification remain pending. See
 AI-SECURITY-SPEC.md and ../workflow/SECURITY.md.
 
 ## SDD workflow

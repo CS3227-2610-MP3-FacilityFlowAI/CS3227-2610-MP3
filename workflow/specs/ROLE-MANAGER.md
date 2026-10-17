@@ -1,7 +1,10 @@
 # Facilities Manager Specification
 
-Status: approved v0.1, 12 October 2026. Owner: yu-sutong. Required teammate
-review has been confirmed. Shared rules are in [PRODUCT-SPEC](PRODUCT-SPEC.md).
+Status: approved baseline v0.1, 12 October 2026. Owner: yu-sutong. Gateway
+revision candidate v0.2 received stakeholder approval on 16 October 2026;
+Manager role-owner and teammate review of the revision remains pending. This is
+not an implementation or verification claim. Shared rules are in
+[PRODUCT-SPEC](PRODUCT-SPEC.md).
 
 ## Objective and screens
 
@@ -82,10 +85,16 @@ makes every final decision.
   reconsidering category, priority or assignment for an otherwise eligible
   non-terminal Request. It is unavailable for CANCELLED; CLOSED requires reopen
   before assignment work.
-- **REQ-MGR-021:** Model context contains only the selected Request report,
-  Requester Updates relevant to triage, active category values, active skill tags
-  and the fixed output rules. It excludes Technician identities, workloads,
-  passwords, unrelated Requests and mutation capabilities.
+- **REQ-MGR-021:** Model context contains only the selected Request's title,
+  description, location, current category, reported urgency, Manager priority
+  and status; at most the latest ten Requester Updates; active category labels;
+  active skill labels; and fixed output rules. Select Updates by creation time
+  descending then immutable ID descending and send the selected set
+  oldest-to-newest. Sort active labels case-insensitively then by immutable ID,
+  but never send the IDs. It excludes Request/Account internal or display IDs,
+  Technician identities, workloads, passwords, unrelated Requests and mutation
+  capabilities. Oversize context is rejected rather than silently truncated
+  beyond the specified latest-ten Update selection.
 - **REQ-MGR-022:** The typed result contains suggested category, Manager priority,
   clarification questions, required skill tags, optional skill tags and rationale
   as specified in [INTEGRATION-SPEC](INTEGRATION-SPEC.md).
@@ -100,7 +109,11 @@ makes every final decision.
   one and submits the ordinary authorized assignment operation.
 - **REQ-MGR-025:** Saving triage re-reads current state and active Account/catalogue
   data. Stale recommendations, AI failure, malformed output or no candidate never
-  block manual triage and never change a Request.
+  block manual triage and never change a Request. Before displaying an AI result,
+  the server also rechecks Account/role/object access, Request state/version and
+  category/skill catalogue freshness. Any change, including a now-inactive
+  suggested value, discards the result as `DISCARDED_ACCESS_CHANGED`; it is never
+  recorded successful.
 
 ## Acceptance scenarios
 
@@ -116,6 +129,7 @@ makes every final decision.
 | MGR-A08 | AI recommends skills | deterministic candidate order, Manager choice | LLM or ranker assigns |
 | MGR-A09 | injected Request asks for secrets/actions | safe schema/rejection | data disclosure or mutation |
 | MGR-A10 | concurrent triage changed state/catalogue | stale save rejected/refresh | obsolete recommendation applied |
+| MGR-A11 | Request state/version or category/skill catalogue changes in flight | entire result discarded with safe refresh guidance | stale suggestion displayed or recorded successful |
 
 Tests cover every lifecycle operation, account guard, catalogue migration
 rollback, tag management, exact ranking/ties, no-match behavior, role/object

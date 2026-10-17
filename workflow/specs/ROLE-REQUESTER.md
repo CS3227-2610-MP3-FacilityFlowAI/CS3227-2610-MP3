@@ -1,8 +1,10 @@
 # Requester Specification
 
-Status: approved v0.1, 12 October 2026. Owner: yooplo. Required teammate review
-has been confirmed. Shared fields, lifecycle, UI and quality rules are in
-[PRODUCT-SPEC](PRODUCT-SPEC.md) and are not repeated here.
+Status: approved baseline v0.1, 12 October 2026. Owner: yooplo. Gateway revision
+candidate v0.2 received stakeholder approval on 16 October 2026; Requester
+role-owner and teammate review of the revision remains pending. This is not an
+implementation or verification claim. Shared fields, lifecycle, UI and quality
+rules are in [PRODUCT-SPEC](PRODUCT-SPEC.md) and are not repeated here.
 
 ## Objective and screens
 
@@ -48,9 +50,12 @@ draft, suggests category and reported urgency, and asks for missing information.
 - **REQ-RQ-012:** It is available only to an authenticated active Requester while
   creating a Request or editing an owned persisted OPEN Request.
 - **REQ-RQ-013:** Its model context contains only the Requester's current rough
-  text/form fields, active category values and the fixed field rules needed to
-  construct the draft. It contains no account list, other Requests, Work Logs,
-  Audit Events or Manager/Technician private data.
+  or current title, description and location; selected category and reported
+  urgency when present; active category labels; and the fixed field rules needed
+  to construct the draft. It contains no Request/Account internal or display ID,
+  account list, other Request, Work Log, Audit Event or Manager/Technician
+  private data. Oversize input is rejected under AI-SEC-007 and is not silently
+  truncated.
 - **REQ-RQ-014:** Its typed result contains optional draft title, description and
   location; optional suggested category and urgency; zero to five missing-
   information questions; and a short rationale. Exact schema and limits are in
@@ -63,7 +68,10 @@ draft, suggests category and reported urgency, and asks for missing information.
   checks. AI output is never authorization or trusted validation.
 - **REQ-RQ-017:** Missing, malformed, unsafe, timed-out or rate-limited AI output
   produces a safe status message and leaves the manual form and its current input
-  usable.
+  usable. For persisted edit assistance, the server rechecks ownership, OPEN
+  state, Request version and category-catalogue freshness before display; any
+  change discards the result as `DISCARDED_ACCESS_CHANGED`. A now-inactive
+  suggested category also invalidates the result.
 
 ## Acceptance scenarios
 
@@ -79,6 +87,7 @@ draft, suggests category and reported urgency, and asks for missing information.
 | RQ-AI01 | valid rough text returns typed AI result | review panel only; accepted fields copied to form | automatic submission |
 | RQ-AI02 | rough text contains prompt-injection instructions | treated as Request data; bounded schema or safe rejection | disclosure, tools or broader context |
 | RQ-AI03 | AI is unavailable or malformed | manual form remains usable | draft loss or business mutation |
+| RQ-AI04 | persisted edit ownership/state/version/category changes in flight | entire result discarded with safe refresh guidance | stale suggestion displayed or recorded successful |
 
 Tests cover normal, boundary, ownership, stale-state, rollback, duplicate-click,
 direct/obfuscated injection, malformed output and AI failure cases.

@@ -39,6 +39,18 @@ server:
         secure: ${SESSION_COOKIE_SECURE:true}
         same-site: lax
 facilityflow:
+  ai:
+    # Bind as strings so malformed deployment values make AI unavailable without
+    # preventing the manual FacilityFlow application from starting.
+    enabled: "${AI_ENABLED:false}"
+    base-url: "${SOCLAAS_BASE_URL:https://soclaas-api.comp.nus.edu.sg/v1}"
+    api-key: "${SOCLAAS_API_KEY:}"
+    model: "${SOCLAAS_MODEL:}"
+    timeout-seconds: "${AI_TIMEOUT_SECONDS:30}"
+    max-output-tokens: "${AI_MAX_OUTPUT_TOKENS:800}"
+    max-in-flight: "${AI_MAX_IN_FLIGHT:5}"
+    rate-per-minute: "${AI_RATE_PER_MINUTE:5}"
+    rate-per-hour: "${AI_RATE_PER_HOUR:30}"
   security:
     password:
       salt-length: 16
