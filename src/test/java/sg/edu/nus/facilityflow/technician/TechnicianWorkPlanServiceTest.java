@@ -34,6 +34,8 @@ import sg.edu.nus.facilityflow.ai.technician.WorkPlanResponse;
 import sg.edu.nus.facilityflow.ai.technician.WorkPlanResult;
 import sg.edu.nus.facilityflow.identity.AccountRole;
 import sg.edu.nus.facilityflow.identity.CurrentAccount;
+import sg.edu.nus.facilityflow.identity.CurrentAccountProvider;
+import sg.edu.nus.facilityflow.identity.CurrentAccountSnapshot;
 import sg.edu.nus.facilityflow.identity.IdentityAuthorization;
 
 /** Requirement tests for the authorization-first Technician role adapter. */
@@ -120,6 +122,44 @@ class TechnicianWorkPlanServiceTest {
 
         assertTrue(await(response) instanceof WorkPlanResponse.Success);
         assertEquals(1, repository.eligibilityChecks.get());
+    }
+
+    @Test
+    @DisplayName("AI-SEC-028 changed session snapshot discards an async result")
+    void changedSessionSnapshotDiscardsAsyncResult() throws Exception {
+        CurrentAccount account = new CurrentAccount(
+                TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN);
+        CurrentAccountSnapshot snapshot = new CurrentAccountSnapshot(
+                TECHNICIAN_ID, AccountRole.TECHNICIAN, 7);
+        CurrentAccountProvider currentAccounts = new CurrentAccountProvider() {
+            @Override
+            public CurrentAccount requireCurrentAccount() {
+                return account;
+            }
+
+            @Override
+            public CurrentAccountSnapshot requireCurrentAccountSnapshot() {
+                return snapshot;
+            }
+        };
+        IdentityAuthorization authorization = new IdentityAuthorization(currentAccounts);
+        CountingRepository repository = new CountingRepository();
+        repository.snapshotStillEligible = false;
+        CompletableFuture<WorkPlanResponse> provider = new CompletableFuture<>();
+        WorkPlanAssistant assistant = ignored -> provider;
+        TechnicianWorkPlanService service = new TechnicianWorkPlanService(
+                authorization,
+                new AiAccessGuard(authorization),
+                coordinator(),
+                new ReadyLifecycle(),
+                repository,
+                assistant);
+
+        CompletionStage<WorkPlanResponse> response = service.request("FF-000001");
+        provider.complete(new CountingAssistant().request(context()).toCompletableFuture().join());
+
+        assertEquals(WorkPlanFailureCode.DISCARDED_ACCESS_CHANGED, failureCode(await(response)));
+        assertEquals(7, repository.observedSessionVersion);
     }
 
     @Test
@@ -310,6 +350,8 @@ class TechnicianWorkPlanServiceTest {
         private final AtomicInteger loadCalls = new AtomicInteger();
         private final AtomicInteger eligibilityChecks = new AtomicInteger();
         private boolean stillEligible = true;
+        private boolean snapshotStillEligible = true;
+        private long observedSessionVersion = Long.MIN_VALUE;
 
         @Override
         public Optional<WorkPlanContext> loadEligible(String displayId, UUID technicianId) {
@@ -321,6 +363,13 @@ class TechnicianWorkPlanServiceTest {
         public boolean isStillEligible(WorkPlanContext context) {
             eligibilityChecks.incrementAndGet();
             return stillEligible;
+        }
+
+        @Override
+        public boolean isStillEligible(WorkPlanContext context, CurrentAccountSnapshot accountSnapshot) {
+            eligibilityChecks.incrementAndGet();
+            observedSessionVersion = accountSnapshot.sessionVersion();
+            return stillEligible && snapshotStillEligible;
         }
     }
 

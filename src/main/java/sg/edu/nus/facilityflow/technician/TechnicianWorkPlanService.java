@@ -21,7 +21,7 @@ import sg.edu.nus.facilityflow.ai.technician.WorkPlanContext;
 import sg.edu.nus.facilityflow.ai.technician.WorkPlanFailureCode;
 import sg.edu.nus.facilityflow.ai.technician.WorkPlanResponse;
 import sg.edu.nus.facilityflow.identity.AccountRole;
-import sg.edu.nus.facilityflow.identity.CurrentAccount;
+import sg.edu.nus.facilityflow.identity.CurrentAccountSnapshot;
 import sg.edu.nus.facilityflow.identity.IdentityAuthorization;
 
 /** Authorization-first orchestration for REQ-TECH-012–017 and AI-SEC-001/008/017/028. */
@@ -96,7 +96,7 @@ public final class TechnicianWorkPlanService {
         if (displayId == null || !displayId.matches("FF-[0-9]{6}")) {
             return completedFailure(WorkPlanFailureCode.AI_INVALID_REQUEST);
         }
-        CurrentAccount technician = authorization.requireRole(AccountRole.TECHNICIAN);
+        CurrentAccountSnapshot technician = authorization.requireRoleSnapshot(AccountRole.TECHNICIAN);
         Instant deadline = deadline(clock.instant(), timeoutSeconds);
         if (!clock.instant().isBefore(deadline)) {
             return completedFailure(WorkPlanFailureCode.AI_TIMEOUT);
@@ -163,7 +163,7 @@ public final class TechnicianWorkPlanService {
                         CompletionStage<WorkPlanResponse> response;
                         try (AiInvocationTelemetry.Scope ignored = AiInvocationTelemetry.bind(invocation)) {
                             response = aiAccessGuard.forTechnician(
-                                    context.assignedTechnicianId(), () -> context,
+                                    technician, context.assignedTechnicianId(), () -> context,
                                     value -> assistant.request(value, deadline));
                         }
                         return response.handle((value, failure) -> {
@@ -178,7 +178,7 @@ public final class TechnicianWorkPlanService {
                             }
                             if (value instanceof WorkPlanResponse.Success) {
                                 try {
-                                    if (!repository.isStillEligible(context)) {
+                                    if (!repository.isStillEligible(context, technician)) {
                                         return WorkPlanResponse.failure(
                                                 WorkPlanFailureCode.DISCARDED_ACCESS_CHANGED);
                                     }

@@ -10,12 +10,22 @@ public class SpringSecurityCurrentAccountProvider implements CurrentAccountProvi
 
     @Override
     public CurrentAccount requireCurrentAccount() {
+        return requirePrincipal().asCurrentAccount();
+    }
+
+    @Override
+    public CurrentAccountSnapshot requireCurrentAccountSnapshot() {
+        CurrentAccountPrincipal principal = requirePrincipal();
+        return new CurrentAccountSnapshot(principal.id(), principal.role(), principal.sessionVersion());
+    }
+
+    private static CurrentAccountPrincipal requirePrincipal() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null
                 || !authentication.isAuthenticated()
                 || !(authentication.getPrincipal() instanceof CurrentAccountPrincipal principal)) {
             throw new AuthenticationCredentialsNotFoundException("Authentication is required");
         }
-        return principal.asCurrentAccount();
+        return principal;
     }
 }

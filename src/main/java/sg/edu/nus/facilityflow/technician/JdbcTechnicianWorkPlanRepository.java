@@ -11,6 +11,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import sg.edu.nus.facilityflow.ai.technician.RequesterUpdate;
 import sg.edu.nus.facilityflow.ai.technician.WorkPlanContext;
+import sg.edu.nus.facilityflow.identity.AccountRole;
+import sg.edu.nus.facilityflow.identity.CurrentAccountSnapshot;
 
 /** Loads only the bounded, assigned Request context needed by the Work Plan seam. */
 @Repository
@@ -46,6 +48,8 @@ public class JdbcTechnicianWorkPlanRepository implements TechnicianWorkPlanRepos
                AND r.status IN ('ASSIGNED', 'IN_PROGRESS')
                AND a.active = true
                AND a.role = 'TECHNICIAN'
+               AND a.id = :authenticatedAccountId
+               AND (:sessionVersion < 0 OR a.session_version = :sessionVersion)
             """;
 
     private final NamedParameterJdbcTemplate jdbc;
@@ -77,13 +81,21 @@ public class JdbcTechnicianWorkPlanRepository implements TechnicianWorkPlanRepos
 
     @Override
     public boolean isStillEligible(WorkPlanContext context) {
+        return isStillEligible(context, new CurrentAccountSnapshot(
+                context.assignedTechnicianId(), AccountRole.TECHNICIAN, -1));
+    }
+
+    @Override
+    public boolean isStillEligible(WorkPlanContext context, CurrentAccountSnapshot accountSnapshot) {
         Number matches = jdbc.queryForObject(
                 STILL_ELIGIBLE,
                 Map.of(
                         "requestId", context.requestId(),
                         "displayId", context.displayId(),
                         "technicianId", context.assignedTechnicianId(),
-                        "requestVersion", context.requestVersion()),
+                        "requestVersion", context.requestVersion(),
+                        "authenticatedAccountId", accountSnapshot.id(),
+                        "sessionVersion", accountSnapshot.sessionVersion()),
                 Number.class);
         return matches != null && matches.longValue() == 1L;
     }
