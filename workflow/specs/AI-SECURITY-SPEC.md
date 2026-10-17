@@ -15,15 +15,18 @@ teammate approval remain pending.
 Iteration 2B HTTPS-adapter requirements were prepared against provider-core base
 commit `897937d`; the adapter, focused tests and fresh Security Reviewer approval
 are complete. Iteration 2C adds startup-safe Spring lifecycle/readiness wiring;
-fresh Security Reviewer review is GO. Later increments still own retries,
-rate/lease controls, telemetry, role gateway/coordinator and compressed-response
-support. Iteration 2D adds the first Technician Work Plan vertical slice;
+fresh Security Reviewer review is GO. Later candidate increments implement
+retries, rate/lease controls and telemetry locally, but the approved revision and
+human review have not yet been synchronized; role gateway/coordinator and
+compressed-response support remain separately scoped. Iteration 2D adds the first
+Technician Work Plan vertical slice;
 focused tests pass, but teammate and fresh Security Reviewer review remain
 pending. Iteration 2E adds a process-local shared admission coordinator and
 focused rolling-window/concurrency tests. Iteration 2F adds PostgreSQL-time
 Account buckets and owner/version-fenced global leases with renewal and
-stale-release tests. Retry, telemetry and compressed-response requirements
-remain deferred.
+stale-release tests. Retry and telemetry have local candidate evidence but remain
+pending synchronized specification/reviewer approval; compressed-response
+requirements remain deferred.
 
 ## Assets and trust seams
 

@@ -15,15 +15,18 @@ teammate approval remain pending.
 Iteration 2B HTTPS-adapter requirements were prepared against provider-core base
 commit `897937d`; the adapter, focused tests and fresh Security Reviewer approval
 are complete. Iteration 2C adds production lifecycle/readiness wiring and has a
-fresh Security Reviewer GO; role gateway/coordinator, retries, rate/lease
-controls, telemetry and compressed-response support remain later increments.
+fresh Security Reviewer GO. Later candidate commits also implement retries,
+rate/lease controls and durable telemetry locally; these status notes do not
+replace the pending approved specification/review update, and compressed-response
+support remains deferred.
 Iteration 2D adds the first role-facing Technician Work Plan vertical slice;
 focused implementation tests pass, while teammate and fresh Security Reviewer
 review remain pending. Iteration 2E adds a shared process-local admission
 coordinator for configured in-flight and rolling per-account limits. Iteration
-2F adds PostgreSQL-time Account buckets and fenced global leases. Retry
-execution, durable invocation telemetry and compressed-response controls remain
-later increments.
+2F adds PostgreSQL-time Account buckets and fenced global leases. The candidate
+includes later local retry and durable invocation telemetry evidence; the
+approved revision still requires synchronized review before those controls can
+be treated as approved scope.
 
 ## SoCLaaS transport
 
