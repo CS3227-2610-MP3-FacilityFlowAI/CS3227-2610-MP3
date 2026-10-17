@@ -4,6 +4,7 @@ import java.text.Normalizer;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /** Validated advisory fields; callers still perform ordinary Request validation. */
 public record SmartReportResult(
@@ -16,6 +17,10 @@ public record SmartReportResult(
         String rationale) {
 
     private static final Set<String> URGENCIES = Set.of("Low", "Normal", "High", "Emergency");
+    private static final Pattern HTML_OR_MARKDOWN = Pattern.compile(
+            "<[^>]*>|!\\[[^]]*\\]\\([^)]*\\)|\\[[^]]+\\]\\([^)]*\\)");
+    private static final Pattern FORBIDDEN_IDENTIFIER = Pattern.compile(
+            "(?i)(?:\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b|\\bFF-[0-9]{6}\\b|<\\/?request-data>)");
 
     public SmartReportResult {
         draftTitle = optional(draftTitle, "draftTitle", 5, 100);
@@ -51,6 +56,9 @@ public record SmartReportResult(
         if (normalized.isEmpty() || normalized.codePointCount(0, normalized.length()) < min
                 || normalized.codePointCount(0, normalized.length()) > max || hasDisallowedControl(normalized)) {
             throw new IllegalArgumentException(name + " is invalid.");
+        }
+        if (HTML_OR_MARKDOWN.matcher(normalized).find() || FORBIDDEN_IDENTIFIER.matcher(normalized).find()) {
+            throw new IllegalArgumentException(name + " contains disallowed markup or identifiers.");
         }
         return normalized;
     }

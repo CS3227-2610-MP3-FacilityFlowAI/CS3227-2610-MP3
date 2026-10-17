@@ -55,7 +55,8 @@ public final class SocLlmProviderRuntimeFactory {
                     scheduler);
             CompletionStage<Readiness> readiness = core.beginStartupReadinessCheck();
             WorkPlanAssistant assistant = new SocLlmWorkPlanAssistant(available, core, clock);
-            return new Runtime(core, readiness, assistant, SmartReportAssistant.unavailable(),
+            SmartReportAssistant smartReport = new SocLlmSmartReportAssistant(available, core, clock);
+            return new Runtime(core, readiness, assistant, smartReport,
                     TriageAssistant.unavailable(), discovery, provider, scheduler, true);
         } catch (RuntimeException failure) {
             shutdown(discovery);
@@ -86,7 +87,8 @@ public final class SocLlmProviderRuntimeFactory {
                 Objects.requireNonNull(scheduler, "scheduler"));
         CompletionStage<Readiness> readiness = core.beginStartupReadinessCheck();
         WorkPlanAssistant assistant = new SocLlmWorkPlanAssistant(available, core, clock);
-        return new Runtime(core, readiness, assistant, SmartReportAssistant.unavailable(),
+        SmartReportAssistant smartReport = new SocLlmSmartReportAssistant(available, core, clock);
+        return new Runtime(core, readiness, assistant, smartReport,
                 TriageAssistant.unavailable(), discovery, provider, scheduler, false);
     }
 
