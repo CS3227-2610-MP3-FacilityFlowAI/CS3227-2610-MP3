@@ -5,7 +5,7 @@
 - Final candidate: `e784d48..HEAD` on `soc-llm-gateway`.
 - Remediation commits: `695eb07`, `899501f`, `d93b7da`, `16d1279`,
   `0f60e5f`, `0a0ca7b`, `2003e61`, `8305b0d`, `dd66032`, `f610ba6`,
-  `96f6cd9`, `c6b1459`.
+  `96f6cd9`, `c6b1459`, `7c5c8a9`, `91131ad`.
 - Verified result: full Gradle suite `BUILD SUCCESSFUL`; 476 tests, 0 failures,
   0 errors, 0 skipped. `git diff --check` passed for every implementation
   increment.

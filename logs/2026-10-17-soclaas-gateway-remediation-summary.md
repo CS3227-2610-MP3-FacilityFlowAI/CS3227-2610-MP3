@@ -14,6 +14,8 @@
 10. `f610ba6 docs(ai): record final gateway test count`
 11. `96f6cd9 docs(ai): finalize gateway review range`
 12. `c6b1459 docs(ai): complete gateway handoff evidence`
+13. `7c5c8a9 docs(ai): complete remediation commit index`
+14. `91131ad docs(ai): reconcile gateway review status`
 
 The review baseline remains `e784d483f546fa60b01fd76107b8aa27b4359db0`;
 the fresh-review range is `e784d48..HEAD` (ending at the final evidence commit).
