@@ -1,5 +1,6 @@
 package sg.edu.nus.facilityflow.ai.technician;
 
+import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -7,6 +8,16 @@ import java.util.concurrent.CompletableFuture;
 /** Deep feature seam for the read-only Technician Work Plan advisory. */
 public interface WorkPlanAssistant {
     CompletionStage<WorkPlanResponse> request(WorkPlanContext context);
+
+    /**
+     * Requests using the absolute deadline created by the role use case.
+     * Implementations that do not need provider work retain the simple seam.
+     * AI-SEC-008 requires adapters never to reset this budget.
+     */
+    default CompletionStage<WorkPlanResponse> request(WorkPlanContext context, Instant absoluteDeadline) {
+        Objects.requireNonNull(absoluteDeadline, "absoluteDeadline");
+        return request(context);
+    }
 
     static WorkPlanAssistant unavailable() {
         return new Inert();

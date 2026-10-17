@@ -61,17 +61,30 @@ final class SocLlmTriageAssistant implements TriageAssistant {
 
     @Override
     public CompletionStage<TriageResponse> request(TriageContext context) {
+        return request(context, safeDeadline());
+    }
+
+    @Override
+    public CompletionStage<TriageResponse> request(TriageContext context, Instant absoluteDeadline) {
         CompletableFuture<TriageResponse> result = new CompletableFuture<>();
         try {
             PreparedPrompt prompt = prepare(context);
-            Instant deadline = clock.instant().plusSeconds(configuration.timeoutSeconds());
-            CallHandle call = core.complete(new PreparedChat(prompt.systemMessage(), prompt.userMessage()), deadline);
+            CallHandle call = core.complete(
+                    new PreparedChat(prompt.systemMessage(), prompt.userMessage()), absoluteDeadline);
             call.stage().whenComplete((completion, failure) ->
                     result.complete(mapCompletion(context, completion, failure)));
         } catch (RuntimeException invalidRequest) {
             result.complete(TriageResponse.failure(TriageFailureCode.AI_INVALID_REQUEST));
         }
         return result.minimalCompletionStage();
+    }
+
+    private Instant safeDeadline() {
+        try {
+            return clock.instant().plusSeconds(configuration.timeoutSeconds());
+        } catch (RuntimeException overflow) {
+            return Instant.MAX;
+        }
     }
 
     private PreparedPrompt prepare(TriageContext context) {

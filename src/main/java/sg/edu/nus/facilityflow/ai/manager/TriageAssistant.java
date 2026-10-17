@@ -1,5 +1,6 @@
 package sg.edu.nus.facilityflow.ai.manager;
 
+import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -7,6 +8,11 @@ import java.util.concurrent.CompletionStage;
 /** Feature-specific seam for Manager triage recommendations. */
 public interface TriageAssistant {
     CompletionStage<TriageResponse> request(TriageContext context);
+
+    default CompletionStage<TriageResponse> request(TriageContext context, Instant absoluteDeadline) {
+        Objects.requireNonNull(absoluteDeadline, "absoluteDeadline");
+        return request(context);
+    }
 
     static TriageAssistant unavailable() {
         return new Inert();

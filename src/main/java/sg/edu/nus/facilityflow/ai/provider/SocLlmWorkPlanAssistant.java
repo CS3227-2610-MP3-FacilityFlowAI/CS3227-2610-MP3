@@ -89,16 +89,29 @@ final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
 
     @Override
     public CompletionStage<WorkPlanResponse> request(WorkPlanContext context) {
+        return request(context, safeDeadline());
+    }
+
+    @Override
+    public CompletionStage<WorkPlanResponse> request(WorkPlanContext context, Instant absoluteDeadline) {
         CompletableFuture<WorkPlanResponse> result = new CompletableFuture<>();
         try {
             PreparedPrompt prompt = prepare(context);
-            Instant deadline = clock.instant().plusSeconds(configuration.timeoutSeconds());
-            CallHandle call = core.complete(new PreparedChat(prompt.systemMessage(), prompt.userMessage()), deadline);
+            CallHandle call = core.complete(
+                    new PreparedChat(prompt.systemMessage(), prompt.userMessage()), absoluteDeadline);
             call.stage().whenComplete((completion, failure) -> result.complete(mapCompletion(completion, failure)));
         } catch (RuntimeException invalidRequest) {
             result.complete(WorkPlanResponse.failure(WorkPlanFailureCode.AI_INVALID_REQUEST));
         }
         return result.minimalCompletionStage();
+    }
+
+    private Instant safeDeadline() {
+        try {
+            return clock.instant().plusSeconds(configuration.timeoutSeconds());
+        } catch (RuntimeException overflow) {
+            return Instant.MAX;
+        }
     }
 
     private PreparedPrompt prepare(WorkPlanContext context) {

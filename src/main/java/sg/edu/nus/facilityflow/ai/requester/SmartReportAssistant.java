@@ -1,5 +1,6 @@
 package sg.edu.nus.facilityflow.ai.requester;
 
+import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -7,6 +8,12 @@ import java.util.concurrent.CompletionStage;
 /** Feature-specific seam for temporary Requester report drafting. */
 public interface SmartReportAssistant {
     CompletionStage<SmartReportResponse> request(SmartReportContext context);
+
+    default CompletionStage<SmartReportResponse> request(
+            SmartReportContext context, Instant absoluteDeadline) {
+        Objects.requireNonNull(absoluteDeadline, "absoluteDeadline");
+        return request(context);
+    }
 
     static SmartReportAssistant unavailable() {
         return new Inert();

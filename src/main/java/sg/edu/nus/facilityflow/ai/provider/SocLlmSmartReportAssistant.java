@@ -60,17 +60,31 @@ final class SocLlmSmartReportAssistant implements SmartReportAssistant {
 
     @Override
     public CompletionStage<SmartReportResponse> request(SmartReportContext context) {
+        return request(context, safeDeadline());
+    }
+
+    @Override
+    public CompletionStage<SmartReportResponse> request(
+            SmartReportContext context, Instant absoluteDeadline) {
         CompletableFuture<SmartReportResponse> result = new CompletableFuture<>();
         try {
             PreparedPrompt prompt = prepare(context);
-            Instant deadline = clock.instant().plusSeconds(configuration.timeoutSeconds());
-            CallHandle call = core.complete(new PreparedChat(prompt.systemMessage(), prompt.userMessage()), deadline);
+            CallHandle call = core.complete(
+                    new PreparedChat(prompt.systemMessage(), prompt.userMessage()), absoluteDeadline);
             call.stage().whenComplete((completion, failure) ->
                     result.complete(mapCompletion(context, completion, failure)));
         } catch (RuntimeException invalidRequest) {
             result.complete(SmartReportResponse.failure(SmartReportFailureCode.AI_INVALID_REQUEST));
         }
         return result.minimalCompletionStage();
+    }
+
+    private Instant safeDeadline() {
+        try {
+            return clock.instant().plusSeconds(configuration.timeoutSeconds());
+        } catch (RuntimeException overflow) {
+            return Instant.MAX;
+        }
     }
 
     private PreparedPrompt prepare(SmartReportContext context) {

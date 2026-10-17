@@ -1,5 +1,6 @@
 package sg.edu.nus.facilityflow.technician;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -36,6 +37,8 @@ public final class TechnicianWorkPlanService {
     private final WorkPlanAssistant assistant;
     private final AiInvocationTelemetry telemetry;
     private final String model;
+    private final Clock clock;
+    private final int timeoutSeconds;
 
     @Autowired
     public TechnicianWorkPlanService(
@@ -47,6 +50,20 @@ public final class TechnicianWorkPlanService {
             WorkPlanAssistant assistant,
             AiInvocationTelemetry telemetry,
             AiConfiguration configuration) {
+        this(authorization, aiAccessGuard, invocationCoordinator, lifecycle, repository, assistant,
+                telemetry, configuration, Clock.systemUTC());
+    }
+
+    public TechnicianWorkPlanService(
+            IdentityAuthorization authorization,
+            AiAccessGuard aiAccessGuard,
+            AiInvocationCoordinator invocationCoordinator,
+            AiProviderLifecycle lifecycle,
+            TechnicianWorkPlanRepository repository,
+            WorkPlanAssistant assistant,
+            AiInvocationTelemetry telemetry,
+            AiConfiguration configuration,
+            Clock clock) {
         this.authorization = authorization;
         this.aiAccessGuard = aiAccessGuard;
         this.invocationCoordinator = invocationCoordinator;
@@ -54,9 +71,13 @@ public final class TechnicianWorkPlanService {
         this.repository = repository;
         this.assistant = assistant;
         this.telemetry = telemetry;
+        this.clock = java.util.Objects.requireNonNull(clock, "clock");
         this.model = configuration instanceof AiConfiguration.Available available
                 ? available.model()
                 : null;
+        this.timeoutSeconds = configuration instanceof AiConfiguration.Available available
+                ? available.timeoutSeconds()
+                : 30;
     }
 
     /** Direct-construction seam retained for feature tests without database telemetry. */
@@ -76,6 +97,10 @@ public final class TechnicianWorkPlanService {
             return completedFailure(WorkPlanFailureCode.AI_INVALID_REQUEST);
         }
         CurrentAccount technician = authorization.requireRole(AccountRole.TECHNICIAN);
+        Instant deadline = deadline(clock.instant(), timeoutSeconds);
+        if (!clock.instant().isBefore(deadline)) {
+            return completedFailure(WorkPlanFailureCode.AI_TIMEOUT);
+        }
         try {
             if (!lifecycle.enabled()) {
                 return completedFailure(WorkPlanFailureCode.AI_UNAVAILABLE);
@@ -101,6 +126,10 @@ public final class TechnicianWorkPlanService {
             permit.get().release();
             return completedFailure(WorkPlanFailureCode.AI_UNAVAILABLE);
         }
+        if (!clock.instant().isBefore(deadline)) {
+            return finish(permit.get(), invocation,
+                    WorkPlanResponse.failure(WorkPlanFailureCode.AI_TIMEOUT));
+        }
         CompletionStage<AiProviderLifecycle.State> readiness;
         try {
             readiness = lifecycle.readiness();
@@ -113,11 +142,19 @@ public final class TechnicianWorkPlanService {
         return readiness.handle((state, readinessFailure) ->
                 readinessFailure == null && state == AiProviderLifecycle.State.READY)
                 .thenCompose(ready -> {
+                    if (!clock.instant().isBefore(deadline)) {
+                        return finish(permit.get(), invocation,
+                                WorkPlanResponse.failure(WorkPlanFailureCode.AI_TIMEOUT));
+                    }
                     if (!ready) {
                         return finish(permit.get(), invocation,
                                 WorkPlanResponse.failure(WorkPlanFailureCode.AI_UNAVAILABLE));
                     }
                     OptionalContext loaded = load(displayId, technician.id());
+                    if (!clock.instant().isBefore(deadline)) {
+                        return finish(permit.get(), invocation,
+                                WorkPlanResponse.failure(WorkPlanFailureCode.AI_TIMEOUT));
+                    }
                     if (loaded.context() == null) {
                         return finish(permit.get(), invocation, WorkPlanResponse.failure(loaded.failure()));
                     }
@@ -126,11 +163,15 @@ public final class TechnicianWorkPlanService {
                         CompletionStage<WorkPlanResponse> response;
                         try (AiInvocationTelemetry.Scope ignored = AiInvocationTelemetry.bind(invocation)) {
                             response = aiAccessGuard.forTechnician(
-                                    context.assignedTechnicianId(), () -> context, assistant::request);
+                                    context.assignedTechnicianId(), () -> context,
+                                    value -> assistant.request(value, deadline));
                         }
                         return response.handle((value, failure) -> {
                             if (failure != null || value == null) {
                                 return WorkPlanResponse.failure(WorkPlanFailureCode.AI_UNAVAILABLE);
+                            }
+                            if (!clock.instant().isBefore(deadline)) {
+                                return WorkPlanResponse.failure(WorkPlanFailureCode.AI_TIMEOUT);
                             }
                             if (!permit.get().valid()) {
                                 return WorkPlanResponse.failure(WorkPlanFailureCode.AI_UNAVAILABLE);
@@ -166,7 +207,7 @@ public final class TechnicianWorkPlanService {
             WorkPlanResponse response) {
         WorkPlanResponse terminalResponse = response;
         try {
-            long latencyMs = Math.max(0, Duration.between(invocation.startedAt(), Instant.now()).toMillis());
+            long latencyMs = Math.max(0, Duration.between(invocation.startedAt(), clock.instant()).toMillis());
             telemetry.finish(invocation, new AiInvocationTelemetry.Terminal(
                     status(response), latencyMs, invocation.retryCount(), invocation.inputTokens(),
                     invocation.outputTokens(), invocation.totalTokens()));
@@ -207,6 +248,14 @@ public final class TechnicianWorkPlanService {
     private static CompletionStage<WorkPlanResponse> completedFailure(WorkPlanFailureCode code) {
         WorkPlanResponse response = WorkPlanResponse.failure(code);
         return CompletableFuture.<WorkPlanResponse>completedFuture(response).minimalCompletionStage();
+    }
+
+    private static Instant deadline(Instant start, int timeoutSeconds) {
+        try {
+            return start.plusSeconds(timeoutSeconds);
+        } catch (RuntimeException overflow) {
+            return Instant.MAX;
+        }
     }
 
     private record OptionalContext(WorkPlanContext context, WorkPlanFailureCode failure) {

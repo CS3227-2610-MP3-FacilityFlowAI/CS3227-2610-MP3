@@ -7,6 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -175,6 +180,52 @@ class TechnicianWorkPlanServiceTest {
     }
 
     @Test
+    @DisplayName("AI-SEC-008 deadline is created at use-case entry and is not reset by context loading")
+    void deadlineIsCreatedAtEntryAndPassedToProviderAdapter() {
+        MutableClock clock = new MutableClock(Instant.parse("2026-10-17T00:00:00Z"));
+        AtomicReference<Instant> observedDeadline = new AtomicReference<>();
+        WorkPlanAssistant assistant = new WorkPlanAssistant() {
+            @Override
+            public CompletionStage<WorkPlanResponse> request(WorkPlanContext context) {
+                return CompletableFuture.completedFuture(
+                        WorkPlanResponse.failure(WorkPlanFailureCode.AI_UNAVAILABLE));
+            }
+
+            @Override
+            public CompletionStage<WorkPlanResponse> request(
+                    WorkPlanContext context, Instant absoluteDeadline) {
+                observedDeadline.set(absoluteDeadline);
+                return CompletableFuture.completedFuture(new CountingAssistant().request(context)
+                        .toCompletableFuture().join());
+            }
+        };
+        TechnicianWorkPlanRepository repository = new TechnicianWorkPlanRepository() {
+            @Override
+            public Optional<WorkPlanContext> loadEligible(String displayId, UUID technicianId) {
+                clock.advance(Duration.ofSeconds(5));
+                return Optional.of(context());
+            }
+
+            @Override
+            public boolean isStillEligible(WorkPlanContext context) {
+                return true;
+            }
+        };
+        TechnicianWorkPlanService service = new TechnicianWorkPlanService(
+                new IdentityAuthorization(() -> new CurrentAccount(
+                        TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN)),
+                new AiAccessGuard(new IdentityAuthorization(() -> new CurrentAccount(
+                        TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN))),
+                coordinator(), new ReadyLifecycle(), repository, assistant,
+                AiInvocationTelemetry.noop(), new AiConfiguration.Available(
+                        java.net.URI.create("https://soclaas-api.comp.nus.edu.sg/v1"),
+                        "synthetic-key", "synthetic-model", 30, 800, 5, 5, 30), clock);
+
+        assertTrue(await(service.request("FF-000001")) instanceof WorkPlanResponse.Success);
+        assertEquals(Instant.parse("2026-10-17T00:00:30Z"), observedDeadline.get());
+    }
+
+    @Test
     @DisplayName("AI-SEC-017 start telemetry failure prevents protected context loading")
     void startTelemetryFailurePreventsProtectedWork() {
         RecordingTelemetry telemetry = new RecordingTelemetry();
@@ -313,6 +364,33 @@ class TechnicianWorkPlanServiceTest {
                     List.of("Stop and escalate if unsafe."),
                     "Advisory only.");
             return CompletableFuture.completedFuture(new WorkPlanResponse.Success(plan));
+        }
+    }
+
+    private static final class MutableClock extends Clock {
+        private Instant instant;
+
+        private MutableClock(Instant instant) {
+            this.instant = instant;
+        }
+
+        private void advance(Duration duration) {
+            instant = instant.plus(duration);
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return ZoneOffset.UTC;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return this;
+        }
+
+        @Override
+        public Instant instant() {
+            return instant;
         }
     }
 
