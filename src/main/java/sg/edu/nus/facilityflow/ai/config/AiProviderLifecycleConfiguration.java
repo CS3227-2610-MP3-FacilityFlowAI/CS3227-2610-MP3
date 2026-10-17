@@ -4,6 +4,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Qualifier;
 import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderRuntimeFactory;
+import sg.edu.nus.facilityflow.ai.manager.TriageAssistant;
+import sg.edu.nus.facilityflow.ai.requester.SmartReportAssistant;
 import sg.edu.nus.facilityflow.ai.technician.WorkPlanAssistant;
 
 /**
@@ -34,6 +36,24 @@ public class AiProviderLifecycleConfiguration {
         return WorkPlanAssistant.unavailable();
     }
 
+    @Bean
+    SmartReportAssistant smartReportAssistant(
+            @Qualifier("aiProviderLifecycle") AiProviderLifecycle lifecycle) {
+        if (lifecycle instanceof RuntimeLifecycleView runtime) {
+            return SmartReportAssistant.delegating(runtime.delegateSmartReport());
+        }
+        return SmartReportAssistant.unavailable();
+    }
+
+    @Bean
+    TriageAssistant triageAssistant(
+            @Qualifier("aiProviderLifecycle") AiProviderLifecycle lifecycle) {
+        if (lifecycle instanceof RuntimeLifecycleView runtime) {
+            return TriageAssistant.delegating(runtime.delegateTriage());
+        }
+        return TriageAssistant.unavailable();
+    }
+
     /** Lifecycle-only adapter keeps the provider runtime out of Spring's lifecycle type lookup. */
     private static final class RuntimeLifecycleView implements AiProviderLifecycle {
         private final AiProviderRuntime runtime;
@@ -43,6 +63,14 @@ public class AiProviderLifecycleConfiguration {
         }
 
         private WorkPlanAssistant delegate() {
+            return runtime;
+        }
+
+        private SmartReportAssistant delegateSmartReport() {
+            return runtime;
+        }
+
+        private TriageAssistant delegateTriage() {
             return runtime;
         }
 

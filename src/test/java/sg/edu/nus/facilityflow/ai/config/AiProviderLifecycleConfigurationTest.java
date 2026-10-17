@@ -14,6 +14,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import sg.edu.nus.facilityflow.ai.manager.TriageAssistant;
+import sg.edu.nus.facilityflow.ai.requester.SmartReportAssistant;
 
 /** Requirement tests for startup-safe Iteration 2C provider lifecycle wiring. */
 class AiProviderLifecycleConfigurationTest {
@@ -32,6 +34,8 @@ class AiProviderLifecycleConfigurationTest {
             assertEquals(AiProviderLifecycle.State.DISABLED, lifecycle.state());
             assertEquals(AiProviderLifecycle.State.DISABLED, await(lifecycle.readiness()));
             assertInstanceOf(AiProviderLifecycle.Inert.class, lifecycle);
+            assertNotNull(context.getBean(SmartReportAssistant.class));
+            assertNotNull(context.getBean(TriageAssistant.class));
 
             assertNoProviderBeans(context);
             assertNoExecutorOrSchedulerBeans(context);
@@ -61,6 +65,8 @@ class AiProviderLifecycleConfigurationTest {
                     assertEquals(AiProviderLifecycle.State.UNAVAILABLE, lifecycle.state());
                     assertEquals(AiProviderLifecycle.State.UNAVAILABLE, await(lifecycle.readiness()));
                     assertInstanceOf(AiProviderLifecycle.Inert.class, lifecycle);
+                    assertNotNull(context.getBean(SmartReportAssistant.class));
+                    assertNotNull(context.getBean(TriageAssistant.class));
 
                     assertNoProviderBeans(context);
                     assertNoExecutorOrSchedulerBeans(context);

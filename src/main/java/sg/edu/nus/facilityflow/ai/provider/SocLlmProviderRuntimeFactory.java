@@ -16,6 +16,12 @@ import sg.edu.nus.facilityflow.ai.config.AiProviderLifecycle.State;
 import sg.edu.nus.facilityflow.ai.technician.WorkPlanAssistant;
 import sg.edu.nus.facilityflow.ai.technician.WorkPlanContext;
 import sg.edu.nus.facilityflow.ai.technician.WorkPlanResponse;
+import sg.edu.nus.facilityflow.ai.manager.TriageAssistant;
+import sg.edu.nus.facilityflow.ai.manager.TriageContext;
+import sg.edu.nus.facilityflow.ai.manager.TriageResponse;
+import sg.edu.nus.facilityflow.ai.requester.SmartReportAssistant;
+import sg.edu.nus.facilityflow.ai.requester.SmartReportContext;
+import sg.edu.nus.facilityflow.ai.requester.SmartReportResponse;
 import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderCore.Readiness;
 
 /**
@@ -49,7 +55,8 @@ public final class SocLlmProviderRuntimeFactory {
                     scheduler);
             CompletionStage<Readiness> readiness = core.beginStartupReadinessCheck();
             WorkPlanAssistant assistant = new SocLlmWorkPlanAssistant(available, core, clock);
-            return new Runtime(core, readiness, assistant, discovery, provider, scheduler, true);
+            return new Runtime(core, readiness, assistant, SmartReportAssistant.unavailable(),
+                    TriageAssistant.unavailable(), discovery, provider, scheduler, true);
         } catch (RuntimeException failure) {
             shutdown(discovery);
             shutdown(provider);
@@ -79,7 +86,8 @@ public final class SocLlmProviderRuntimeFactory {
                 Objects.requireNonNull(scheduler, "scheduler"));
         CompletionStage<Readiness> readiness = core.beginStartupReadinessCheck();
         WorkPlanAssistant assistant = new SocLlmWorkPlanAssistant(available, core, clock);
-        return new Runtime(core, readiness, assistant, discovery, provider, scheduler, false);
+        return new Runtime(core, readiness, assistant, SmartReportAssistant.unavailable(),
+                TriageAssistant.unavailable(), discovery, provider, scheduler, false);
     }
 
     private static ThreadFactory named(String prefix) {
@@ -98,6 +106,8 @@ public final class SocLlmProviderRuntimeFactory {
         private final SocLlmProviderCore core;
         private final CompletionStage<Readiness> readiness;
         private final WorkPlanAssistant assistant;
+        private final SmartReportAssistant smartReportAssistant;
+        private final TriageAssistant triageAssistant;
         private final Executor discovery;
         private final Executor provider;
         private final ScheduledExecutorService scheduler;
@@ -108,6 +118,8 @@ public final class SocLlmProviderRuntimeFactory {
                 SocLlmProviderCore core,
                 CompletionStage<Readiness> readiness,
                 WorkPlanAssistant assistant,
+                SmartReportAssistant smartReportAssistant,
+                TriageAssistant triageAssistant,
                 Executor discovery,
                 Executor provider,
                 ScheduledExecutorService scheduler,
@@ -115,6 +127,8 @@ public final class SocLlmProviderRuntimeFactory {
             this.core = core;
             this.readiness = readiness;
             this.assistant = assistant;
+            this.smartReportAssistant = smartReportAssistant;
+            this.triageAssistant = triageAssistant;
             this.discovery = discovery;
             this.provider = provider;
             this.scheduler = scheduler;
@@ -140,6 +154,16 @@ public final class SocLlmProviderRuntimeFactory {
         @Override
         public CompletionStage<WorkPlanResponse> request(WorkPlanContext context) {
             return assistant.request(context);
+        }
+
+        @Override
+        public CompletionStage<SmartReportResponse> request(SmartReportContext context) {
+            return smartReportAssistant.request(context);
+        }
+
+        @Override
+        public CompletionStage<TriageResponse> request(TriageContext context) {
+            return triageAssistant.request(context);
         }
 
         @Override
