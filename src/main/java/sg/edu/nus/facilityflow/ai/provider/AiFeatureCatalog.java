@@ -8,7 +8,7 @@ final class AiFeatureCatalog {
     private static final Map<Feature, Definition> DEFINITIONS = Map.of(
             Feature.SMART_REPORT, new Definition("smart-report-v2", "REQUESTER"),
             Feature.WORK_PLAN, new Definition("work-plan-v1", "TECHNICIAN"),
-            Feature.TRIAGE, new Definition("triage-v1", "MANAGER"));
+            Feature.TRIAGE, new Definition("triage-v2", "MANAGER"));
 
     private AiFeatureCatalog() {}
 

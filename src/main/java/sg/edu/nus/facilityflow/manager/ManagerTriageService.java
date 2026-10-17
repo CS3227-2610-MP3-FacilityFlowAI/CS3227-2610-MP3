@@ -28,7 +28,7 @@ import sg.edu.nus.facilityflow.identity.IdentityAuthorization;
 /** Authorization-first, non-mutating Manager Triage orchestration. */
 @Service
 public final class ManagerTriageService {
-    private static final String TEMPLATE_VERSION = "triage-v1";
+    private static final String TEMPLATE_VERSION = "triage-v2";
     private static final Logger LOGGER = LoggerFactory.getLogger(ManagerTriageService.class);
 
     private final IdentityAuthorization authorization;

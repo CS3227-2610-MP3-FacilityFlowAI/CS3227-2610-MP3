@@ -35,6 +35,11 @@ class SocLlmTriageAssistantTest {
 
         fixture.provider.runNext();
         SocLlmProviderPort.ProviderChatRequest request = fixture.port.requests().get(0);
+        for (String field : List.of("suggestedCategory", "suggestedPriority", "clarificationQuestions",
+                "requiredSkillTags", "optionalSkillTags", "rationale")) {
+            assertTrue(request.systemMessage().contains("\"" + field + "\""),
+                    "REQ-MGR-022: the provider must receive the output field " + field);
+        }
         String userData = request.userDataMessage();
         assertTrue(userData.contains("Water is pooling"));
         assertTrue(userData.contains("HVAC"));
