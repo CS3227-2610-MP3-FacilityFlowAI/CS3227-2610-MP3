@@ -1,7 +1,10 @@
 # Technician Specification
 
-Status: approved v0.1, 12 October 2026. Owner: ngkhengyang. Required teammate
-review has been confirmed. Shared rules are in [PRODUCT-SPEC](PRODUCT-SPEC.md).
+Status: approved baseline v0.1, 12 October 2026. Owner: ngkhengyang. Gateway
+revision candidate v0.2 received stakeholder approval on 16 October 2026;
+Technician role-owner and teammate review of the revision remains pending. This
+is not an implementation or verification claim. Shared rules are in
+[PRODUCT-SPEC](PRODUCT-SPEC.md).
 
 ## Objective and screens
 
@@ -45,12 +48,15 @@ questions, evidence to collect, and stop/escalation conditions.
 
 - **REQ-TECH-012:** It is available only to the active Technician currently
   assigned to a persisted Request whose state is ASSIGNED or IN_PROGRESS.
-- **REQ-TECH-013:** Context is limited to that Request's report fields, category,
-  urgencies/priorities, status, Requester Updates visible to the Technician, and
-  approved static safety/playbook excerpts selected by the application. It
-  excludes other Requests, accounts, credentials, audit data and model tools.
-  Playbooks are source-controlled, versioned, human-reviewed read-only resources;
-  if no applicable approved excerpt exists, the model receives none.
+- **REQ-TECH-013:** Context is limited to that Request's title, description,
+  location, category, reported urgency, Manager priority and status.
+  It also contains at most the latest ten Requester Updates visible to the
+  Technician. Select Updates by creation time descending then immutable ID
+  descending and send the selected set oldest-to-newest. It excludes Work Logs,
+  Request/Account internal or display IDs, other Requests, accounts, credentials,
+  audit data and model tools. The initial revision sends no playbook excerpt.
+  Oversize context is rejected rather than silently truncated beyond the
+  specified latest-ten Update selection.
 - **REQ-TECH-014:** The typed result follows the Work Plan schema in
   [INTEGRATION-SPEC](INTEGRATION-SPEC.md) and is displayed as read-only advice.
 - **REQ-TECH-015:** The Technician chooses which steps to follow. Advice does not
@@ -58,7 +64,10 @@ questions, evidence to collect, and stop/escalation conditions.
 - **REQ-TECH-016:** Safety advice shall prominently show stop/escalation items.
   Empty or unsafe safety output is rejected rather than presented as authoritative.
 - **REQ-TECH-017:** AI failure or safe rejection leaves all manual Technician
-  operations available and stores no partial plan or business change.
+  operations available and stores no partial plan or business change. Before
+  display, the server rechecks current Account/role, assignment, ASSIGNED or
+  IN_PROGRESS state and Request version. Any change discards the result as
+  `DISCARDED_ACCESS_CHANGED`; it is never recorded successful.
 
 ## Acceptance scenarios
 
@@ -73,6 +82,7 @@ questions, evidence to collect, and stop/escalation conditions.
 | TECH-AI01 | eligible assigned Request requests plan | bounded read-only structured plan | state/log changes |
 | TECH-AI02 | stored Request/Update says to ignore instructions | content remains data; safe schema/rejection | instruction hierarchy changed |
 | TECH-AI03 | unsafe or missing safety section | result rejected with manual fallback | advice shown as approved procedure |
+| TECH-AI04 | assignment/status/Request version changes in flight | entire result discarded with safe refresh guidance | stale plan displayed or recorded successful |
 
 Tests cover queue scope/order, transitions, append-only behavior, stale
 assignment, indirect injection through stored text/playbooks, unsafe output,

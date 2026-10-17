@@ -1,0 +1,16 @@
+# SoCLaaS Gateway Configuration Foundation
+
+- Date/timezone: 16 October 2026, Asia/Singapore.
+- AI/tool/agent role: Primary coordinator; Analyst; Architect; Developer; two independent Testers; Security Reviewer.
+- Task: approve the shared gateway design decisions and implement the first incremental configuration foundation without provider transport or role integration.
+- Prompt/intention summary: use the recommended fail-closed gateway decisions, keep implementation incremental, bind required environment values safely and verify security properties without live credentials.
+- Sources/approved revision: stakeholder-approved specification candidate v0.2 dated 16 October 2026; `workflow/SOCLAAS-GATEWAY-PLAN.md`; dated gateway handoffs. Affected role-owner, teammate and specification Security Reviewer review remains pending.
+- Requirement IDs: REQ-AI-001, REQ-AI-003–004; configuration portions of AI-SEC-008, AI-SEC-019–020; NFR-SEC-002.
+- Files affected: v0.2 specification and traceability files; `.env.example`; `application.yml`; `ai/config` production and test packages; Developer Guide; dated handoffs and this log.
+- Important decisions: AI is disabled by default; raw string binding prevents malformed optional AI configuration from blocking core startup; official HTTPS `/v1` origin only; configured values may only tighten mandatory ceilings; invalid credentials/models/URI/numbers become safe unavailable states; secrets and attacker-controlled raw input are redacted.
+- AI suggestions accepted: feature-specific future seam, internal coordinator, hard configuration ceilings, fail-closed validation, package-private raw configuration and credential access, control/surrogate/placeholder rejection, encoded URI regression coverage.
+- AI suggestions rejected: initial public generic gateway signature and public credential access were rejected after security review; no provider, readiness, limiter, telemetry, schema or role feature was added to this increment.
+- Verification commands/results/evidence: Developer `compileJava` passed. Original Tester reported 73 focused tests and full Gradle check passed. After two P2 security findings were fixed, a fresh Tester added 169 security regressions; all 242 AI configuration tests passed and full `.\gradlew.bat check` passed with 290 tests, zero skipped/failures/errors. The primary coordinator reran `.\gradlew.bat test --tests "sg.edu.nus.facilityflow.ai.config.*" --console=plain`; it completed successfully in 7 seconds with JaCoCo. Scoped whitespace checks passed. No network or provider call occurred.
+- Corrections/unresolved questions: fixed control-bearing/malformed-surrogate key/model acceptance and excessive public secret access. Transport, model readiness, prompt/schema/safety, distributed limits, telemetry/schema migration, exact browser byte cap, Manager eligibility and live compatibility remain later increments.
+- Security considerations: no credentials or raw prompts/outputs were used. Configuration diagnostics expose only stable issue codes and presence/redaction markers. Fresh verification followed the security findings under AI-SEC-027.
+- Human reviewer/outcome: stakeholder approved all listed design recommendations; teammate, affected role-owner and specification/security merge review pending.

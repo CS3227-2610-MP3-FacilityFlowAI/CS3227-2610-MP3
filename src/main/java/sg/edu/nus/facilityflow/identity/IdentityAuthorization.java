@@ -24,6 +24,15 @@ public class IdentityAuthorization {
         return account;
     }
 
+    /** Captures role and session identity before work may complete asynchronously. */
+    public CurrentAccountSnapshot requireRoleSnapshot(AccountRole expectedRole) {
+        CurrentAccountSnapshot snapshot = currentAccounts.requireCurrentAccountSnapshot();
+        if (snapshot.role() != expectedRole) {
+            throw new AccessDeniedException("The requested operation is not available");
+        }
+        return snapshot;
+    }
+
     public CurrentAccount requireRequesterOwner(UUID requesterOwnerId) {
         CurrentAccount account = requireRole(AccountRole.REQUESTER);
         if (!account.id().equals(requesterOwnerId)) {
