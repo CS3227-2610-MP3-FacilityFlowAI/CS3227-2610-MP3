@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sg.edu.nus.facilityflow.ai.config.AiProviderLifecycle;
@@ -93,6 +94,44 @@ class SocLlmProviderRuntimeFactoryTest {
 
         assertEquals(AiProviderLifecycle.State.READY, await(lifecycle.readiness()));
         assertEquals(AiProviderLifecycle.State.READY, lifecycle.state());
+        lifecycle.close();
+    }
+
+    @Test
+    @DisplayName("AI-SEC-020 negative readiness cache expires into a new shared generation")
+    void negativeCacheExpiryStartsFreshGenerationForConcurrentJoiners() {
+        MutableClock clock = new MutableClock();
+        ManualExecutor discovery = new ManualExecutor();
+        ManualExecutor provider = new ManualExecutor();
+        ManualScheduler scheduler = new ManualScheduler(clock);
+        FakeProviderPort port = new FakeProviderPort();
+        CompletableFuture<ProviderModels> failedModels = port.enqueueModels();
+
+        AiProviderLifecycle lifecycle = SocLlmProviderRuntimeFactory.startForTests(
+                ProviderTestControls.availableConfiguration(), port, clock, discovery, provider, scheduler);
+        discovery.runNext();
+        failedModels.completeExceptionally(new IllegalStateException("synthetic discovery failure"));
+        assertEquals(AiProviderLifecycle.State.NEGATIVE, await(lifecycle.readiness()));
+        assertEquals(AiProviderLifecycle.State.NEGATIVE, lifecycle.state());
+
+        // Before expiry the negative cache is terminal and does not dispatch work.
+        CompletionStage<AiProviderLifecycle.State> cached = lifecycle.readiness();
+        assertEquals(AiProviderLifecycle.State.NEGATIVE, await(cached));
+        assertEquals(0, discovery.queuedCount());
+
+        clock.advance(Duration.ofSeconds(60));
+        CompletableFuture<ProviderModels> recoveredModels = port.enqueueModels();
+        CompletionStage<AiProviderLifecycle.State> first = lifecycle.readiness();
+        CompletionStage<AiProviderLifecycle.State> second = lifecycle.readiness();
+        assertEquals(AiProviderLifecycle.State.CHECKING, lifecycle.state());
+        assertEquals(1, discovery.queuedCount());
+        assertFalse(first.toCompletableFuture().isDone());
+        assertFalse(second.toCompletableFuture().isDone());
+
+        discovery.runNext();
+        recoveredModels.complete(ProviderTestControls.models(ProviderTestControls.MODEL));
+        assertEquals(AiProviderLifecycle.State.READY, await(first));
+        assertEquals(AiProviderLifecycle.State.READY, await(second));
         lifecycle.close();
     }
 

@@ -151,7 +151,11 @@ public final class SocLlmProviderRuntimeFactory {
 
         @Override
         public CompletionStage<State> readiness() {
-            CompletionStage<State> mapped = readiness.thenApply(SocLlmProviderRuntimeFactory::map);
+            // Readiness is generation-aware. A call after the negative cache expires
+            // must ask the core for a fresh generation instead of replaying the
+            // startup stage forever (AI-SEC-020 / NFR-REL-001).
+            CompletionStage<State> mapped = core.beginStartupReadinessCheck()
+                    .thenApply(SocLlmProviderRuntimeFactory::map);
             return mapped.toCompletableFuture().minimalCompletionStage();
         }
 
