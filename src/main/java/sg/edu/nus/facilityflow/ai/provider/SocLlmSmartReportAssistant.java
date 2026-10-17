@@ -40,6 +40,7 @@ final class SocLlmSmartReportAssistant implements SmartReportAssistant {
     private static final Set<String> RESULT_FIELDS = Set.of(
             "draftTitle", "draftDescription", "draftLocation", "suggestedCategory",
             "suggestedUrgency", "missingInformationQuestions", "rationale");
+    private static final Set<String> URGENCIES = Set.of("Low", "Normal", "High", "Emergency");
     private static final Pattern HTML_OR_MARKDOWN = Pattern.compile(
             "<[^>]*>|!\\[[^]]*\\]\\([^)]*\\)|\\[[^]]+\\]\\([^)]*\\)");
     private static final Pattern FORBIDDEN_IDENTIFIER = Pattern.compile(
@@ -174,8 +175,15 @@ final class SocLlmSmartReportAssistant implements SmartReportAssistant {
                     throw new IllegalArgumentException("suggested category is not active");
                 }
                 String suggestedUrgency = optionalText(root, "suggestedUrgency", 1, 20);
+                if (suggestedUrgency != null && !URGENCIES.contains(suggestedUrgency)) {
+                    throw new IllegalArgumentException("suggested urgency is not approved");
+                }
                 List<String> questions = textArray(root, "missingInformationQuestions", 0, 5, 200);
                 String rationale = requiredText(root, "rationale", 1, 500);
+                if (draftTitle == null && draftDescription == null && draftLocation == null
+                        && suggestedCategory == null && suggestedUrgency == null && questions.isEmpty()) {
+                    throw new IllegalArgumentException("smart report has no actionable suggestion");
+                }
                 return new SmartReportResult(draftTitle, draftDescription, draftLocation,
                         suggestedCategory, suggestedUrgency, questions, rationale);
             }
