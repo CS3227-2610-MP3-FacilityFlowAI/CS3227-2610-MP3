@@ -30,7 +30,7 @@ import sg.edu.nus.facilityflow.requester.RequesterSmartReportRepository.Eligibil
 /** Authorization-first Smart Report orchestration for REQ-RQ-012–017 and AI-SEC-001/008/017/028. */
 @Service
 public final class RequesterSmartReportService {
-    private static final String TEMPLATE_VERSION = "smart-report-v1";
+    private static final String TEMPLATE_VERSION = "smart-report-v2";
     private static final Logger LOGGER = LoggerFactory.getLogger(RequesterSmartReportService.class);
 
     private final IdentityAuthorization authorization;

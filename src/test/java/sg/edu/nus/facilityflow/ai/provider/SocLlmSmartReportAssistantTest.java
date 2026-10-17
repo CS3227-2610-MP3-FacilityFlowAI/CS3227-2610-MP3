@@ -34,6 +34,11 @@ class SocLlmSmartReportAssistantTest {
 
         fixture.provider.runNext();
         SocLlmProviderPort.ProviderChatRequest request = fixture.port.requests().get(0);
+        for (String field : List.of("draftTitle", "draftDescription", "draftLocation", "suggestedCategory",
+                "suggestedUrgency", "missingInformationQuestions", "rationale")) {
+            assertTrue(request.systemMessage().contains("\"" + field + "\""),
+                    "REQ-RQ-014: the provider must receive the output field " + field);
+        }
         String userData = request.userDataMessage();
         assertTrue(userData.contains("air conditioner"));
         assertTrue(userData.contains("HVAC"));
