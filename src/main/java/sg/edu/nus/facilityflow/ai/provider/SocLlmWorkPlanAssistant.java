@@ -87,6 +87,8 @@ final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
             call.stage().whenComplete((completion, failure) ->
                     result.complete(mapCompletion(completion, failure, prompt.denyMaterial())));
         } catch (RuntimeException invalidRequest) {
+            ProviderDiagnostics.report(ProviderDiagnostics.Stage.WORK_PLAN_INPUT,
+                    ProviderDiagnostics.Reason.INVALID_INPUT);
             result.complete(WorkPlanResponse.failure(WorkPlanFailureCode.AI_INVALID_REQUEST));
         }
         return result.minimalCompletionStage();
@@ -149,10 +151,14 @@ final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
         Completion providerCompletion = (Completion) completion;
         try {
             if (denyMaterial.matches(providerCompletion.content())) {
+                ProviderDiagnostics.report(ProviderDiagnostics.Stage.WORK_PLAN_OUTPUT,
+                        ProviderDiagnostics.Reason.DISCLOSURE_REJECTED);
                 return WorkPlanResponse.failure(WorkPlanFailureCode.AI_INVALID_OUTPUT);
             }
             return new WorkPlanResponse.Success(parse(providerCompletion.content()));
         } catch (RuntimeException invalidOutput) {
+            ProviderDiagnostics.report(ProviderDiagnostics.Stage.WORK_PLAN_OUTPUT,
+                    ProviderDiagnostics.Reason.INVALID_OUTPUT);
             return WorkPlanResponse.failure(WorkPlanFailureCode.AI_INVALID_OUTPUT);
         }
     }

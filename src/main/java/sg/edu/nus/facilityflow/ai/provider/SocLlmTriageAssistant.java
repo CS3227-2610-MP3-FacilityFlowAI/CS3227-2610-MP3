@@ -91,6 +91,8 @@ final class SocLlmTriageAssistant implements TriageAssistant {
             call.stage().whenComplete((completion, failure) ->
                     result.complete(mapCompletion(context, completion, failure, prompt.denyMaterial())));
         } catch (RuntimeException invalidRequest) {
+            ProviderDiagnostics.report(ProviderDiagnostics.Stage.TRIAGE_INPUT,
+                    ProviderDiagnostics.Reason.INVALID_INPUT);
             result.complete(TriageResponse.failure(TriageFailureCode.AI_INVALID_REQUEST));
         }
         return result.minimalCompletionStage();
@@ -163,10 +165,14 @@ final class SocLlmTriageAssistant implements TriageAssistant {
         }
         try {
             if (denyMaterial.matches(((Completion) completion).content())) {
+                ProviderDiagnostics.report(ProviderDiagnostics.Stage.TRIAGE_OUTPUT,
+                        ProviderDiagnostics.Reason.DISCLOSURE_REJECTED);
                 return TriageResponse.failure(TriageFailureCode.AI_INVALID_OUTPUT);
             }
             return new TriageResponse.Success(parse(((Completion) completion).content(), context));
         } catch (RuntimeException invalidOutput) {
+            ProviderDiagnostics.report(ProviderDiagnostics.Stage.TRIAGE_OUTPUT,
+                    ProviderDiagnostics.Reason.INVALID_OUTPUT);
             return TriageResponse.failure(TriageFailureCode.AI_INVALID_OUTPUT);
         }
     }

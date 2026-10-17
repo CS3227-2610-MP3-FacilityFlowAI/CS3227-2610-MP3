@@ -150,6 +150,23 @@ SoCLaaS provider or validates a hosted model.
 
 ## AI security
 
+Gateway failures include a stable `code` and readable `message`, for example:
+
+```json
+{"code":"AI_INVALID_OUTPUT","message":"The AI response had an invalid format or failed output validation."}
+```
+
+Inspect the server console for `SoCLaaS gateway` entries. Failure entries name
+the feature and code; provider diagnostics additionally identify the stage and
+safe reason, for example `stage=READINESS reason=MODEL_NOT_FOUND`,
+`stage=READINESS reason=INVALID_ENVELOPE`,
+`stage=COMPLETION reason=HTTP_UNAUTHORIZED`, or
+`stage=WORK_PLAN_OUTPUT reason=INVALID_OUTPUT`. Authentication/access rejection
+maps to `AI_CONFIGURATION_ERROR`; invalid format or output validation maps to
+`AI_INVALID_OUTPUT`; timeouts map to `AI_TIMEOUT`. For `AI_UNAVAILABLE`,
+check the startup disabled/configuration log and readiness diagnostics.
+Logs omit credentials, raw prompts/responses, context and exception messages.
+
 Prompts/context/output are untrusted. `AiAccessGuard` implements the
 authorization-before-context seam required by AI-SEC-001 and is verified to
 construct no protected context and make no model call after denial. Configuration

@@ -91,6 +91,8 @@ final class SocLlmSmartReportAssistant implements SmartReportAssistant {
             call.stage().whenComplete((completion, failure) ->
                     result.complete(mapCompletion(context, completion, failure, prompt.denyMaterial())));
         } catch (RuntimeException invalidRequest) {
+            ProviderDiagnostics.report(ProviderDiagnostics.Stage.SMART_REPORT_INPUT,
+                    ProviderDiagnostics.Reason.INVALID_INPUT);
             result.complete(SmartReportResponse.failure(SmartReportFailureCode.AI_INVALID_REQUEST));
         }
         return result.minimalCompletionStage();
@@ -157,10 +159,14 @@ final class SocLlmSmartReportAssistant implements SmartReportAssistant {
         }
         try {
             if (denyMaterial.matches(((Completion) completion).content())) {
+                ProviderDiagnostics.report(ProviderDiagnostics.Stage.SMART_REPORT_OUTPUT,
+                        ProviderDiagnostics.Reason.DISCLOSURE_REJECTED);
                 return SmartReportResponse.failure(SmartReportFailureCode.AI_INVALID_OUTPUT);
             }
             return new SmartReportResponse.Success(parse(((Completion) completion).content(), context));
         } catch (RuntimeException invalidOutput) {
+            ProviderDiagnostics.report(ProviderDiagnostics.Stage.SMART_REPORT_OUTPUT,
+                    ProviderDiagnostics.Reason.INVALID_OUTPUT);
             return SmartReportResponse.failure(SmartReportFailureCode.AI_INVALID_OUTPUT);
         }
     }

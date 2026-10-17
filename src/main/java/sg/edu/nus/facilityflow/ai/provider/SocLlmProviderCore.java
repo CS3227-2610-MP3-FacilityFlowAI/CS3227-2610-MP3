@@ -220,7 +220,7 @@ final class SocLlmProviderCore implements AutoCloseable {
                     delayNanos(clock.instant(), generation.absoluteExpiry),
                     TimeUnit.NANOSECONDS);
         } catch (RuntimeException ignored) {
-            transitionNegative(generation);
+            transitionNegative(generation, ProviderDiagnostics.Reason.SCHEDULER_REJECTED);
             return;
         }
         boolean install;
@@ -238,7 +238,7 @@ final class SocLlmProviderCore implements AutoCloseable {
             discoveryExecutor.execute(() -> runDiscovery(generation));
         } catch (RuntimeException ignored) {
             cancelTimer(scheduled);
-            transitionNegative(generation);
+            transitionNegative(generation, ProviderDiagnostics.Reason.EXECUTOR_REJECTED);
         }
     }
 
@@ -253,7 +253,8 @@ final class SocLlmProviderCore implements AutoCloseable {
         CompletableFuture<ProviderModels> providerStage;
         try {
             providerStage = port.listModels();
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException discoveryFailure) {
+            ProviderDiagnostics.reportFailure(ProviderDiagnostics.Stage.READINESS, discoveryFailure);
             transitionNegative(generation);
             return;
         }
@@ -270,7 +271,7 @@ final class SocLlmProviderCore implements AutoCloseable {
             return;
         }
         if (providerStage == null) {
-            transitionNegative(generation);
+            transitionNegative(generation, ProviderDiagnostics.Reason.EMPTY_RESPONSE);
             return;
         }
         providerStage.whenComplete((models, failure) -> onDiscoveryCompleted(generation, models, failure));
@@ -294,17 +295,35 @@ final class SocLlmProviderCore implements AutoCloseable {
         if (late) {
             cancelProvider(generation.providerStage);
         }
+        if (transition != null && transition.state == Readiness.NEGATIVE) {
+            if (failure != null) {
+                ProviderDiagnostics.reportFailure(ProviderDiagnostics.Stage.READINESS, failure);
+            } else {
+                ProviderDiagnostics.report(ProviderDiagnostics.Stage.READINESS,
+                        !clock.instant().isBefore(generation.absoluteExpiry)
+                                ? ProviderDiagnostics.Reason.DEADLINE_EXCEEDED
+                                : models == null ? ProviderDiagnostics.Reason.EMPTY_RESPONSE
+                                : ProviderDiagnostics.Reason.MODEL_NOT_FOUND);
+            }
+        }
         publishReadinessTransition(transition);
     }
 
     private void onReadinessTimeout(ReadinessGeneration generation) {
-        transitionNegative(generation);
+        transitionNegative(generation, ProviderDiagnostics.Reason.DEADLINE_EXCEEDED);
     }
 
     private void transitionNegative(ReadinessGeneration generation) {
+        transitionNegative(generation, null);
+    }
+
+    private void transitionNegative(ReadinessGeneration generation, ProviderDiagnostics.Reason reason) {
         ReadinessTransition transition;
         synchronized (readinessLock) {
             transition = reserveNegativeTransitionLocked(generation);
+        }
+        if (transition != null && reason != null) {
+            ProviderDiagnostics.report(ProviderDiagnostics.Stage.READINESS, reason);
         }
         publishReadinessTransition(transition);
     }
@@ -748,6 +767,9 @@ final class SocLlmProviderCore implements AutoCloseable {
             }
             unregister();
             cancelTimer(timer);
+            if (failureCode != null) {
+                ProviderDiagnostics.reportFailure(ProviderDiagnostics.Stage.COMPLETION, failure);
+            }
             result.publish(failureCode == null ? success : new Failure(failureCode, retryCount));
         }
 

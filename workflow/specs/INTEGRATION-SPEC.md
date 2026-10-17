@@ -533,6 +533,22 @@ model-selected retrieval is in scope.
 No partial result is displayed. Provider error bodies are not exposed to users.
 The manual form or role operation remains available.
 
+Gateway failure responses retain the existing `code` field and include a
+source-controlled `message` describing the broad category (unavailable,
+limited, invalid request, configuration/access failure, timeout, invalid output,
+or discarded stale result). An invalid-output message deliberately covers both
+format and safety/disclosure validation. Messages contain no exception text,
+provider response body, prompt, credentials or protected context. Existing
+endpoint HTTP-status behavior is preserved.
+
+Console diagnostics use only stable feature, stage and reason codes. Provider
+discovery and final completion failures log safe transport/decoder codes such as
+`HTTP_UNAUTHORIZED` and `INVALID_ENVELOPE`; missing configured models,
+readiness expiry and scheduling rejection have distinct reason codes. Feature
+validation logs input/output stages without raw data or parser exception chains.
+Disabled configuration is logged at INFO; invalid configuration logs only its
+closed issue codes at WARN. See AI-SEC-017/019.
+
 ## Usage and audit metadata
 
 - **REQ-AI-007:** Capture provider input, output and total token counts when

@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
@@ -162,6 +163,8 @@ class SecurityIntegrationTest {
                 .andReturn();
         mockMvc.perform(asyncDispatch(smartReport))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("AI_UNAVAILABLE"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("unavailable")))
                 .andExpect(header().string(
                         HttpHeaders.CACHE_CONTROL, org.hamcrest.Matchers.containsString("no-store")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("AI_UNAVAILABLE")));
@@ -181,9 +184,24 @@ class SecurityIntegrationTest {
                 .andReturn();
         mockMvc.perform(asyncDispatch(triage))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("AI_UNAVAILABLE"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("unavailable")))
                 .andExpect(header().string(
                         HttpHeaders.CACHE_CONTROL, org.hamcrest.Matchers.containsString("no-store")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("AI_UNAVAILABLE")));
+    }
+
+    @Test
+    void reqAi005WorkPlanFailureExposesSafeCodeAndMessage() throws Exception {
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        MvcResult workPlan = mockMvc.perform(post("/technician/requests/FF-000051/work-plan")
+                        .cookie(technician).with(csrf()))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+        mockMvc.perform(asyncDispatch(workPlan))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("AI_UNAVAILABLE"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("unavailable")));
     }
 
     @Test
