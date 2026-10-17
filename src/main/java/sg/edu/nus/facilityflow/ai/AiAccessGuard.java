@@ -30,6 +30,19 @@ public class AiAccessGuard {
         return modelCall.apply(authorizedContextFactory.get());
     }
 
+    /** Uses the role/session snapshot captured before asynchronous Requester work began. */
+    public <C, R> R forRequester(
+            CurrentAccountSnapshot accountSnapshot,
+            UUID requesterOwnerId,
+            Supplier<C> authorizedContextFactory,
+            Function<C, R> modelCall) {
+        if (accountSnapshot.role() != AccountRole.REQUESTER
+                || !accountSnapshot.id().equals(requesterOwnerId)) {
+            throw new AccessDeniedException("The requested operation is not available");
+        }
+        return modelCall.apply(authorizedContextFactory.get());
+    }
+
     public <C, R> R forTechnician(
             UUID assignedTechnicianId,
             Supplier<C> authorizedContextFactory,

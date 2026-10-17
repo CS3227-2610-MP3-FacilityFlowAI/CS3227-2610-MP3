@@ -2,10 +2,13 @@ package sg.edu.nus.facilityflow.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import jakarta.servlet.http.Cookie;
@@ -20,6 +23,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -131,6 +136,35 @@ class SecurityIntegrationTest {
 
         mockMvc.perform(post("/logout").cookie(requester)).andExpect(status().isForbidden());
         mockMvc.perform(get("/requester").cookie(requester)).andExpect(status().isOk());
+    }
+
+    @Test
+    void aiSec029RequesterSmartReportIsPostCsrfRoleProtectedAndNonCacheable() throws Exception {
+        String body = """
+                {"roughTitle":"Flickering light","roughDescription":"The ceiling light flickers.",
+                 "roughLocation":"Room 4","selectedCategory":"Electrical","selectedUrgency":"High"}
+                """;
+        Cookie requester = login("requester1", VALID_PASSWORD, "/requester");
+        mockMvc.perform(post("/requester/smart-report")
+                        .cookie(requester).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isForbidden());
+
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        mockMvc.perform(post("/requester/smart-report")
+                        .cookie(technician).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isForbidden());
+
+        MvcResult smartReport = mockMvc.perform(post("/requester/smart-report")
+                        .cookie(requester).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+        mockMvc.perform(asyncDispatch(smartReport))
+                .andExpect(status().isOk())
+                .andExpect(header().string(
+                        HttpHeaders.CACHE_CONTROL, org.hamcrest.Matchers.containsString("no-store")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("AI_UNAVAILABLE")));
     }
 
     @Test
