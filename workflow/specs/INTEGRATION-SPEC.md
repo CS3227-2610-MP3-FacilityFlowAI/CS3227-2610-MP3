@@ -8,9 +8,10 @@ Business eligibility remains in role specifications; this document owns
 transport and typed contracts. Iteration 2A provider-core/readiness decisions
 received stakeholder direction and approval on 16 October 2026; specification
 Security Reviewer findings were incorporated on 16 October 2026; re-review and
-teammate review remain pending. The implementation Security Reviewer currently
-records a NO-GO; the remediation requirements below are specified but their
-implementation, tests and security re-review remain pending.
+teammate review remain pending. The implementation Security Reviewer recorded
+a NO-GO for then-open remediation findings; subsequent commits provide local
+implementation/test evidence for selected controls, but security re-review and
+teammate approval remain pending.
 Iteration 2B HTTPS-adapter requirements were prepared against provider-core base
 commit `897937d`; the adapter, focused tests and fresh Security Reviewer approval
 are complete. Iteration 2C adds production lifecycle/readiness wiring and has a

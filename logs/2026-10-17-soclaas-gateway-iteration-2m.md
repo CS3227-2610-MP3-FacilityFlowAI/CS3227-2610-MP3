@@ -21,3 +21,13 @@ authorized assignment operation.
 - Focused `TriageCandidateRankerTest` covers filtering, ordering, tie-breaks,
   no-candidate guidance, immutability, and invalid workload rejection.
 - Provider regression tests remain the next verification step after this change.
+
+Requirement IDs: REQ-MGR-023, AI-SEC-010/013/016. Commands/tools: focused
+`gradlew.bat test --tests sg.edu.nus.facilityflow.manager.TriageCandidateRankerTest
+--no-daemon` passed for this increment; the later Triage provider-contract
+increment also passed the combined ranker/provider command. `git diff --check`
+passed. Security evidence: the ranker is mutation-free and accepts only
+validated typed tags; duplicate tags are rejected before ranking. Human review:
+Manager role-owner, teammate, Security Reviewer and fresh-verifier review remain
+pending. Corrections/risks: no assignment, Request mutation or authorization
+decision was added; no provider credentials or raw request data were accessed.

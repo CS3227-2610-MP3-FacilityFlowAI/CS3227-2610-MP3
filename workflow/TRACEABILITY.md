@@ -5,12 +5,11 @@ revision candidate v0.2 received stakeholder approval on 16 October 2026;
 affected role-owner, Security Reviewer, teammate and fresh-reviewer review
 remains pending. Iteration 2A provider-core/readiness decisions received
 stakeholder direction and approval on 16 October 2026; specification Security
-Reviewer and teammate review remains pending. No revision is implemented or
-verified by approval alone. Iteration 2A specification Security Reviewer findings
-were addressed in the specification on 16 October 2026; implementation, tests
-and teammate review remain pending. The implementation Security Reviewer records
-a NO-GO pending implementation and verification of the documented lock-safety,
-read-only-handle, package-visibility and decoder-diagnostic remediations.
+Reviewer and teammate review remains pending. No revision is approved or
+verified by passing tests alone. The earlier implementation Security Reviewer
+NO-GO covered then-open lock-safety, read-only-handle, package-visibility and
+decoder-diagnostic findings; later remediation commits and tests provide local
+evidence for those fixes, while the required human reviews remain pending.
 Iteration 2B HTTPS-adapter requirements are based on provider-core commit
 `897937d`; adapter implementation, focused tests and fresh Security Reviewer
 approval are complete. Iteration 2C lifecycle implementation and focused tests
