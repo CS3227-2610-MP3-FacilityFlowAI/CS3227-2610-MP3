@@ -36,7 +36,7 @@ the fresh-review range is `e784d48..0a0ca7b`.
 Each remediation increment ran its focused Gradle test(s), `git diff --check`,
 and `./gradlew.bat test --no-daemon`; every executed full suite completed with
 `BUILD SUCCESSFUL`, 0 failures, 0 errors and 0 skipped. The branch baseline
-count was 475 tests; the current suite remains green.
+count was 475 tests; the current suite has 476 tests and remains green.
 
 ## Blocked or unverified work
 
