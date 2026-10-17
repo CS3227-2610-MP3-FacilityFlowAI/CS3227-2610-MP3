@@ -73,7 +73,7 @@ final class SocLlmTriageAssistant implements TriageAssistant {
             CallHandle call = core.complete(
                     new PreparedChat(prompt.systemMessage(), prompt.userMessage()), absoluteDeadline);
             call.stage().whenComplete((completion, failure) ->
-                    result.complete(mapCompletion(context, completion, failure)));
+                    result.complete(mapCompletion(context, completion, failure, prompt.denyMaterial())));
         } catch (RuntimeException invalidRequest) {
             result.complete(TriageResponse.failure(TriageFailureCode.AI_INVALID_REQUEST));
         }
@@ -118,7 +118,8 @@ final class SocLlmTriageAssistant implements TriageAssistant {
         if (codePoints > 12_000) {
             throw new IllegalArgumentException("serialized prompt exceeds the configured limit");
         }
-        return new PreparedPrompt(SYSTEM_MESSAGE, userMessage);
+        return new PreparedPrompt(SYSTEM_MESSAGE, userMessage,
+                DisclosureDenyMaterial.forRequest(configuration, SYSTEM_MESSAGE));
     }
 
     private static void put(ObjectNode parent, String field, String value, String provenance) {
@@ -135,7 +136,9 @@ final class SocLlmTriageAssistant implements TriageAssistant {
         }
     }
 
-    private static TriageResponse mapCompletion(TriageContext context, CompletionResult completion, Throwable failure) {
+    private static TriageResponse mapCompletion(
+            TriageContext context, CompletionResult completion, Throwable failure,
+            DisclosureDenyMaterial denyMaterial) {
         if (failure != null || completion == null) {
             return TriageResponse.failure(TriageFailureCode.AI_UNAVAILABLE);
         }
@@ -143,6 +146,9 @@ final class SocLlmTriageAssistant implements TriageAssistant {
             return TriageResponse.failure(mapFailure(providerFailure.code()));
         }
         try {
+            if (denyMaterial.matches(((Completion) completion).content())) {
+                return TriageResponse.failure(TriageFailureCode.AI_INVALID_OUTPUT);
+            }
             return new TriageResponse.Success(parse(((Completion) completion).content(), context));
         } catch (RuntimeException invalidOutput) {
             return TriageResponse.failure(TriageFailureCode.AI_INVALID_OUTPUT);
@@ -248,5 +254,6 @@ final class SocLlmTriageAssistant implements TriageAssistant {
         }
     }
 
-    private record PreparedPrompt(String systemMessage, String userMessage) {}
+    private record PreparedPrompt(
+            String systemMessage, String userMessage, DisclosureDenyMaterial denyMaterial) {}
 }

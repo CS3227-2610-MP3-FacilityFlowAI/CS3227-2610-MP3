@@ -73,7 +73,7 @@ final class SocLlmSmartReportAssistant implements SmartReportAssistant {
             CallHandle call = core.complete(
                     new PreparedChat(prompt.systemMessage(), prompt.userMessage()), absoluteDeadline);
             call.stage().whenComplete((completion, failure) ->
-                    result.complete(mapCompletion(context, completion, failure)));
+                    result.complete(mapCompletion(context, completion, failure, prompt.denyMaterial())));
         } catch (RuntimeException invalidRequest) {
             result.complete(SmartReportResponse.failure(SmartReportFailureCode.AI_INVALID_REQUEST));
         }
@@ -117,7 +117,8 @@ final class SocLlmSmartReportAssistant implements SmartReportAssistant {
         if (codePoints > 12_000) {
             throw new IllegalArgumentException("serialized prompt exceeds the configured limit");
         }
-        return new PreparedPrompt(SYSTEM_MESSAGE, userMessage);
+        return new PreparedPrompt(SYSTEM_MESSAGE, userMessage,
+                DisclosureDenyMaterial.forRequest(configuration, SYSTEM_MESSAGE));
     }
 
     private static void putOptional(ObjectNode parent, String field, String value, String provenance) {
@@ -130,7 +131,8 @@ final class SocLlmSmartReportAssistant implements SmartReportAssistant {
     }
 
     private static SmartReportResponse mapCompletion(
-            SmartReportContext context, CompletionResult completion, Throwable failure) {
+            SmartReportContext context, CompletionResult completion, Throwable failure,
+            DisclosureDenyMaterial denyMaterial) {
         if (failure != null || completion == null) {
             return SmartReportResponse.failure(SmartReportFailureCode.AI_UNAVAILABLE);
         }
@@ -138,6 +140,9 @@ final class SocLlmSmartReportAssistant implements SmartReportAssistant {
             return SmartReportResponse.failure(mapFailure(providerFailure.code()));
         }
         try {
+            if (denyMaterial.matches(((Completion) completion).content())) {
+                return SmartReportResponse.failure(SmartReportFailureCode.AI_INVALID_OUTPUT);
+            }
             return new SmartReportResponse.Success(parse(((Completion) completion).content(), context));
         } catch (RuntimeException invalidOutput) {
             return SmartReportResponse.failure(SmartReportFailureCode.AI_INVALID_OUTPUT);
@@ -254,5 +259,6 @@ final class SocLlmSmartReportAssistant implements SmartReportAssistant {
         }
     }
 
-    private record PreparedPrompt(String systemMessage, String userMessage) {}
+    private record PreparedPrompt(
+            String systemMessage, String userMessage, DisclosureDenyMaterial denyMaterial) {}
 }

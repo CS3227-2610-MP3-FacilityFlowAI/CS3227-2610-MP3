@@ -99,7 +99,8 @@ final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
             PreparedPrompt prompt = prepare(context);
             CallHandle call = core.complete(
                     new PreparedChat(prompt.systemMessage(), prompt.userMessage()), absoluteDeadline);
-            call.stage().whenComplete((completion, failure) -> result.complete(mapCompletion(completion, failure)));
+            call.stage().whenComplete((completion, failure) ->
+                    result.complete(mapCompletion(completion, failure, prompt.denyMaterial())));
         } catch (RuntimeException invalidRequest) {
             result.complete(WorkPlanResponse.failure(WorkPlanFailureCode.AI_INVALID_REQUEST));
         }
@@ -140,7 +141,10 @@ final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
         if (codePoints > 12_000) {
             throw new IllegalArgumentException("serialized prompt exceeds the configured limit");
         }
-        return new PreparedPrompt(SYSTEM_MESSAGE, userMessage);
+        return new PreparedPrompt(SYSTEM_MESSAGE, userMessage,
+                DisclosureDenyMaterial.forRequest(configuration, SYSTEM_MESSAGE,
+                        context.requestId().toString(), context.displayId(),
+                        context.assignedTechnicianId().toString()));
     }
 
     private static void putData(ObjectNode parent, String field, String value) {
@@ -149,7 +153,8 @@ final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
         labeled.put("value", value);
     }
 
-    private static WorkPlanResponse mapCompletion(CompletionResult completion, Throwable failure) {
+    private static WorkPlanResponse mapCompletion(
+            CompletionResult completion, Throwable failure, DisclosureDenyMaterial denyMaterial) {
         if (failure != null || completion == null) {
             return WorkPlanResponse.failure(WorkPlanFailureCode.AI_UNAVAILABLE);
         }
@@ -158,6 +163,9 @@ final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
         }
         Completion providerCompletion = (Completion) completion;
         try {
+            if (denyMaterial.matches(providerCompletion.content())) {
+                return WorkPlanResponse.failure(WorkPlanFailureCode.AI_INVALID_OUTPUT);
+            }
             return new WorkPlanResponse.Success(parse(providerCompletion.content()));
         } catch (RuntimeException invalidOutput) {
             return WorkPlanResponse.failure(WorkPlanFailureCode.AI_INVALID_OUTPUT);
@@ -288,5 +296,6 @@ final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
         }
     }
 
-    private record PreparedPrompt(String systemMessage, String userMessage) {}
+    private record PreparedPrompt(
+            String systemMessage, String userMessage, DisclosureDenyMaterial denyMaterial) {}
 }

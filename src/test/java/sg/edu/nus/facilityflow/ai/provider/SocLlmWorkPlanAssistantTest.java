@@ -122,6 +122,17 @@ class SocLlmWorkPlanAssistantTest {
         genericStopStage.complete(ProviderTestControls.completion(genericStopPlanJson()));
         assertEquals(WorkPlanFailureCode.AI_INVALID_OUTPUT, failureCode(await(genericStopResponse)));
         genericStop.runtime.close();
+
+        Fixture disclosure = readyFixture();
+        CompletableFuture<SocLlmProviderPort.ProviderCompletion> disclosureStage = disclosure.port.enqueueChat();
+        CompletionStage<WorkPlanResponse> disclosureResponse = disclosure.runtime.request(contextWith(List.of()));
+        disclosure.provider.runNext();
+        disclosureStage.complete(ProviderTestControls.completion(validPlanJson()
+                .replace("The symptoms suggest a connection inspection.", DISPLAY_ID)));
+        WorkPlanResponse rejected = await(disclosureResponse);
+        assertEquals(WorkPlanFailureCode.AI_INVALID_OUTPUT, failureCode(rejected));
+        assertFalse(rejected.toString().contains(DISPLAY_ID));
+        disclosure.runtime.close();
     }
 
     @Test

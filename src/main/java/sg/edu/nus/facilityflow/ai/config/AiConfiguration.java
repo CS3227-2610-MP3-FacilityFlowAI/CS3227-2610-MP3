@@ -100,6 +100,11 @@ public sealed interface AiConfiguration
             return model;
         }
 
+        /** Checks output for the server-only credential without exposing it. */
+        public boolean containsProviderSecret(String candidate) {
+            return candidate != null && !apiKey.isEmpty() && candidate.contains(apiKey);
+        }
+
         public int timeoutSeconds() {
             return timeoutSeconds;
         }

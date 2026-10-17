@@ -59,7 +59,8 @@ class SocLlmSmartReportAssistantTest {
                 "{\"draftTitle\":\"<script>x</script>\",\"missingInformationQuestions\":[],\"rationale\":\"Needs review.\"}",
                 "{\"suggestedCategory\":\"Plumbing\",\"missingInformationQuestions\":[],\"rationale\":\"Needs review.\"}",
                 "{\"suggestedUrgency\":\"Urgent\",\"missingInformationQuestions\":[],\"rationale\":\"Needs review.\"}",
-                "{\"missingInformationQuestions\":[],\"rationale\":\"Needs review.\"}")) {
+                "{\"missingInformationQuestions\":[],\"rationale\":\"Needs review.\"}",
+                "{\"draftTitle\":\"Leak report\",\"missingInformationQuestions\":[],\"rationale\":\"facilityflow-unauthorized-context-canary\"}")) {
             Fixture fixture = readyFixture();
             CompletableFuture<SocLlmProviderPort.ProviderCompletion> providerCompletion = fixture.port.enqueueChat();
             CompletionStage<SmartReportResponse> response = fixture.runtime.request(context());
