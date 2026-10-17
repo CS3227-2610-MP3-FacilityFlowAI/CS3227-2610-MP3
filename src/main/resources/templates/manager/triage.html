@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${'Triage ' + displayId + ' · FacilityFlow AI'}">Triage Assistant · FacilityFlow AI</title>
+    <link rel="stylesheet" th:href="@{/css/manager.css}">
+</head>
+<body>
+<header class="site-header">
+    <div class="identity"><strong th:text="${displayName}">Manager</strong><span th:text="${username}">username</span></div>
+    <nav aria-label="Manager navigation">
+        <a th:href="@{/manager/overview}">Overview</a>
+        <a th:href="@{/manager/requests}">Requests</a>
+        <a th:href="@{/manager/audit}">Audit</a>
+    </nav>
+    <form method="post" th:action="@{/logout}"><button class="button button-quiet" type="submit">Sign out</button></form>
+</header>
+
+<main class="page-shell">
+    <a class="back-link" th:href="@{/manager/requests}">Back to all requests</a>
+    <div class="title-row">
+        <div>
+            <h1>Triage Assistant</h1>
+            <p class="request-reference">Request <strong th:text="${displayId}">FF-000001</strong></p>
+        </div>
+        <span class="advisory-label">Advisory only</span>
+    </div>
+
+    <section class="intro-panel" aria-labelledby="assistant-purpose">
+        <h2 id="assistant-purpose">Get a second opinion before assigning work</h2>
+        <p>The assistant can suggest a category, priority and relevant skills. FacilityFlow ranks matching active Technicians deterministically. Nothing is saved or assigned unless you complete the ordinary Manager action yourself.</p>
+        <form method="post" th:action="@{/manager/requests/{id}/triage-assistant(id=${displayId})}">
+            <button class="button button-primary" type="submit" th:text="${suggestion != null or assistantError != null ? 'Generate a fresh suggestion' : 'Generate triage suggestion'}">Generate triage suggestion</button>
+        </form>
+    </section>
+
+    <div class="alert alert-error" role="alert" th:if="${assistantError}" th:text="${assistantError}">
+        The assistant is unavailable. Continue with manual triage or try again.
+    </div>
+
+    <div th:if="${suggestion}" class="results" aria-live="polite">
+        <div class="alert alert-success" role="status">
+            Suggestion ready. Review every field below; no request data has been changed.
+        </div>
+
+        <section aria-labelledby="review-heading">
+            <div class="section-heading">
+                <div><h2 id="review-heading">Review the recommendation</h2><p>Edit or reject any suggestion before using it in the normal workflow.</p></div>
+            </div>
+
+            <div class="review-grid">
+                <fieldset class="review-field">
+                    <legend>Category</legend>
+                    <label for="category-review">Suggested value</label>
+                    <input id="category-review" type="text" maxlength="50" th:value="${suggestion.suggestedCategory}">
+                    <label for="category-decision">Your decision</label>
+                    <select id="category-decision">
+                        <option value="">Choose a decision</option>
+                        <option value="accept">Accept this suggestion</option>
+                        <option value="edit">Use my edited value</option>
+                        <option value="reject">Reject this suggestion</option>
+                    </select>
+                </fieldset>
+
+                <fieldset class="review-field">
+                    <legend>Manager priority</legend>
+                    <label for="priority-review">Suggested value</label>
+                    <select id="priority-review">
+                        <option th:each="value : ${ {'Low','Medium','High','Critical'} }" th:value="${value}" th:text="${value}" th:selected="${suggestion.suggestedPriority == value}">High</option>
+                    </select>
+                    <label for="priority-decision">Your decision</label>
+                    <select id="priority-decision">
+                        <option value="">Choose a decision</option>
+                        <option value="accept">Accept this suggestion</option>
+                        <option value="edit">Use my edited value</option>
+                        <option value="reject">Reject this suggestion</option>
+                    </select>
+                </fieldset>
+            </div>
+        </section>
+
+        <section aria-labelledby="skills-heading">
+            <div class="section-heading">
+                <div><h2 id="skills-heading">Review suggested skills</h2><p>Skills begin unselected so acceptance is always deliberate.</p></div>
+            </div>
+            <div class="skill-columns">
+                <fieldset>
+                    <legend>Required skills</legend>
+                    <p class="empty-copy" th:if="${#lists.isEmpty(suggestion.requiredSkillTags)}">No required skills suggested.</p>
+                    <label class="check-row" th:each="skill : ${suggestion.requiredSkillTags}">
+                        <input type="checkbox" name="acceptedRequiredSkills" th:value="${skill}">
+                        <span th:text="${skill}">Electrical</span>
+                    </label>
+                </fieldset>
+                <fieldset>
+                    <legend>Optional skills</legend>
+                    <p class="empty-copy" th:if="${#lists.isEmpty(suggestion.optionalSkillTags)}">No optional skills suggested.</p>
+                    <label class="check-row" th:each="skill : ${suggestion.optionalSkillTags}">
+                        <input type="checkbox" name="acceptedOptionalSkills" th:value="${skill}">
+                        <span th:text="${skill}">Working at height</span>
+                    </label>
+                </fieldset>
+            </div>
+        </section>
+
+        <section class="explanation" aria-labelledby="reasoning-heading">
+            <h2 id="reasoning-heading">Why the assistant suggested this</h2>
+            <p th:text="${suggestion.rationale}">Rationale</p>
+            <div th:if="${!#lists.isEmpty(suggestion.clarificationQuestions)}">
+                <h3>Questions to clarify</h3>
+                <ul><li th:each="question : ${suggestion.clarificationQuestions}" th:text="${question}">Question</li></ul>
+            </div>
+        </section>
+
+        <section aria-labelledby="candidate-heading">
+            <div class="section-heading">
+                <div><h2 id="candidate-heading">Suggested Technician order</h2><p>This order comes from accepted skill coverage and current workload—not from the LLM.</p></div>
+                <span class="deterministic-label">Deterministic ranking</span>
+            </div>
+            <div class="alert alert-neutral" th:if="${!ranking.hasCandidate()}" th:text="${ranking.explanation}">
+                No active Technician matches every required skill.
+            </div>
+            <div class="table-wrap" th:if="${ranking.hasCandidate()}">
+                <table>
+                    <thead><tr><th scope="col">Rank</th><th scope="col">Technician</th><th scope="col">Current workload</th><th scope="col">Active skills</th></tr></thead>
+                    <tbody>
+                    <tr th:each="candidate, position : ${ranking.rankedCandidates}">
+                        <td th:text="${position.count}">1</td>
+                        <td th:text="${candidate.username}">technician</td>
+                        <td th:text="${candidate.workload}">0</td>
+                        <td><span th:each="skill, item : ${candidate.skillTags}" th:text="${skill + (item.last ? '' : ', ')}">Electrical</span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <div class="next-step">
+            <strong>Human approval remains required.</strong>
+            <p>These review controls do not save, change priority or assign a Technician. Return to the Request queue to continue the ordinary Manager workflow.</p>
+            <a class="button button-secondary" th:href="@{/manager/requests}">Return to requests</a>
+        </div>
+    </div>
+</main>
+</body>
+</html>

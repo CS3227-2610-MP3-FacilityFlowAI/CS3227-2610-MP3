@@ -1,7 +1,8 @@
 # User Guide
 
-Status: authentication foundation and the first Facilities Manager read/create
-slice are implemented locally; teammate, browser and hosted review remain pending.
+Status: authentication, the first Facilities Manager read/create slice and the
+Manager Triage Assistant review surface are implemented locally; teammate,
+real-browser and hosted application review remain pending.
 
 This guide must be updated continuously to match the deployed product exactly.
 It will document how Requesters, Technicians, and Facilities Managers access,
@@ -67,7 +68,7 @@ Request ID rather than inventing one. The current page is limited to the newest
 
 ## AI features
 
-Three bounded SoC LLM assistants are planned:
+Three bounded SoC LLM assistants are defined:
 
 - Requesters may ask the Smart Report Assistant for an editable structured
   draft, category and urgency suggestions, and missing-information questions.
@@ -78,8 +79,21 @@ Three bounded SoC LLM assistants are planned:
   ranks eligible Technicians using deterministic rules.
 
 No assistant performs a business action. Users review suggestions and use the
-ordinary workflow. Exact steps and screenshots will be added only after the
-features are implemented and verified.
+ordinary workflow.
+
+### Facilities Manager: Triage Assistant
+
+In **All requests**, choose **Ask Triage Assistant** for any Request that is not
+CANCELLED or CLOSED. Select **Generate triage suggestion**. The page displays an
+editable category, an editable Manager priority, required and optional skill
+suggestions, clarification questions, rationale and a deterministic Technician
+order. Skill choices begin unselected and category/priority each require an
+explicit accept, edit or reject decision.
+
+The assistant never saves those review controls, changes priority or assigns a
+Technician. If it is disabled, limited, times out, returns invalid output or the
+Request/catalogue changes while it is running, the page shows safe retry/manual
+guidance and leaves the Request unchanged.
 
 ## Limitations
 
@@ -87,9 +101,10 @@ AI drafts/recommends only; users perform authorized actions. Confirmed
 released resource limits and failure behavior: TBD.
 
 Manager assignment, reassignment, cancellation, completed-work review,
-correction, account/catalogue/skill administration and Triage Assistant remain
-pending. The first Manager slice has local automated evidence only; no hosted or
-real-browser release claim is made yet.
+correction and account/catalogue/skill administration remain pending. Persisting
+reviewed triage choices through those ordinary Manager operations is therefore
+also pending. The Manager slice has local automated evidence only; no hosted
+application or real-browser release claim is made yet.
 
 ## Troubleshooting
 

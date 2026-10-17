@@ -45,7 +45,8 @@ latest release rather than the intended design.
 
 FacilityFlow AI, CS3227 MP3. Database and authentication foundations are
 integrated. The first Manager overview/queue/audit/on-behalf-create slice is
-implemented locally; remaining role workflows are pending. See README and AGENTS.md.
+implemented locally together with the non-mutating Triage Assistant review
+surface; remaining role workflows are pending. See README and AGENTS.md.
 
 ## Repository structure
 
@@ -106,8 +107,15 @@ The audit projection left-joins Request targets. Non-Request events retain a
 null Request display ID; they are never mapped to a sentinel value. Request,
 actor, action and inclusive Singapore date filters are combined with AND and
 return at most 200 newest events. Manager lifecycle actions, details, account and
-catalogue administration, Triage Assistant, browser verification and hosted
+catalogue administration, browser verification and hosted application
 verification remain pending.
+
+`ManagerTriagePageController` adds a server-rendered, no-store review surface on
+`/manager/requests/{displayId}/triage-assistant`. It calls the merged gateway's
+`ManagerTriageService`, renders safe failure/retry guidance, requires explicit
+category/priority decisions, leaves suggested skill tags unselected, and shows
+the deterministic Technician order without exposing internal Account IDs. The
+page performs no mutation; ordinary assignment and persistence remain separate.
 
 ## Role model
 
@@ -150,10 +158,10 @@ admission/lease coordination, telemetry, bounded retry, a single end-to-end
 Technician deadline, strict typed Work Plan/Smart Report/Triage provider
 contracts, deterministic Manager candidate ranking and server-side output
 disclosure checks. The provider core remains advisory and mutation-free. Only
-the Technician Work Plan currently has a role-facing service/controller seam;
-Requester Smart Report and Manager Triage orchestration remain pending their
-role-owner and teammate approval evidence. Compressed responses remain deferred
-by the authoritative integration specification.
+the Manager slice currently adds a role-facing review page over its service/API;
+Requester Smart Report and Technician Work Plan remain API/service seams until
+their owners add workflow UI. Compressed responses remain deferred by the
+authoritative integration specification.
 
 `AI_ENABLED` defaults to `false`. When enabled, the application binds all
 deployment values as raw strings and resolves them to disabled, unavailable or
@@ -170,7 +178,9 @@ commit a populated file. AI requires `AI_ENABLED=true`, a real
 `SOCLAAS_BASE_URL`, `AI_TIMEOUT_SECONDS`, `AI_MAX_OUTPUT_TOKENS`,
 `AI_MAX_IN_FLIGHT`, `AI_RATE_PER_MINUTE` and `AI_RATE_PER_HOUR`. Invalid,
 placeholder or over-limit values make AI unavailable. No local test calls a live
-SoCLaaS provider or validates a hosted model.
+SoCLaaS provider. A manual 17 October 2026 smoke check verified model discovery
+and one minimal completion using the developer's external secret environment;
+no credential or raw response was recorded in the repository.
 
 ## AI security
 
@@ -196,9 +206,10 @@ authorization-before-context seam required by AI-SEC-001 and is verified to
 construct no protected context and make no model call after denial. Configuration
 validation and redaction are implemented and locally verified; typed schemas,
 runtime limits, transport/readiness, retry, telemetry and provider disclosure
-checks are covered by focused tests. Requester/Manager role orchestration, the
-approved Work Plan multilingual safety corpus, hosted-provider smoke testing
-and final Security Reviewer/teammate verification remain pending. See
+checks are covered by focused tests. Manager role orchestration and its review
+surface are integrated locally; the approved Work Plan multilingual safety
+corpus, hosted application verification and final Security Reviewer/teammate
+verification remain pending. See
 AI-SECURITY-SPEC.md and ../workflow/SECURITY.md.
 
 ## SDD workflow

@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>All requests · FacilityFlow AI</title>
+    <link rel="stylesheet" th:href="@{/css/manager.css}">
 </head>
 <body>
 <header><a th:href="@{/manager}">Manager workspace</a> · <a th:href="@{/manager/overview}">Overview</a> · <a th:href="@{/manager/audit}">Audit</a></header>
@@ -26,8 +27,8 @@
     <p th:if="${#maps.isEmpty(page.errors) and page.hasRequests and #lists.isEmpty(page.rows)}">No requests match these filters. Try changing or resetting them.</p>
     <div style="overflow-x:auto" th:unless="${#lists.isEmpty(page.rows)}">
         <table>
-            <thead><tr><th scope="col">Request</th><th scope="col">Title</th><th scope="col">Status</th><th scope="col">Urgency</th><th scope="col">Priority</th><th scope="col">Requester</th><th scope="col">Technician</th><th scope="col">Category</th><th scope="col">Location</th><th scope="col">Created</th></tr></thead>
-            <tbody><tr th:each="row : ${page.rows}"><td th:text="${row.displayId}">FF-000001</td><td th:text="${row.title}">Title</td><td th:text="${row.status}">OPEN</td><td th:text="${row.urgency}">NORMAL</td><td th:text="${row.priority ?: 'Not set'}">Not set</td><td th:text="${row.requester}">Requester</td><td th:text="${row.technician ?: 'Unassigned'}">Unassigned</td><td th:text="${row.category}">Category</td><td th:text="${row.location}">Location</td><td th:text="${row.createdTime()}">Time</td></tr></tbody>
+            <thead><tr><th scope="col">Request</th><th scope="col">Title</th><th scope="col">Status</th><th scope="col">Urgency</th><th scope="col">Priority</th><th scope="col">Requester</th><th scope="col">Technician</th><th scope="col">Category</th><th scope="col">Location</th><th scope="col">Created</th><th scope="col">Actions</th></tr></thead>
+            <tbody><tr th:each="row : ${page.rows}"><td th:text="${row.displayId}">FF-000001</td><td th:text="${row.title}">Title</td><td th:text="${row.status}">OPEN</td><td th:text="${row.urgency}">NORMAL</td><td th:text="${row.priority ?: 'Not set'}">Not set</td><td th:text="${row.requester}">Requester</td><td th:text="${row.technician ?: 'Unassigned'}">Unassigned</td><td th:text="${row.category}">Category</td><td th:text="${row.location}">Location</td><td th:text="${row.createdTime()}">Time</td><td><a th:if="${row.status != 'CANCELLED' and row.status != 'CLOSED'}" th:href="@{/manager/requests/{id}/triage-assistant(id=${row.displayId})}">Ask Triage Assistant</a><span th:unless="${row.status != 'CANCELLED' and row.status != 'CLOSED'}">Unavailable</span></td></tr></tbody>
         </table>
     </div>
 </main>
