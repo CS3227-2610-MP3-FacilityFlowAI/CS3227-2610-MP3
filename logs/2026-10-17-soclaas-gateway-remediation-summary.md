@@ -8,11 +8,12 @@
 4. `16d1279 fix(manager-ai): enforce the Triage result contract`
 5. `0f60e5f security(ai): enforce request-specific output disclosure policy`
 6. `0a0ca7b revert(ai): defer compressed provider responses`
-7. `8305b0d fix(ai): preserve absolute deadlines through feature delegates`
-8. `dd66032 docs(ai): add gateway requirement anchors`
-9. `f610ba6 docs(ai): record final gateway test count`
-10. `96f6cd9 docs(ai): finalize gateway review range`
-11. `c6b1459 docs(ai): complete gateway handoff evidence`
+7. `2003e61 docs(ai): reconcile gateway implementation evidence`
+8. `8305b0d fix(ai): preserve absolute deadlines through feature delegates`
+9. `dd66032 docs(ai): add gateway requirement anchors`
+10. `f610ba6 docs(ai): record final gateway test count`
+11. `96f6cd9 docs(ai): finalize gateway review range`
+12. `c6b1459 docs(ai): complete gateway handoff evidence`
 
 The review baseline remains `e784d483f546fa60b01fd76107b8aa27b4359db0`;
 the fresh-review range is `e784d48..HEAD` (ending at the final evidence commit).
