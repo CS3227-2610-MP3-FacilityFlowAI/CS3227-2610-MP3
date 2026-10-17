@@ -23,6 +23,7 @@
 19. `a2feb0d fix(ai): accept current completion metadata`
 20. `4150d37 fix(ai): use persisted work plan freshness recheck`
 21. `bfbea8d docs(ai): refresh gateway evidence`
+22. `2152d3d docs(ai): record fresh gateway review`
 
 The review baseline remains `e784d483f546fa60b01fd76107b8aa27b4359db0`;
 the fresh-review range is `e784d48..HEAD` (ending at the current evidence

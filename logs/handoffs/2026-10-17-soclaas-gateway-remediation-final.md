@@ -6,7 +6,7 @@
 - Remediation commits: `695eb07`, `899501f`, `d93b7da`, `16d1279`,
   `0f60e5f`, `0a0ca7b`, `2003e61`, `8305b0d`, `dd66032`, `f610ba6`,
   `96f6cd9`, `c6b1459`, `7c5c8a9`, `91131ad`, `cf70e60`, `a4f995f`,
-  `526e16f`, `4d6a629`, `a2feb0d`, `4150d37`.
+  `526e16f`, `4d6a629`, `a2feb0d`, `4150d37`, `bfbea8d`, `2152d3d`.
 - Verified result: full Gradle suite `BUILD SUCCESSFUL`; 477 tests, 0 failures,
   0 errors, 0 skipped. `git diff --check` passed for every implementation
   increment.
