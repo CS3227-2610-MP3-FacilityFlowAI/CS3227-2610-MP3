@@ -56,8 +56,9 @@ public final class SocLlmProviderRuntimeFactory {
             CompletionStage<Readiness> readiness = core.beginStartupReadinessCheck();
             WorkPlanAssistant assistant = new SocLlmWorkPlanAssistant(available, core, clock);
             SmartReportAssistant smartReport = new SocLlmSmartReportAssistant(available, core, clock);
-            return new Runtime(core, readiness, assistant, smartReport,
-                    TriageAssistant.unavailable(), discovery, provider, scheduler, true);
+            TriageAssistant triage = new SocLlmTriageAssistant(available, core, clock);
+            return new Runtime(core, readiness, assistant, smartReport, triage,
+                    discovery, provider, scheduler, true);
         } catch (RuntimeException failure) {
             shutdown(discovery);
             shutdown(provider);
@@ -88,8 +89,9 @@ public final class SocLlmProviderRuntimeFactory {
         CompletionStage<Readiness> readiness = core.beginStartupReadinessCheck();
         WorkPlanAssistant assistant = new SocLlmWorkPlanAssistant(available, core, clock);
         SmartReportAssistant smartReport = new SocLlmSmartReportAssistant(available, core, clock);
-        return new Runtime(core, readiness, assistant, smartReport,
-                TriageAssistant.unavailable(), discovery, provider, scheduler, false);
+        TriageAssistant triage = new SocLlmTriageAssistant(available, core, clock);
+        return new Runtime(core, readiness, assistant, smartReport, triage,
+                discovery, provider, scheduler, false);
     }
 
     private static ThreadFactory named(String prefix) {

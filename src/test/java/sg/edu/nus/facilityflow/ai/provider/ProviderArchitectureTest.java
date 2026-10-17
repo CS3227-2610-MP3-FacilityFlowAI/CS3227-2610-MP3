@@ -23,7 +23,8 @@ class ProviderArchitectureTest {
             ProviderFailure.class,
             DecompressedBody.class,
             CompressedProviderBody.class,
-            SocLlmSmartReportAssistant.class);
+            SocLlmSmartReportAssistant.class,
+            SocLlmTriageAssistant.class);
 
     private static final List<Class<?>> MUTATING_INPUT_TYPES = List.of(
             PreparedChat.class,

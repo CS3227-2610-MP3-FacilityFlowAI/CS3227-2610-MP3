@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /** Typed triage facts; ranking and assignment remain deterministic application work. */
 public record TriageResult(
@@ -16,6 +17,10 @@ public record TriageResult(
         String rationale) {
 
     private static final Set<String> PRIORITIES = Set.of("Low", "Medium", "High", "Critical");
+    private static final Pattern HTML_OR_MARKDOWN = Pattern.compile(
+            "<[^>]*>|!\\[[^]]*\\]\\([^)]*\\)|\\[[^]]+\\]\\([^)]*\\)");
+    private static final Pattern FORBIDDEN_IDENTIFIER = Pattern.compile(
+            "(?i)(?:\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b|\\bFF-[0-9]{6}\\b|<\\/?request-data>)");
 
     public TriageResult {
         suggestedCategory = required(suggestedCategory, "suggestedCategory", 50);
@@ -55,6 +60,9 @@ public record TriageResult(
                 || normalized.codePoints().anyMatch(codePoint -> Character.isISOControl(codePoint)
                         && codePoint != '\n' && codePoint != '\t')) {
             throw new IllegalArgumentException(name + " is invalid.");
+        }
+        if (HTML_OR_MARKDOWN.matcher(normalized).find() || FORBIDDEN_IDENTIFIER.matcher(normalized).find()) {
+            throw new IllegalArgumentException(name + " contains disallowed markup or identifiers.");
         }
         return normalized;
     }
