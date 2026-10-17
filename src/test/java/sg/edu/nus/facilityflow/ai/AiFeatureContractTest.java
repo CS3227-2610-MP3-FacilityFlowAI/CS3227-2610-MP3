@@ -5,6 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
+import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import sg.edu.nus.facilityflow.ai.manager.TriageAssistant;
 import sg.edu.nus.facilityflow.ai.manager.TriageContext;
@@ -61,5 +65,41 @@ class AiFeatureContractTest {
                 "HVAC", "Urgent", List.of(), List.of("Electrical"), List.of(), "Review the request."));
         assertThrows(IllegalArgumentException.class, () -> new TriageResult(
                 "HVAC", "High", List.of(), List.of("Electrical"), List.of("Electrical"), "Review the request."));
+    }
+
+    @Test
+    void delegatingFeatureSeamsForwardAbsoluteDeadline() {
+        Instant deadline = Instant.parse("2026-10-17T00:00:30Z");
+        AtomicReference<Instant> workPlanDeadline = new AtomicReference<>();
+        WorkPlanContextFixture workPlan = new WorkPlanContextFixture();
+        sg.edu.nus.facilityflow.ai.technician.WorkPlanAssistant workPlanDelegate =
+                new sg.edu.nus.facilityflow.ai.technician.WorkPlanAssistant() {
+                    @Override
+                    public CompletionStage<sg.edu.nus.facilityflow.ai.technician.WorkPlanResponse> request(
+                            sg.edu.nus.facilityflow.ai.technician.WorkPlanContext context) {
+                        return CompletableFuture.completedFuture(
+                                sg.edu.nus.facilityflow.ai.technician.WorkPlanResponse.failure(
+                                        sg.edu.nus.facilityflow.ai.technician.WorkPlanFailureCode.AI_UNAVAILABLE));
+                    }
+
+                    @Override
+                    public CompletionStage<sg.edu.nus.facilityflow.ai.technician.WorkPlanResponse> request(
+                            sg.edu.nus.facilityflow.ai.technician.WorkPlanContext context,
+                            Instant absoluteDeadline) {
+                        workPlanDeadline.set(absoluteDeadline);
+                        return request(context);
+                    }
+                };
+        sg.edu.nus.facilityflow.ai.technician.WorkPlanAssistant.delegating(workPlanDelegate)
+                .request(workPlan.context, deadline).toCompletableFuture().join();
+        assertEquals(deadline, workPlanDeadline.get());
+    }
+
+    private static final class WorkPlanContextFixture {
+        private final sg.edu.nus.facilityflow.ai.technician.WorkPlanContext context =
+                new sg.edu.nus.facilityflow.ai.technician.WorkPlanContext(
+                        java.util.UUID.randomUUID(), "FF-000001", java.util.UUID.randomUUID(),
+                        "Pump issue", "The pump is noisy.", "Plant room", "Mechanical",
+                        "High", "Normal", "ASSIGNED", 1, List.of());
     }
 }

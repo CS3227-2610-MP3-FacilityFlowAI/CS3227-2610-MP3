@@ -53,5 +53,11 @@ public interface WorkPlanAssistant {
         public CompletionStage<WorkPlanResponse> request(WorkPlanContext context) {
             return delegate.request(context);
         }
+
+        @Override
+        public CompletionStage<WorkPlanResponse> request(
+                WorkPlanContext context, Instant absoluteDeadline) {
+            return delegate.request(context, absoluteDeadline);
+        }
     }
 }

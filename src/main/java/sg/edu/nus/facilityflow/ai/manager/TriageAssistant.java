@@ -44,5 +44,10 @@ public interface TriageAssistant {
         public CompletionStage<TriageResponse> request(TriageContext context) {
             return delegate.request(context);
         }
+
+        @Override
+        public CompletionStage<TriageResponse> request(TriageContext context, Instant absoluteDeadline) {
+            return delegate.request(context, absoluteDeadline);
+        }
     }
 }

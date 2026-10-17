@@ -45,5 +45,11 @@ public interface SmartReportAssistant {
         public CompletionStage<SmartReportResponse> request(SmartReportContext context) {
             return delegate.request(context);
         }
+
+        @Override
+        public CompletionStage<SmartReportResponse> request(
+                SmartReportContext context, Instant absoluteDeadline) {
+            return delegate.request(context, absoluteDeadline);
+        }
     }
 }
