@@ -1,7 +1,8 @@
 # User Guide
 
-Status: authentication foundation implemented 13 October 2026; teammate review
-pending. Maintenance and AI workflows are not yet released.
+Status: authentication, the first Facilities Manager read/create slice and the
+Manager Triage Assistant review surface are implemented locally; teammate,
+real-browser and hosted application review remain pending.
 
 This guide must be updated continuously to match the deployed product exactly.
 It will document how Requesters, Technicians, and Facilities Managers access,
@@ -32,9 +33,42 @@ The authenticated header shows display name, username and role. Select
 password reset represented by a session-version change, or a persisted role
 change takes effect on the next request.
 
+### Facilities Manager: overview and request queue
+
+From the Manager workspace, open **Operational overview** for counts by status,
+counts by assigned Manager priority, and each active Technician's workload.
+Workload counts ASSIGNED plus IN_PROGRESS requests.
+
+Open **All requests** to view the shared queue. Search by display ID, title,
+location, Requester or Technician. Search treats punctuation literally and can
+be combined with status, category, priority, Technician and inclusive
+Asia/Singapore creation-date filters. **Reset filters** clears the complete
+filter set. OPEN requests appear first by reported urgency and age; active work
+then appears by Manager priority and age; completed/terminal work follows by
+latest update.
+
+### Facilities Manager: record a request on behalf
+
+Open **Record a request on behalf** and select an active Requester plus the
+request fields. Inactive Requesters are deliberately absent. On success, the
+selected Requester owns the OPEN request and the signed-in Manager is recorded
+as its Recording Actor. The Request and Audit Event save together.
+
+Field errors retain the submitted values. A temporary storage or audit failure
+also retains the form and permits a retry without a partial Request. The submit
+button prevents a second pending browser submission when JavaScript is available;
+server-side validation and transactions remain authoritative.
+
+### Facilities Manager: audit viewer
+
+The read-only **Audit viewer** filters events by Request display ID, actor,
+action text and inclusive Asia/Singapore dates. A non-Request event displays no
+Request ID rather than inventing one. The current page is limited to the newest
+200 matching events.
+
 ## AI features
 
-Three bounded SoC LLM assistants are planned:
+Three bounded SoC LLM assistants are defined:
 
 - Requesters may ask the Smart Report Assistant for an editable structured
   draft, category and urgency suggestions, and missing-information questions.
@@ -45,13 +79,32 @@ Three bounded SoC LLM assistants are planned:
   ranks eligible Technicians using deterministic rules.
 
 No assistant performs a business action. Users review suggestions and use the
-ordinary workflow. Exact steps and screenshots will be added only after the
-features are implemented and verified.
+ordinary workflow.
+
+### Facilities Manager: Triage Assistant
+
+In **All requests**, choose **Ask Triage Assistant** for any Request that is not
+CANCELLED or CLOSED. Select **Generate triage suggestion**. The page displays an
+editable category, an editable Manager priority, required and optional skill
+suggestions, clarification questions, rationale and a deterministic Technician
+order. Skill choices begin unselected and category/priority each require an
+explicit accept, edit or reject decision.
+
+The assistant never saves those review controls, changes priority or assigns a
+Technician. If it is disabled, limited, times out, returns invalid output or the
+Request/catalogue changes while it is running, the page shows safe retry/manual
+guidance and leaves the Request unchanged.
 
 ## Limitations
 
 AI drafts/recommends only; users perform authorized actions. Confirmed
 released resource limits and failure behavior: TBD.
+
+Manager assignment, reassignment, cancellation, completed-work review,
+correction and account/catalogue/skill administration remain pending. Persisting
+reviewed triage choices through those ordinary Manager operations is therefore
+also pending. The Manager slice has local automated evidence only; no hosted
+application or real-browser release claim is made yet.
 
 ## Troubleshooting
 

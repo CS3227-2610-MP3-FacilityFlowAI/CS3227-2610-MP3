@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>All requests · FacilityFlow AI</title>
+    <link rel="stylesheet" th:href="@{/css/manager.css}">
+</head>
+<body>
+<header><a th:href="@{/manager}">Manager workspace</a> · <a th:href="@{/manager/overview}">Overview</a> · <a th:href="@{/manager/audit}">Audit</a></header>
+<main>
+    <h1>All requests</h1>
+    <p role="status" th:if="${notice}" th:text="${notice}">Saved.</p>
+    <p><a th:href="@{/manager/requests/new}">Record a request on behalf</a></p>
+    <form method="get" th:action="@{/manager/requests}">
+        <div><label for="search">Search</label><input id="search" name="search" th:value="${filters.search}" maxlength="120"><p role="alert" th:if="${page.errors.search}" th:text="${page.errors.search}"></p></div>
+        <div><label for="status">Status</label><select id="status" name="status"><option value="">All</option><option th:each="value : ${ {'OPEN','ASSIGNED','IN_PROGRESS','COMPLETED','CLOSED','CANCELLED'} }" th:value="${value}" th:text="${value}" th:selected="${filters.status == value}"></option></select><p role="alert" th:if="${page.errors.status}" th:text="${page.errors.status}"></p></div>
+        <div><label for="categoryId">Category</label><select id="categoryId" name="categoryId"><option value="">All</option><option th:each="option : ${page.categories}" th:value="${option.id}" th:text="${option.label}" th:selected="${filters.categoryId == option.id.toString()}"></option></select><p role="alert" th:if="${page.errors.categoryId}" th:text="${page.errors.categoryId}"></p></div>
+        <div><label for="priority">Priority</label><select id="priority" name="priority"><option value="">All</option><option th:each="value : ${ {'LOW','MEDIUM','HIGH','CRITICAL'} }" th:value="${value}" th:text="${value}" th:selected="${filters.priority == value}"></option></select><p role="alert" th:if="${page.errors.priority}" th:text="${page.errors.priority}"></p></div>
+        <div><label for="technicianId">Technician</label><select id="technicianId" name="technicianId"><option value="">All</option><option th:each="option : ${page.technicians}" th:value="${option.id}" th:text="${option.label}" th:selected="${filters.technicianId == option.id.toString()}"></option></select><p role="alert" th:if="${page.errors.technicianId}" th:text="${page.errors.technicianId}"></p></div>
+        <div><label for="createdFrom">Created from</label><input id="createdFrom" name="createdFrom" type="date" th:value="${filters.createdFrom}"><p role="alert" th:if="${page.errors.createdFrom}" th:text="${page.errors.createdFrom}"></p></div>
+        <div><label for="createdTo">Created to</label><input id="createdTo" name="createdTo" type="date" th:value="${filters.createdTo}"><p role="alert" th:if="${page.errors.createdTo}" th:text="${page.errors.createdTo}"></p></div>
+        <button type="submit">Apply filters</button> <a th:href="@{/manager/requests}">Reset filters</a>
+    </form>
+    <p role="alert" th:unless="${#maps.isEmpty(page.errors)}">Check the marked filters and try again.</p>
+    <p th:if="${#maps.isEmpty(page.errors) and !page.hasRequests}">No requests have been recorded yet.</p>
+    <p th:if="${#maps.isEmpty(page.errors) and page.hasRequests and #lists.isEmpty(page.rows)}">No requests match these filters. Try changing or resetting them.</p>
+    <div style="overflow-x:auto" th:unless="${#lists.isEmpty(page.rows)}">
+        <table>
+            <thead><tr><th scope="col">Request</th><th scope="col">Title</th><th scope="col">Status</th><th scope="col">Urgency</th><th scope="col">Priority</th><th scope="col">Requester</th><th scope="col">Technician</th><th scope="col">Category</th><th scope="col">Location</th><th scope="col">Created</th><th scope="col">Actions</th></tr></thead>
+            <tbody><tr th:each="row : ${page.rows}"><td th:text="${row.displayId}">FF-000001</td><td th:text="${row.title}">Title</td><td th:text="${row.status}">OPEN</td><td th:text="${row.urgency}">NORMAL</td><td th:text="${row.priority ?: 'Not set'}">Not set</td><td th:text="${row.requester}">Requester</td><td th:text="${row.technician ?: 'Unassigned'}">Unassigned</td><td th:text="${row.category}">Category</td><td th:text="${row.location}">Location</td><td th:text="${row.createdTime()}">Time</td><td><a th:if="${row.status != 'CANCELLED' and row.status != 'CLOSED'}" th:href="@{/manager/requests/{id}/triage-assistant(id=${row.displayId})}">Ask Triage Assistant</a><span th:unless="${row.status != 'CANCELLED' and row.status != 'CLOSED'}">Unavailable</span></td></tr></tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>
