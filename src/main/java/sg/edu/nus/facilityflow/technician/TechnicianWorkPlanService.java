@@ -178,12 +178,6 @@ public final class TechnicianWorkPlanService {
                             }
                             if (value instanceof WorkPlanResponse.Success) {
                                 try {
-                                    authorization.requireAssignedTechnician(context.assignedTechnicianId());
-                                } catch (RuntimeException accessChanged) {
-                                    return WorkPlanResponse.failure(
-                                            WorkPlanFailureCode.DISCARDED_ACCESS_CHANGED);
-                                }
-                                try {
                                     if (!repository.isStillEligible(context)) {
                                         return WorkPlanResponse.failure(
                                                 WorkPlanFailureCode.DISCARDED_ACCESS_CHANGED);

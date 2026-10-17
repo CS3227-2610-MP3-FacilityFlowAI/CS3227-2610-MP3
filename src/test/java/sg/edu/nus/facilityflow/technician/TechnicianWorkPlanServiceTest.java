@@ -14,6 +14,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.DisplayName;
@@ -89,11 +90,17 @@ class TechnicianWorkPlanServiceTest {
     }
 
     @Test
-    @DisplayName("AI-SEC-028 principal reassignment during provider call discards the completed plan")
-    void principalSwapDuringProviderCallDiscardsSuccess() {
-        AtomicReference<CurrentAccount> account = new AtomicReference<>(
-                new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN));
-        IdentityAuthorization authorization = new IdentityAuthorization(account::get);
+    @DisplayName("AI-SEC-028 async completion uses the persisted eligibility recheck")
+    void asyncCompletionUsesPersistedEligibilityRecheck() throws Exception {
+        Thread requestThread = Thread.currentThread();
+        CurrentAccount account = new CurrentAccount(
+                TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN);
+        IdentityAuthorization authorization = new IdentityAuthorization(() -> {
+            if (Thread.currentThread() != requestThread) {
+                throw new IllegalStateException("request-thread authentication is unavailable");
+            }
+            return account;
+        });
         CountingRepository repository = new CountingRepository();
         CompletableFuture<WorkPlanResponse> provider = new CompletableFuture<>();
         WorkPlanAssistant assistant = ignored -> provider;
@@ -106,12 +113,13 @@ class TechnicianWorkPlanServiceTest {
                 assistant);
 
         CompletionStage<WorkPlanResponse> response = service.request("FF-000001");
-        account.set(new CurrentAccount(
-                UUID.fromString("32000000-0000-0000-0000-000000000099"),
-                "other-technician", "Other Technician", AccountRole.TECHNICIAN));
-        provider.complete(new CountingAssistant().request(context()).toCompletableFuture().join());
+        try (var providerExecutor = Executors.newSingleThreadExecutor()) {
+            providerExecutor.submit(() -> provider.complete(
+                    new CountingAssistant().request(context()).toCompletableFuture().join())).get();
+        }
 
-        assertEquals(WorkPlanFailureCode.DISCARDED_ACCESS_CHANGED, failureCode(await(response)));
+        assertTrue(await(response) instanceof WorkPlanResponse.Success);
+        assertEquals(1, repository.eligibilityChecks.get());
     }
 
     @Test
@@ -300,6 +308,7 @@ class TechnicianWorkPlanServiceTest {
 
     private static final class CountingRepository implements TechnicianWorkPlanRepository {
         private final AtomicInteger loadCalls = new AtomicInteger();
+        private final AtomicInteger eligibilityChecks = new AtomicInteger();
         private boolean stillEligible = true;
 
         @Override
@@ -310,6 +319,7 @@ class TechnicianWorkPlanServiceTest {
 
         @Override
         public boolean isStillEligible(WorkPlanContext context) {
+            eligibilityChecks.incrementAndGet();
             return stillEligible;
         }
     }
