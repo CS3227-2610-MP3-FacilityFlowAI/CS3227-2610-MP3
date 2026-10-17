@@ -123,8 +123,11 @@ public final class TechnicianWorkPlanService {
                     }
                     WorkPlanContext context = loaded.context();
                     try {
-                        CompletionStage<WorkPlanResponse> response = aiAccessGuard.forTechnician(
-                                context.assignedTechnicianId(), () -> context, assistant::request);
+                        CompletionStage<WorkPlanResponse> response;
+                        try (AiInvocationTelemetry.Scope ignored = AiInvocationTelemetry.bind(invocation)) {
+                            response = aiAccessGuard.forTechnician(
+                                    context.assignedTechnicianId(), () -> context, assistant::request);
+                        }
                         return response.handle((value, failure) -> {
                             if (failure != null || value == null) {
                                 return WorkPlanResponse.failure(WorkPlanFailureCode.AI_UNAVAILABLE);
@@ -165,7 +168,8 @@ public final class TechnicianWorkPlanService {
         try {
             long latencyMs = Math.max(0, Duration.between(invocation.startedAt(), Instant.now()).toMillis());
             telemetry.finish(invocation, new AiInvocationTelemetry.Terminal(
-                    status(response), latencyMs, 0, null, null, null));
+                    status(response), latencyMs, invocation.retryCount(), invocation.inputTokens(),
+                    invocation.outputTokens(), invocation.totalTokens()));
         } catch (RuntimeException telemetryFailure) {
             LOGGER.warn("AI terminal telemetry persistence failed for invocation {}", invocation.id());
             terminalResponse = WorkPlanResponse.failure(WorkPlanFailureCode.AI_UNAVAILABLE);

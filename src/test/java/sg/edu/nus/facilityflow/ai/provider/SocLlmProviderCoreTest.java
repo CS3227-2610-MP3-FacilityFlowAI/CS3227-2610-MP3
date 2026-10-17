@@ -17,6 +17,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
+import sg.edu.nus.facilityflow.ai.AiInvocationTelemetry;
 import sg.edu.nus.facilityflow.ai.provider.ProviderTestControls.FakeProviderPort;
 import sg.edu.nus.facilityflow.ai.provider.ProviderTestControls.ManualExecutor;
 import sg.edu.nus.facilityflow.ai.provider.ProviderTestControls.ManualScheduler;
@@ -375,6 +376,77 @@ class SocLlmProviderCoreTest {
         assertEquals(1L, completion.usage().orElseThrow().promptTokens().orElseThrow());
         assertFalse(completion.toString().contains("answer"));
         assertFalse(chat.toString().contains("fixed-system"));
+    }
+
+    @Test
+    void aiSec009Retries503OnceWithinTheOriginalDeadline() {
+        TestRig rig = readyRig();
+        CompletableFuture<ProviderCompletion> first = rig.port.enqueueChat();
+        CompletableFuture<ProviderCompletion> second = rig.port.enqueueChat();
+        AiInvocationTelemetry.Invocation invocation = new AiInvocationTelemetry.Invocation(
+                java.util.UUID.randomUUID(), rig.clock.instant());
+        CallHandle call;
+        try (AiInvocationTelemetry.Scope ignored = AiInvocationTelemetry.bind(invocation)) {
+            call = rig.core.complete(new PreparedChat("system", "user"), rig.clock.instant().plusSeconds(10));
+        }
+
+        rig.executor.runNext();
+        first.completeExceptionally(new ProviderFailure(ProviderFailure.Code.HTTP_SERVICE_UNAVAILABLE));
+        assertEquals(1, rig.port.chatCalls());
+        rig.scheduler.advanceBy(Duration.ofMillis(249));
+        assertEquals(1, rig.port.chatCalls());
+        rig.scheduler.advanceBy(Duration.ofMillis(1));
+        assertEquals(1, rig.executor.queuedCount());
+        rig.executor.runNext();
+        assertEquals(2, rig.port.chatCalls());
+        second.complete(ProviderTestControls.completion("answer"));
+
+        Completion completion = assertInstanceOf(Completion.class, join(call.stage()));
+        assertEquals("answer", completion.content());
+        assertEquals(1, completion.retryCount());
+        assertEquals(1, invocation.retryCount());
+    }
+
+    @Test
+    void aiSec009Retries429OnlyWithApprovedRetryAfterAndFiveSecondsRemaining() {
+        TestRig rig = readyRig();
+        CompletableFuture<ProviderCompletion> first = rig.port.enqueueChat();
+        CallHandle call = rig.core.complete(
+                new PreparedChat("system", "user"), rig.clock.instant().plusSeconds(4));
+        rig.executor.runNext();
+        first.completeExceptionally(new ProviderFailure(
+                ProviderFailure.Code.HTTP_RATE_LIMITED, Duration.ofSeconds(1)));
+
+        assertFailure(join(call.stage()), FailureCode.PROVIDER_RATE_LIMITED);
+        assertEquals(1, rig.port.chatCalls());
+    }
+
+    @Test
+    void aiSec009RejectsUnapproved429RetryAfterWithoutASecondProviderCall() {
+        TestRig rig = readyRig();
+        CompletableFuture<ProviderCompletion> first = rig.port.enqueueChat();
+        CallHandle call = rig.core.complete(
+                new PreparedChat("system", "user"), rig.clock.instant().plusSeconds(10));
+        rig.executor.runNext();
+        first.completeExceptionally(new ProviderFailure(
+                ProviderFailure.Code.HTTP_RATE_LIMITED, Duration.ofSeconds(3)));
+
+        assertFailure(join(call.stage()), FailureCode.PROVIDER_RATE_LIMITED);
+        assertEquals(1, rig.port.chatCalls());
+    }
+
+    @Test
+    void aiSec009CancellationDuringRetryPreventsTheSecondProviderCall() {
+        TestRig rig = readyRig();
+        CompletableFuture<ProviderCompletion> first = rig.port.enqueueChat();
+        CallHandle call = rig.core.complete(
+                new PreparedChat("system", "user"), rig.clock.instant().plusSeconds(10));
+        rig.executor.runNext();
+        first.completeExceptionally(new ProviderFailure(ProviderFailure.Code.NETWORK_FAILURE));
+        assertTrue(call.cancel());
+        assertThrows(CancellationException.class, () -> join(call.stage()));
+        rig.scheduler.advanceBy(Duration.ofMillis(250));
+        assertEquals(1, rig.port.chatCalls());
     }
 
     @Test

@@ -19,6 +19,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import sg.edu.nus.facilityflow.ai.AiInvocationTelemetry;
 import sg.edu.nus.facilityflow.ai.config.AiConfiguration;
 import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderPort.ProviderChatRequest;
 import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderPort.ProviderCompletion;
@@ -119,7 +120,7 @@ final class SocLlmProviderCore implements AutoCloseable {
     CallHandle complete(PreparedChat chat, Instant absoluteDeadline) {
         Objects.requireNonNull(chat, "chat");
         Objects.requireNonNull(absoluteDeadline, "absoluteDeadline");
-        CallControl call = new CallControl(absoluteDeadline);
+        CallControl call = new CallControl(absoluteDeadline, chat, AiInvocationTelemetry.current());
         boolean registered;
         synchronized (readinessLock) {
             registered = !closed;
@@ -501,15 +502,19 @@ final class SocLlmProviderCore implements AutoCloseable {
     static final class Completion implements CompletionResult {
         private final String content;
         private final Optional<Usage> usage;
+        private final int retryCount;
 
-        private Completion(String content, Optional<Usage> usage) {
+        private Completion(String content, Optional<Usage> usage, int retryCount) {
             this.content = content;
             this.usage = usage;
+            this.retryCount = retryCount;
         }
 
         public String content() { return content; }
 
         public Optional<Usage> usage() { return usage; }
+
+        public int retryCount() { return retryCount; }
 
         @Override
         public String toString() {
@@ -518,8 +523,17 @@ final class SocLlmProviderCore implements AutoCloseable {
         }
     }
 
-    record Failure(FailureCode code) implements CompletionResult {
-        Failure { Objects.requireNonNull(code, "code"); }
+    record Failure(FailureCode code, int retryCount) implements CompletionResult {
+        Failure {
+            Objects.requireNonNull(code, "code");
+            if (retryCount < 0 || retryCount > 1) {
+                throw new IllegalArgumentException("retryCount must be between 0 and 1");
+            }
+        }
+
+        Failure(FailureCode code) {
+            this(code, 0);
+        }
     }
 
     record Usage(OptionalLong promptTokens, OptionalLong completionTokens, OptionalLong totalTokens) {
@@ -660,14 +674,25 @@ final class SocLlmProviderCore implements AutoCloseable {
     private final class CallControl {
         private final Object callLock = new Object();
         private final Instant absoluteDeadline;
+        private final PreparedChat chat;
+        private final AiInvocationTelemetry.Invocation telemetryInvocation;
         private final ReadOnlyFuture<CompletionResult> result = new ReadOnlyFuture<>();
         private final CallHandle handle = new CallHandle(result, this::cancelByCaller);
         private ScheduledFuture<?> deadlineTask;
+        private ScheduledFuture<?> retryTask;
         private CompletableFuture<ProviderCompletion> providerStage;
+        private int retryCount;
         private boolean invocationReserved;
         private boolean terminal;
 
-        private CallControl(Instant absoluteDeadline) { this.absoluteDeadline = absoluteDeadline; }
+        private CallControl(
+                Instant absoluteDeadline,
+                PreparedChat chat,
+                AiInvocationTelemetry.Invocation telemetryInvocation) {
+            this.absoluteDeadline = absoluteDeadline;
+            this.chat = chat;
+            this.telemetryInvocation = telemetryInvocation;
+        }
 
         private boolean armDeadline() {
             Instant now = clock.instant();
@@ -708,20 +733,81 @@ final class SocLlmProviderCore implements AutoCloseable {
                 if (terminal) {
                     return;
                 }
-                terminal = true;
-                timer = deadlineTask;
                 if (failure != null || completion == null) {
                     Throwable safeType = failure == null ? null : unwrap(failure);
+                    if (safeType instanceof ProviderFailure providerFailure && scheduleRetryLocked(providerFailure)) {
+                        return;
+                    }
                     failureCode = safeType instanceof ProviderFailure providerFailure
-                            ? mapProviderFailure(providerFailure.code())
-                            : FailureCode.PROVIDER_UNAVAILABLE;
+                            ? mapProviderFailure(providerFailure.code()) : FailureCode.PROVIDER_UNAVAILABLE;
                 } else {
                     success = toCompletion(completion);
                 }
+                terminal = true;
+                timer = deadlineTask;
             }
             unregister();
             cancelTimer(timer);
-            result.publish(failureCode == null ? success : new Failure(failureCode));
+            result.publish(failureCode == null ? success : new Failure(failureCode, retryCount));
+        }
+
+        private boolean scheduleRetryLocked(ProviderFailure failure) {
+            if (retryCount >= 1) {
+                return false;
+            }
+            Duration delay = retryDelay(failure);
+            Instant now = clock.instant();
+            if (delay == null || !now.isBefore(absoluteDeadline)) {
+                return false;
+            }
+            Duration remaining = Duration.between(now, absoluteDeadline);
+            if (delay.compareTo(remaining) > 0) {
+                return false;
+            }
+            ScheduledFuture<?> scheduled;
+            try {
+                scheduled = scheduler.schedule(this::retry, delay.toNanos(), TimeUnit.NANOSECONDS);
+            } catch (RuntimeException ignored) {
+                return false;
+            }
+            retryTask = scheduled;
+            retryCount = 1;
+            if (telemetryInvocation != null) {
+                try {
+                    telemetryInvocation.recordRetry();
+                } catch (RuntimeException ignored) {
+                    retryCount = 0;
+                    retryTask = null;
+                    cancelTimer(scheduled);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private Duration retryDelay(ProviderFailure failure) {
+            return switch (failure.code()) {
+                case NETWORK_FAILURE, HTTP_SERVICE_UNAVAILABLE -> Duration.ofMillis(250);
+                case HTTP_RATE_LIMITED -> {
+                    Duration retryAfter = failure.retryAfter();
+                    Duration remaining = Duration.between(clock.instant(), absoluteDeadline);
+                    yield retryAfter != null && !retryAfter.isNegative()
+                            && retryAfter.compareTo(Duration.ofSeconds(2)) <= 0
+                            && remaining.compareTo(Duration.ofSeconds(5)) >= 0
+                            ? retryAfter : null;
+                }
+                default -> null;
+            };
+        }
+
+        private void retry() {
+            synchronized (callLock) {
+                retryTask = null;
+                if (terminal) {
+                    return;
+                }
+            }
+            dispatchChat(this, chat);
         }
 
         private void deadlineExpired() {
@@ -734,6 +820,7 @@ final class SocLlmProviderCore implements AutoCloseable {
                 terminal = true;
                 stageToCancel = providerStage;
                 timer = deadlineTask;
+                retryTask = cancelAndClear(retryTask);
             }
             unregister();
             cancelTimer(timer);
@@ -751,6 +838,7 @@ final class SocLlmProviderCore implements AutoCloseable {
                 terminal = true;
                 stageToCancel = providerStage;
                 timer = deadlineTask;
+                retryTask = cancelAndClear(retryTask);
             }
             unregister();
             cancelTimer(timer);
@@ -767,6 +855,7 @@ final class SocLlmProviderCore implements AutoCloseable {
                 }
                 terminal = true;
                 timer = deadlineTask;
+                retryTask = cancelAndClear(retryTask);
             }
             unregister();
             cancelTimer(timer);
@@ -784,6 +873,7 @@ final class SocLlmProviderCore implements AutoCloseable {
                 invocationReserved = false;
                 stageToCancel = providerStage;
                 timer = deadlineTask;
+                retryTask = cancelAndClear(retryTask);
             }
             unregister();
             cancelTimer(timer);
@@ -799,7 +889,24 @@ final class SocLlmProviderCore implements AutoCloseable {
 
         private Completion toCompletion(ProviderCompletion providerCompletion) {
             Optional<Usage> usage = providerCompletion.usage().map(CallControl::toUsage);
-            return new Completion(providerCompletion.content(), usage);
+            usage.ifPresent(value -> {
+                if (telemetryInvocation != null) {
+                    telemetryInvocation.recordUsage(
+                            optionalLongValue(value.promptTokens()),
+                            optionalLongValue(value.completionTokens()),
+                            optionalLongValue(value.totalTokens()));
+                }
+            });
+            return new Completion(providerCompletion.content(), usage, retryCount);
+        }
+
+        private static Long optionalLongValue(OptionalLong value) {
+            return value.isPresent() ? value.getAsLong() : null;
+        }
+
+        private static ScheduledFuture<?> cancelAndClear(ScheduledFuture<?> task) {
+            cancelTimer(task);
+            return null;
         }
 
         private static FailureCode mapProviderFailure(ProviderFailure.Code code) {

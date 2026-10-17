@@ -22,11 +22,44 @@ public interface AiInvocationTelemetry {
         }
     }
 
-    record Invocation(UUID id, Instant startedAt) {
-        public Invocation {
-            Objects.requireNonNull(id, "id");
-            Objects.requireNonNull(startedAt, "startedAt");
+    /** Mutable server-side handle used to carry attempt and usage metadata across async seams. */
+    final class Invocation {
+        private final UUID id;
+        private final Instant startedAt;
+        private int retryCount;
+        private Long inputTokens;
+        private Long outputTokens;
+        private Long totalTokens;
+
+        public Invocation(UUID id, Instant startedAt) {
+            this.id = Objects.requireNonNull(id, "id");
+            this.startedAt = Objects.requireNonNull(startedAt, "startedAt");
         }
+
+        public UUID id() { return id; }
+
+        public Instant startedAt() { return startedAt; }
+
+        public synchronized void recordRetry() {
+            if (retryCount >= 1) {
+                throw new IllegalStateException("Only one provider retry is permitted");
+            }
+            retryCount++;
+        }
+
+        public synchronized int retryCount() { return retryCount; }
+
+        public synchronized void recordUsage(Long inputTokens, Long outputTokens, Long totalTokens) {
+            this.inputTokens = inputTokens;
+            this.outputTokens = outputTokens;
+            this.totalTokens = totalTokens;
+        }
+
+        public synchronized Long inputTokens() { return inputTokens; }
+
+        public synchronized Long outputTokens() { return outputTokens; }
+
+        public synchronized Long totalTokens() { return totalTokens; }
     }
 
     record Terminal(Status status, long latencyMs, int retryCount,
@@ -56,6 +89,36 @@ public interface AiInvocationTelemetry {
     enum Status {
         SUCCEEDED, AI_UNAVAILABLE, AI_LIMITED, AI_INVALID_REQUEST,
         AI_CONFIGURATION_ERROR, AI_TIMEOUT, AI_INVALID_OUTPUT, DISCARDED_ACCESS_CHANGED
+    }
+
+    /** Binds one invocation to the synchronous provider-dispatch seam. */
+    static Scope bind(Invocation invocation) {
+        Objects.requireNonNull(invocation, "invocation");
+        Invocation previous = Holder.ACTIVE.get();
+        Holder.ACTIVE.set(invocation);
+        return () -> {
+            if (previous == null) {
+                Holder.ACTIVE.remove();
+            } else {
+                Holder.ACTIVE.set(previous);
+            }
+        };
+    }
+
+    /** Returns the invocation bound by the current server-side request thread. */
+    static Invocation current() {
+        return Holder.ACTIVE.get();
+    }
+
+    interface Scope extends AutoCloseable {
+        @Override
+        void close();
+    }
+
+    final class Holder {
+        private static final ThreadLocal<Invocation> ACTIVE = new ThreadLocal<>();
+
+        private Holder() {}
     }
 
     /** No-op adapter used by direct feature tests that do not construct a database. */
