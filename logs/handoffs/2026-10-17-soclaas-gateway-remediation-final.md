@@ -15,7 +15,9 @@
   Technician gateway subset under REQ-TECH-012–017.
 - Remaining blockers: role-owner/teammate/Security Reviewer/fresh-verifier
   approvals; Requester/Manager authorized orchestration; and the human-reviewed
-  Work Plan safety corpus/version required by AI-SEC-012. No approval is
-  inferred from passing tests.
+  Work Plan safety corpus/version required by AI-SEC-012. Fresh review also
+  identified an AI-SEC-028 gap: persisted eligibility is rechecked after the
+  call, but current authenticated session/principal revalidation is not yet
+  proven. No approval is inferred from passing tests.
 - Scope decision: compressed responses are deferred; identity-only transport is
   restored. No provider credentials were accessed.

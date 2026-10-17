@@ -20,8 +20,12 @@
   sg.edu.nus.facilityflow.ai.provider.ProviderEnvelopeDecoderTest --tests
   sg.edu.nus.facilityflow.ai.provider.SocLlmProviderRuntimeFactoryTest
   --no-daemon` — `BUILD SUCCESSFUL` in 17s; all 81 focused tests passed.
-- Full verification: `gradlew.bat test --no-daemon` — `BUILD SUCCESSFUL` in
-  3m31s; 478 tests, 0 failures, 0 errors and 0 skipped. `git diff --check`
-  passed.
+- Full verification at the time of this compatibility commit: `BUILD
+  SUCCESSFUL` in 3m31s; 478 tests, 0 failures, 0 errors and 0 skipped. The
+  current HEAD evidence refresh reran the full suite in 3m15s with 477 tests,
+  0 failures, 0 errors and 0 skipped. `git diff --check` passed.
 - Human teammate and Security Reviewer review remain pending.
+- Agent/session role: primary Codex implementation session. Corrections/risks:
+  added fields are inert metadata only; unknown model-entry fields remain
+  fail-closed.
 - Reuse: new MP3 compatibility work; no MP2 source was consulted or copied.

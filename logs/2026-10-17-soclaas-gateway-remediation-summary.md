@@ -22,6 +22,7 @@
 18. `4d6a629 fix(ai): disable reasoning for structured completions`
 19. `a2feb0d fix(ai): accept current completion metadata`
 20. `4150d37 fix(ai): use persisted work plan freshness recheck`
+21. `bfbea8d docs(ai): refresh gateway evidence`
 
 The review baseline remains `e784d483f546fa60b01fd76107b8aa27b4359db0`;
 the fresh-review range is `e784d48..HEAD` (ending at the current evidence
@@ -49,7 +50,9 @@ refresh commit).
   calls disable reasoning and declare the bounded output schema.
 - Freshness: the Technician post-call eligibility check uses persisted Request
   state, assignment, Account role and version, so asynchronous completion does
-  not depend on a request-thread security principal.
+  not depend on a request-thread security principal. Fresh review found that
+  current authenticated session/principal revalidation is still not proven for
+  AI-SEC-028 and remains an implementation blocker.
 
 ## Verification
 
@@ -68,6 +71,9 @@ latest full run completed in 3m15s.
 - The Work Plan multilingual, obfuscation-aware and negation-aware human-reviewed
   safety corpus/version required by AI-SEC-012 is not present; no substitute
   corpus was invented.
+- AI-SEC-028 current authenticated-principal/session revalidation after an
+  asynchronous provider completion is not fully demonstrated; persisted object
+  eligibility alone is insufficient evidence for that control.
 - Hosted SoCLaaS smoke testing, deployment separation, final Security Reviewer,
   teammate and fresh-verifier approvals remain pending. No provider credential
   was accessed.
