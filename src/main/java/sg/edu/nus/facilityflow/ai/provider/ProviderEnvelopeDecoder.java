@@ -26,7 +26,16 @@ final class ProviderEnvelopeDecoder {
     static final int MAX_MODELS = 1_000;
 
     private static final Set<String> MODELS_ROOT_FIELDS = Set.of("object", "data");
-    private static final Set<String> MODEL_FIELDS = Set.of("id", "object", "created", "owned_by");
+    private static final Set<String> MODEL_FIELDS = Set.of(
+            "id",
+            "object",
+            "created",
+            "owned_by",
+            "context_length",
+            "context_window",
+            "max_context_length",
+            "max_model_len",
+            "soclaas");
     private static final Set<String> CHAT_ROOT_FIELDS = Set.of(
             "id", "object", "created", "model", "system_fingerprint", "service_tier", "choices", "usage");
     private static final Set<String> CHOICE_FIELDS = Set.of("index", "message", "finish_reason", "logprobs");

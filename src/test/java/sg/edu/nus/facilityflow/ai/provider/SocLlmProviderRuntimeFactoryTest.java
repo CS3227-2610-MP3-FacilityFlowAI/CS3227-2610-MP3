@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
@@ -20,6 +21,46 @@ import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderPort.ProviderModels;
 
 /** Deterministic lifecycle tests using the package-private factory seam. */
 class SocLlmProviderRuntimeFactoryTest {
+
+    @Test
+    @DisplayName("REQ-AI-003/AI-SEC-020 current SoCLaaS model metadata reaches READY")
+    void configuredQwenModelWithCurrentSoclaasMetadataReachesReady() {
+        String json = """
+                {"object":"list","data":[{
+                  "id":"qwen3.8:27b",
+                  "object":"model",
+                  "created":1760000000,
+                  "owned_by":"soclaas",
+                  "context_length":32768,
+                  "context_window":{"input":24576,"output":8192},
+                  "max_context_length":32768,
+                  "max_model_len":32768,
+                  "soclaas":{"deployment":{"region":"sg","replicas":2},"capabilities":["chat"]}
+                }]}
+                """;
+        ProviderModels decodedModels = new ProviderEnvelopeDecoder().decodeModels(
+                DecompressedBody.of(json.getBytes(StandardCharsets.UTF_8)));
+        MutableClock clock = new MutableClock();
+        ManualExecutor discovery = new ManualExecutor();
+        ManualExecutor provider = new ManualExecutor();
+        ManualScheduler scheduler = new ManualScheduler(clock);
+        FakeProviderPort port = new FakeProviderPort();
+        CompletableFuture<ProviderModels> models = port.enqueueModels();
+
+        AiProviderLifecycle lifecycle = SocLlmProviderRuntimeFactory.startForTests(
+                ProviderTestControls.availableConfiguration("qwen3.8:27b"),
+                port,
+                clock,
+                discovery,
+                provider,
+                scheduler);
+        discovery.runNext();
+        models.complete(decodedModels);
+
+        assertEquals(AiProviderLifecycle.State.READY, await(lifecycle.readiness()));
+        assertEquals(AiProviderLifecycle.State.READY, lifecycle.state());
+        lifecycle.close();
+    }
 
     @Test
     @DisplayName("REQ-AI-004/AI-SEC-020 available runtime starts readiness asynchronously")

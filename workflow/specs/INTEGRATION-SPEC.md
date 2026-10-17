@@ -355,7 +355,9 @@ Envelope fields use location allowlists; every unlisted member rejects on
 presence. Permitted inert metadata may have any JSON type but is never consumed:
 
 - models root: only `object`, `data`;
-- each model entry: only `id`, `object`, `created`, `owned_by`;
+- each model entry: only `id`, `object`, `created`, `owned_by`,
+  `context_length`, `context_window`, `max_context_length`, `max_model_len`,
+  `soclaas`;
 - chat root: only `id`, `object`, `created`, `model`, `system_fingerprint`,
   `service_tier`, `choices`, `usage`;
 - choice: only `index`, `message`, `finish_reason`, `logprobs`;
@@ -366,7 +368,9 @@ presence. Permitted inert metadata may have any JSON type but is never consumed:
 entry is a non-null object containing a non-empty string `id`; IDs must be unique.
 Any malformed/null entry, empty/non-string ID, duplicate ID or 1,001st entry
 rejects the entire envelope. Readiness succeeds only on an exact configured-
-model ID match.
+model ID match. The additional SoCLaaS context-limit and `soclaas` fields are
+accepted only as inert metadata of any JSON type; the gateway does not traverse
+or use them for configuration, authorization, limits or prompt construction.
 
 A completion response contains exactly one assistant choice. `message.role` is
 exactly `assistant`, `message.content` is one non-empty string and

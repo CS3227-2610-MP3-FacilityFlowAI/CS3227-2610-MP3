@@ -42,6 +42,27 @@ class ProviderEnvelopeDecoderTest {
     }
 
     @Test
+    void reqAi003AndAiSec020AcceptCurrentSoclaasModelMetadataAsInert() {
+        String json = """
+                {"object":"list","data":[{
+                  "id":"qwen3.8:27b",
+                  "object":"model",
+                  "created":1760000000,
+                  "owned_by":"soclaas",
+                  "context_length":32768,
+                  "context_window":{"input":24576,"output":8192},
+                  "max_context_length":32768,
+                  "max_model_len":32768,
+                  "soclaas":{"deployment":{"region":"sg","replicas":2},"capabilities":["chat"]}
+                }]}
+                """;
+
+        ProviderModels result = decodeModels(json);
+
+        assertEquals(Set.of("qwen3.8:27b"), result.modelIds());
+    }
+
+    @Test
     void reqAi002AndAiSec010DecodeOneStoppedAssistantCompletionAndUsage() {
         String json = """
                 {"id":null,"object":{"ignored":true},"created":[],"model":false,

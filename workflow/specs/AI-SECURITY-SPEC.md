@@ -144,12 +144,14 @@ may select a feature, actor, template, parser, model or arbitrary context map.
   compressed-transport increment.
 
   Envelope location allowlists are exact. Models root permits only `object` and
-  `data`; model entries only `id`, `object`, `created`, `owned_by`; chat root only
-  `id`, `object`, `created`, `model`, `system_fingerprint`, `service_tier`,
-  `choices`, `usage`; choice only `index`, `message`, `finish_reason`, `logprobs`;
-  message only `role`, `content`; usage only `prompt_tokens`,
-  `completion_tokens`, `total_tokens`. Permitted inert metadata may have any JSON
-  type but is never consumed. Every unlisted member rejects on presence.
+  `data`; model entries only `id`, `object`, `created`, `owned_by`,
+  `context_length`, `context_window`, `max_context_length`, `max_model_len`,
+  `soclaas`; chat root only `id`, `object`, `created`, `model`,
+  `system_fingerprint`, `service_tier`, `choices`, `usage`; choice only `index`,
+  `message`, `finish_reason`, `logprobs`; message only `role`, `content`; usage
+  only `prompt_tokens`, `completion_tokens`, `total_tokens`. Permitted inert
+  metadata may have any JSON type but is never consumed or recursively trusted.
+  Every unlisted member rejects on presence.
 
   Model discovery requires a root object with a non-null `data` array. Every
   entry is a non-null object with a unique, non-empty string `id`; any malformed

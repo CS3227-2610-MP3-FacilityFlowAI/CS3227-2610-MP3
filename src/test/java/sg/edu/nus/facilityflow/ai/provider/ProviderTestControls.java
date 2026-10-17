@@ -36,6 +36,10 @@ final class ProviderTestControls {
     private ProviderTestControls() {}
 
     static AiConfiguration.Available availableConfiguration() {
+        return availableConfiguration(MODEL);
+    }
+
+    static AiConfiguration.Available availableConfiguration(String model) {
         try {
             Constructor<AiConfiguration.Available> constructor = AiConfiguration.Available.class
                     .getDeclaredConstructor(
@@ -51,7 +55,7 @@ final class ProviderTestControls {
             return constructor.newInstance(
                     AiConfiguration.CANONICAL_BASE_URL,
                     "test-only-key",
-                    MODEL,
+                    model,
                     30,
                     321,
                     5,
