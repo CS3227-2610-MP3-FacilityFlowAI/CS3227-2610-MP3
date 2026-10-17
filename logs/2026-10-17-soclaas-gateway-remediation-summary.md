@@ -11,7 +11,7 @@
 7. `8305b0d fix(ai): preserve absolute deadlines through feature delegates`
 
 The review baseline remains `e784d483f546fa60b01fd76107b8aa27b4359db0`;
-the fresh-review range is `e784d48..0a0ca7b`.
+the fresh-review range is `e784d48..HEAD` (ending at the final evidence commit).
 
 ## Requirements and evidence
 
