@@ -6,7 +6,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-/** PostgreSQL adapter for append-once AI invocation lifecycle evidence. */
+/** PostgreSQL adapter for append-once AI invocation lifecycle evidence (REQ-AI-007/008, AI-SEC-017/018). */
 @Repository
 public class JdbcAiInvocationTelemetry implements AiInvocationTelemetry {
     private final NamedParameterJdbcTemplate jdbc;

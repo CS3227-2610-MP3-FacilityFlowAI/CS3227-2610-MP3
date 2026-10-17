@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import sg.edu.nus.facilityflow.ai.config.AiConfiguration;
 
 /**
- * Shared admission control for AI invocations.
+ * Shared admission control for AI invocations (AI-SEC-008/021/022).
  *
  * <p>This is deliberately a small coordinator seam. It owns the permit
  * lifecycle while provider adapters remain unaware of Accounts and role

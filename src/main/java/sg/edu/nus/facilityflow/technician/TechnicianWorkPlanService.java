@@ -24,7 +24,7 @@ import sg.edu.nus.facilityflow.identity.AccountRole;
 import sg.edu.nus.facilityflow.identity.CurrentAccount;
 import sg.edu.nus.facilityflow.identity.IdentityAuthorization;
 
-/** Authorization-first orchestration for the Technician Work Plan Assistant. */
+/** Authorization-first orchestration for REQ-TECH-012–017 and AI-SEC-001/008/017/028. */
 @Service
 public final class TechnicianWorkPlanService {
     private static final String TEMPLATE_VERSION = "work-plan-v1";

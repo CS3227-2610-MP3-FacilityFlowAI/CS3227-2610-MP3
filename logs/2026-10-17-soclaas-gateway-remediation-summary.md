@@ -8,6 +8,7 @@
 4. `16d1279 fix(manager-ai): enforce the Triage result contract`
 5. `0f60e5f security(ai): enforce request-specific output disclosure policy`
 6. `0a0ca7b revert(ai): defer compressed provider responses`
+7. `8305b0d fix(ai): preserve absolute deadlines through feature delegates`
 
 The review baseline remains `e784d483f546fa60b01fd76107b8aa27b4359db0`;
 the fresh-review range is `e784d48..0a0ca7b`.

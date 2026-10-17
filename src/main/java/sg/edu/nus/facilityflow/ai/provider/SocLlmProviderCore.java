@@ -26,7 +26,7 @@ import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderPort.ProviderCompletion
 import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderPort.ProviderModels;
 import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderPort.ProviderUsage;
 
-/** Package-private provider coordinator; no role-facing API is exposed here. */
+/** Package-private provider coordinator for REQ-AI-002/005/006 and AI-SEC-008/009/020; no role-facing API is exposed here. */
 final class SocLlmProviderCore implements AutoCloseable {
     private static final Duration NEGATIVE_CACHE_DURATION = Duration.ofSeconds(60);
 

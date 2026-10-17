@@ -25,7 +25,8 @@ import sg.edu.nus.facilityflow.ai.requester.SmartReportResponse;
 import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderCore.Readiness;
 
 /**
- * Narrow application-wiring bridge for the package-private provider module.
+ * Narrow application-wiring bridge for the package-private provider module
+ * (REQ-AI-004/005, AI-SEC-019/020).
  * Role and web packages must depend on {@link AiProviderLifecycle}, not this
  * factory or any provider implementation type.
  */
