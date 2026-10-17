@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import org.springframework.stereotype.Component;
 import sg.edu.nus.facilityflow.ai.manager.TriageResult;
 
 /**
@@ -11,6 +12,7 @@ import sg.edu.nus.facilityflow.ai.manager.TriageResult;
  * This class is intentionally mutation-free: a Manager still chooses and submits
  * the ordinary authorized assignment operation separately.
  */
+@Component
 public final class TriageCandidateRanker {
 
     private static final String RANKING_EXPLANATION =

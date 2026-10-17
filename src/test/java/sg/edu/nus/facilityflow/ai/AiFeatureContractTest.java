@@ -54,6 +54,14 @@ class AiFeatureContractTest {
     }
 
     @Test
+    void openTriageMayRepresentAnUnassignedManagerPriority() {
+        TriageContext context = new TriageContext(
+                "Leaking air conditioner", "Water is pooling below the unit.", "Block A", "HVAC",
+                "High", null, "OPEN", List.of(), List.of("HVAC"), List.of("Electrical"));
+        assertEquals(null, context.managerPriority());
+    }
+
+    @Test
     void typedResultsEnforceClosedPriorityAndUniqueSkillContracts() {
         SmartReportResult report = new SmartReportResult(
                 "Leaking air conditioner", null, null, "HVAC", "High", List.of(), "Needs inspection.");

@@ -168,6 +168,25 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    void aiSec029ManagerTriageIsPostCsrfRoleProtectedAndNonCacheable() throws Exception {
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        mockMvc.perform(post("/manager/requests/FF-000051/triage")
+                        .cookie(technician).with(csrf()))
+                .andExpect(status().isForbidden());
+
+        Cookie manager = login("manager1", VALID_PASSWORD, "/manager");
+        MvcResult triage = mockMvc.perform(post("/manager/requests/FF-000051/triage")
+                        .cookie(manager).with(csrf()))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+        mockMvc.perform(asyncDispatch(triage))
+                .andExpect(status().isOk())
+                .andExpect(header().string(
+                        HttpHeaders.CACHE_CONTROL, org.hamcrest.Matchers.containsString("no-store")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("AI_UNAVAILABLE")));
+    }
+
+    @Test
     void reqSh004LogoutInvalidatesTheServerSession() throws Exception {
         Cookie requester = login("requester1", VALID_PASSWORD, "/requester");
 

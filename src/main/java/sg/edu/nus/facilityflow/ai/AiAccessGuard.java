@@ -70,4 +70,15 @@ public class AiAccessGuard {
         authorization.requireRole(AccountRole.FACILITIES_MANAGER);
         return modelCall.apply(authorizedContextFactory.get());
     }
+
+    /** Uses the role/session snapshot captured before asynchronous Manager work began. */
+    public <C, R> R forManager(
+            CurrentAccountSnapshot accountSnapshot,
+            Supplier<C> authorizedContextFactory,
+            Function<C, R> modelCall) {
+        if (accountSnapshot.role() != AccountRole.FACILITIES_MANAGER) {
+            throw new AccessDeniedException("The requested operation is not available");
+        }
+        return modelCall.apply(authorizedContextFactory.get());
+    }
 }

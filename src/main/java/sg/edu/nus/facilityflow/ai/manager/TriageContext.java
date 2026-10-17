@@ -23,7 +23,7 @@ public record TriageContext(
         location = required(location, "location", 120);
         currentCategory = required(currentCategory, "currentCategory", 50);
         reportedUrgency = required(reportedUrgency, "reportedUrgency", 20);
-        managerPriority = required(managerPriority, "managerPriority", 20);
+        managerPriority = optional(managerPriority, "managerPriority", 20);
         status = required(status, "status", 20);
         if ("CANCELLED".equals(status) || "CLOSED".equals(status)) {
             throw new IllegalArgumentException("Triage requires a non-terminal Request.");
@@ -51,5 +51,12 @@ public record TriageContext(
             throw new IllegalArgumentException(name + " is invalid.");
         }
         return normalized;
+    }
+
+    private static String optional(String value, String name, int max) {
+        if (value == null) {
+            return null;
+        }
+        return required(value, name, max);
     }
 }
