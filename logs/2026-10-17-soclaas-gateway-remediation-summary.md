@@ -17,9 +17,15 @@
 13. `7c5c8a9 docs(ai): complete remediation commit index`
 14. `91131ad docs(ai): reconcile gateway review status`
 15. `cf70e60 docs(ai): clarify candidate control status`
+16. `a4f995f fix(ai): accept current SoCLaaS model metadata`
+17. `526e16f fix(ai): declare work plan output schema`
+18. `4d6a629 fix(ai): disable reasoning for structured completions`
+19. `a2feb0d fix(ai): accept current completion metadata`
+20. `4150d37 fix(ai): use persisted work plan freshness recheck`
 
 The review baseline remains `e784d483f546fa60b01fd76107b8aa27b4359db0`;
-the fresh-review range is `e784d48..HEAD` (ending at the final evidence commit).
+the fresh-review range is `e784d48..HEAD` (ending at the current evidence
+refresh commit).
 
 ## Requirements and evidence
 
@@ -38,13 +44,20 @@ the fresh-review range is `e784d48..HEAD` (ending at the final evidence commit).
 - Compression: AI-SEC-010/019. Gzip negotiation/decompression was reverted;
   identity-only handling is restored because compressed wire scope is deferred
   by the current approved specification.
+- Current compatibility: REQ-AI-003/006 and AI-SEC-010/020 now accept current
+  SoCLaaS model and completion metadata as inert fields; structured Work Plan
+  calls disable reasoning and declare the bounded output schema.
+- Freshness: the Technician post-call eligibility check uses persisted Request
+  state, assignment, Account role and version, so asynchronous completion does
+  not depend on a request-thread security principal.
 
 ## Verification
 
 Each remediation increment ran its focused Gradle test(s), `git diff --check`,
 and `./gradlew.bat test --no-daemon`; every executed full suite completed with
 `BUILD SUCCESSFUL`, 0 failures, 0 errors and 0 skipped. The branch baseline
-count was 475 tests; the current suite has 476 tests and remains green.
+count was 475 tests; the current suite has 477 tests and remains green. The
+latest full run completed in 3m15s.
 
 ## Blocked or unverified work
 
