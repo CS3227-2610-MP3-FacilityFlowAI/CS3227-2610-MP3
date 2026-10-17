@@ -32,7 +32,9 @@ import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderPort.ProviderModels;
  */
 final class SocLlmHttpsProviderAdapter implements SocLlmProviderPort {
     private static final String JSON_CONTENT_TYPE = "application/json";
+    private static final String ACCEPT_ENCODING = "gzip, identity";
     private static final String IDENTITY_ENCODING = "identity";
+    private static final String GZIP_ENCODING = "gzip";
 
     private final AiConfiguration.Available configuration;
     private final ProviderHttpTransport transport;
@@ -103,7 +105,7 @@ final class SocLlmHttpsProviderAdapter implements SocLlmProviderPort {
             HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
                     .timeout(timeout)
                     .header("Accept", JSON_CONTENT_TYPE)
-                    .header("Accept-Encoding", IDENTITY_ENCODING);
+                    .header("Accept-Encoding", ACCEPT_ENCODING);
             configuration.applyAuthorization(builder, credentialCapability);
             if ("POST".equals(method)) {
                 builder.header("Content-Type", JSON_CONTENT_TYPE)
@@ -181,21 +183,31 @@ final class SocLlmHttpsProviderAdapter implements SocLlmProviderPort {
             if (status != 200) {
                 throw new ProviderFailure(statusFailure(status), retryAfter(headers));
             }
-            if (!identityOnly(headers)) {
+            String encoding = responseEncoding(headers);
+            if (encoding == null) {
                 throw new ProviderFailure(ProviderFailure.Code.UNSUPPORTED_CONTENT_ENCODING);
             }
             InputStream body = response.body();
             if (body == null) {
                 throw new ProviderFailure(ProviderFailure.Code.BODY_UNREADABLE);
             }
+            // ProviderEnvelopeDecoder owns and closes this body on every path
+            // after the optional decompressor has been constructed.
+            InputStream decoded = GZIP_ENCODING.equals(encoding)
+                    ? CompressedProviderBody.gzip(body)
+                    : body;
             decoderOwnsBody = true;
-            // ProviderEnvelopeDecoder owns and closes this body on every path.
-            return responseDecoder.decode(new DecompressedBody(body));
+            return responseDecoder.decode(new DecompressedBody(decoded));
         } catch (ProviderFailure safe) {
             if (!decoderOwnsBody) {
                 closeBody(response);
             }
             throw safe;
+        } catch (java.io.IOException ignored) {
+            if (!decoderOwnsBody) {
+                closeBody(response);
+            }
+            throw new ProviderFailure(ProviderFailure.Code.BODY_UNREADABLE);
         } catch (RuntimeException ignored) {
             if (!decoderOwnsBody) {
                 closeBody(response);
@@ -229,19 +241,22 @@ final class SocLlmHttpsProviderAdapter implements SocLlmProviderPort {
         };
     }
 
-    private static boolean identityOnly(HttpHeaders headers) {
+    private static String responseEncoding(HttpHeaders headers) {
         List<String> values = headers.allValues("Content-Encoding");
-        for (String value : values) {
-            if (value == null || value.isBlank()) {
-                return false;
-            }
-            for (String encoding : value.split(",", -1)) {
-                if (!IDENTITY_ENCODING.equalsIgnoreCase(encoding.trim())) {
-                    return false;
-                }
-            }
+        if (values.isEmpty()) {
+            return IDENTITY_ENCODING;
         }
-        return true;
+        if (values.size() != 1 || values.get(0) == null) {
+            return null;
+        }
+        String value = values.get(0).trim();
+        if (IDENTITY_ENCODING.equalsIgnoreCase(value)) {
+            return IDENTITY_ENCODING;
+        }
+        if (GZIP_ENCODING.equalsIgnoreCase(value)) {
+            return GZIP_ENCODING;
+        }
+        return null;
     }
 
     private Duration retryAfter(HttpHeaders headers) {
