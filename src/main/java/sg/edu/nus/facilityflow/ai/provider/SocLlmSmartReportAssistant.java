@@ -28,7 +28,7 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Provider-package implementation of the Requester Smart Report seam. */
+/** Provider implementation of the Requester Smart Report seam (REQ-RQ-012–017, REQ-AI-005, AI-SEC-010/013/016). */
 final class SocLlmSmartReportAssistant implements SmartReportAssistant {
     private static final String TEMPLATE_VERSION = "smart-report-v1";
     private static final String SYSTEM_MESSAGE = """

@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-/** Feature-specific seam for Manager triage recommendations. */
+/** Feature-specific seam for Manager triage recommendations (REQ-MGR-020–025, REQ-AI-005, AI-SEC-010/013/016). */
 public interface TriageAssistant {
     CompletionStage<TriageResponse> request(TriageContext context);
 

@@ -25,3 +25,7 @@ specifications or adding business mutation paths.
 - `gradlew.bat test --tests 'sg.edu.nus.facilityflow.ai.provider.*' --tests 'sg.edu.nus.facilityflow.technician.TechnicianWorkPlanServiceTest' --no-daemon` — passed.
 
 No workflow specification or traceability file was changed for this increment.
+
+Requirement IDs: REQ-AI-005, REQ-RQ-014, REQ-TECH-014, REQ-MGR-022,
+AI-SEC-010/013/016. Human review: role-owner and teammate approval pending.
+Corrections/risks: provider seams do not constitute authorized role endpoints.

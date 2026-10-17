@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-/** Feature-specific seam for temporary Requester report drafting. */
+/** Feature-specific seam for temporary Requester report drafting (REQ-RQ-012–017, REQ-AI-005, AI-SEC-010/013/016). */
 public interface SmartReportAssistant {
     CompletionStage<SmartReportResponse> request(SmartReportContext context);
 

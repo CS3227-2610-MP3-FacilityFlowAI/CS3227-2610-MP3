@@ -30,7 +30,7 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Provider-package implementation of the Manager Triage seam. */
+/** Provider implementation of the Manager Triage seam (REQ-MGR-020–025, REQ-AI-005, AI-SEC-010/013/016). */
 final class SocLlmTriageAssistant implements TriageAssistant {
     private static final String SYSTEM_MESSAGE = """
             You are FacilityFlow's Triage Assistant. Return exactly one JSON object matching the requested schema.

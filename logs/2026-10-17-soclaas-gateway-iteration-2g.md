@@ -22,3 +22,7 @@ Implemented the next gateway increment without changing the workflow specificati
 - `./gradlew test --tests 'sg.edu.nus.facilityflow.FacilityFlowApplicationTest' --no-daemon` — passed (Spring wiring check).
 
 No workflow specification or traceability file was changed for this increment, per request.
+
+Requirement IDs: REQ-AI-007/008/010, AI-SEC-017/018. Human review: teammate,
+Security Reviewer and fresh-verifier review pending. Corrections/risks: raw
+prompt/output retention remains prohibited; no hosted telemetry was accessed.

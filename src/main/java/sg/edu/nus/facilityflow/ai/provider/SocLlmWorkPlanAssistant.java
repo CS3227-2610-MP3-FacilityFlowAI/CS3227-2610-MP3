@@ -31,7 +31,7 @@ import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderCore.Failure;
 import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderCore.FailureCode;
 import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderCore.PreparedChat;
 
-/** Provider-package implementation of the narrow Technician Work Plan seam. */
+/** Provider implementation of the Technician Work Plan seam (REQ-TECH-012–017, REQ-AI-005, AI-SEC-008/013/016). */
 final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
     private static final String TEMPLATE_VERSION = "work-plan-v1";
     private static final String SYSTEM_MESSAGE = """

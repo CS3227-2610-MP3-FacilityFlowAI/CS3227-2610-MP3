@@ -26,3 +26,7 @@ added.
 
 The ordinary Requester form/persistence endpoint remains the next integration
 step; this increment only exposes the typed advisory provider seam.
+
+Requirement IDs: REQ-RQ-012–017, REQ-AI-005, AI-SEC-010/013/016. Human review:
+Requester role-owner, teammate and fresh-verifier review pending. Corrections/
+risks: no persistence or authorization authority was added.

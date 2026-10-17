@@ -28,3 +28,7 @@ was added.
 
 The deterministic Manager ranking and ordinary assignment operation remain
 outside the AI provider seam and are the next integration concern.
+
+Requirement IDs: REQ-MGR-020–025, REQ-AI-005, AI-SEC-010/013/016. Human review:
+Manager role-owner, teammate and fresh-verifier review pending. Corrections/
+risks: no assignment or Request mutation was added.

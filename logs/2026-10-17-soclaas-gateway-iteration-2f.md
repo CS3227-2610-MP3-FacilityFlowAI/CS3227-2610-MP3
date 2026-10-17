@@ -25,3 +25,8 @@ intentionally deferred to the next increment.
   lease-validity propagation, renewal failure handling and inert startup.
 
 No secrets or raw provider data are recorded here.
+
+Requirement IDs: AI-SEC-008/021/022, REQ-AI-005, NFR-REL-001. Human review:
+fresh Security Reviewer GO for this increment; teammate/release review pending.
+Corrections/risks: durable telemetry, retry, role orchestration and the safety
+corpus were deferred to later authorized increments.

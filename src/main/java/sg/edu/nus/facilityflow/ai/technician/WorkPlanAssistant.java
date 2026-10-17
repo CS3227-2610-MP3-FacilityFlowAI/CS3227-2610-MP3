@@ -5,7 +5,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-/** Deep feature seam for the read-only Technician Work Plan advisory. */
+/** Deep feature seam for the read-only Technician Work Plan advisory (REQ-TECH-012–017, REQ-AI-005, AI-SEC-008/013/016). */
 public interface WorkPlanAssistant {
     CompletionStage<WorkPlanResponse> request(WorkPlanContext context);
 

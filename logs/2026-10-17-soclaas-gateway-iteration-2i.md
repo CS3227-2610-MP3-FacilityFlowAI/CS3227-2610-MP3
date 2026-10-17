@@ -27,3 +27,8 @@ workflow specifications.
 The full Gradle suite was started but did not finish within the available
 verification window; no failure result was produced. No workflow specification
 or traceability file was changed for this increment.
+
+Requirement IDs: AI-SEC-010/019. Human review: compressed-response scope was
+not approved and was later reverted by `0a0ca7b`; teammate/Security Reviewer
+review pending. Corrections/risks: this historical log records an experiment,
+not active compressed transport support.

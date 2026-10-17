@@ -19,3 +19,7 @@ Implemented provider retry and deadline execution without changing workflow spec
 - Combined provider-core, HTTPS adapter, Technician Work Plan, and PostgreSQL migration tests — passed.
 
 No workflow specification or traceability file was changed for this increment.
+
+Requirement IDs: AI-SEC-009, REQ-AI-005/007. Human review: teammate, Security
+Reviewer and fresh-verifier review pending. Corrections/risks: retry remains
+bounded by the original deadline; compressed responses are separately deferred.
