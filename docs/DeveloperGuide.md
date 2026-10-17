@@ -43,8 +43,9 @@ latest release rather than the intended design.
 
 ## Project overview
 
-FacilityFlow AI, CS3227 MP3. Database and authentication foundations integrated;
-role business workflows remain pending. See README and AGENTS.md.
+FacilityFlow AI, CS3227 MP3. Database and authentication foundations are
+integrated. The first Manager overview/queue/audit/on-behalf-create slice is
+implemented locally; remaining role workflows are pending. See README and AGENTS.md.
 
 ## Repository structure
 
@@ -84,6 +85,29 @@ remain pending application integration; migrations alone do not implement those 
 
 The accepted entities, relationships, transaction boundaries, invariants and
 concurrency approach are defined in `../workflow/specs/TECHNICAL-SPEC.md`.
+
+## Facilities Manager first slice
+
+`ManagerViews` is the small web-facing use-case interface. `ManagerService`
+opens the transaction, rejects non-Managers and asks `ManagerRepository` to
+recheck the persisted active Manager before reading or writing.
+`JdbcManagerRepository` owns parameterized PostgreSQL access; controllers issue
+no SQL.
+
+REQ-MGR-001–003/010–011 currently provide the operational counts, deterministic
+all-request queue, literal combined filters, active Technician workloads,
+read-only audit filters and Manager recording on behalf of an active Requester.
+The create transaction locks/rechecks the Manager, Requester and Category,
+inserts an OPEN Request with distinct owner/Recording Actor, and appends one
+`REQUEST_RECORDED_ON_BEHALF` event. Failure rolls back both. Inactive Requesters
+are excluded from choices and rejected again inside the transaction.
+
+The audit projection left-joins Request targets. Non-Request events retain a
+null Request display ID; they are never mapped to a sentinel value. Request,
+actor, action and inclusive Singapore date filters are combined with AND and
+return at most 200 newest events. Manager lifecycle actions, details, account and
+catalogue administration, Triage Assistant, browser verification and hosted
+verification remain pending.
 
 ## Role model
 
@@ -164,7 +188,12 @@ Team-managed deployment must be independent of AI coding/build-host environments
 The approved direction uses GitHub Actions and Vercel Preview/Production;
 humans approve promotion of a smoke-tested Production candidate without a
 rebuild. Secrets use GitHub/deployment-platform mechanisms. Provisioning,
-workflows, backups and rollback remain unimplemented.
+workflows, backups and rollback remain unimplemented. The new pull-request/master
+CI workflow validates the Gradle wrapper, runs `clean check bootJar`, executes
+dependency-free `src/test/js/*.test.cjs` checks when present, and uploads test,
+coverage and JAR artifacts. This is CI evidence only: Preview deployment,
+candidate smoke testing, human promotion, rollback and environment separation
+remain unimplemented until the Vercel spike confirms the approved flow.
 
 ## MP2 reuse
 

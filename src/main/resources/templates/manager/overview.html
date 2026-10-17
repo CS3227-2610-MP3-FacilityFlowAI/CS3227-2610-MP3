@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manager overview · FacilityFlow AI</title>
+</head>
+<body>
+<header>
+    <strong th:text="${displayName}">Manager</strong>
+    <span th:text="${username}">username</span>
+    <nav aria-label="Manager navigation">
+        <a th:href="@{/manager}">Workspace</a>
+        <a th:href="@{/manager/requests}">Requests</a>
+        <a th:href="@{/manager/requests/new}">Record request</a>
+        <a th:href="@{/manager/audit}">Audit</a>
+    </nav>
+    <form method="post" th:action="@{/logout}"><button type="submit">Sign out</button></form>
+</header>
+<main>
+    <h1>Operational overview</h1>
+    <section aria-labelledby="status-heading">
+        <h2 id="status-heading">Requests by status</h2>
+        <ul><li th:each="item : ${overview.statuses}"><span th:text="${item.label}">OPEN</span>: <strong th:text="${item.count}">0</strong></li></ul>
+    </section>
+    <section aria-labelledby="priority-heading">
+        <h2 id="priority-heading">Requests by Manager priority</h2>
+        <ul><li th:each="item : ${overview.priorities}"><span th:text="${item.label}">HIGH</span>: <strong th:text="${item.count}">0</strong></li></ul>
+    </section>
+    <section aria-labelledby="workload-heading">
+        <h2 id="workload-heading">Active Technician workload</h2>
+        <p th:if="${#lists.isEmpty(overview.technicianWorkloads)}">No active Technicians.</p>
+        <table th:unless="${#lists.isEmpty(overview.technicianWorkloads)}">
+            <thead><tr><th scope="col">Technician</th><th scope="col">Assigned and in progress</th></tr></thead>
+            <tbody><tr th:each="item : ${overview.technicianWorkloads}"><td th:text="${item.displayName + ' (' + item.username + ')'}">Technician</td><td th:text="${item.activeRequests}">0</td></tr></tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>
