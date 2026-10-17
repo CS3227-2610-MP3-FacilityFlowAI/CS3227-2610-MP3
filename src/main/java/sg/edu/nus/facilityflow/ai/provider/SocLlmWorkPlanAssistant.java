@@ -31,7 +31,7 @@ import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderCore.Failure;
 import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderCore.FailureCode;
 import sg.edu.nus.facilityflow.ai.provider.SocLlmProviderCore.PreparedChat;
 
-/** Provider implementation of the Technician Work Plan seam (REQ-TECH-012–017, REQ-AI-005, AI-SEC-008/013/016). */
+/** Provider implementation of the Technician Work Plan seam (REQ-TECH-012–017, REQ-AI-005, AI-SEC-008/012/013/016). */
 final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
     private static final String TEMPLATE_VERSION = "work-plan-v1";
     private static final String SYSTEM_MESSAGE = """
@@ -50,38 +50,12 @@ final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
             Provide read-only advisory suggestions only. Do not authorize work, change status, create logs, assign tools,
             or claim that a safety decision has been approved. Include at least one stopOrEscalateWhen item that says
             to stop or escalate when a concrete hazard is encountered.
-            """;
+            """ + "Apply safety policy \"" + WorkPlanSafetyPolicy.VERSION
+            + "\"; it is deterministic and conservative.\n";
     private static final Set<String> RESULT_FIELDS = Set.of(
             "diagnosticSteps", "safetyPrecautions", "suggestedTools", "requesterQuestions",
             "evidenceChecklist", "stopOrEscalateWhen", "rationale");
     private static final Pattern HTML_OR_MARKDOWN = Pattern.compile("<[^>]*>|!\\[[^]]*\\]\\([^)]*\\)|\\[[^]]+\\]\\([^)]*\\)");
-    private static final Pattern DANGEROUS_ACTION = Pattern.compile(
-            "(?i)\\b(?:work(?:ing)?\\s+on\\s+(?:an?\\s+)?(?:live|energized)|"
-                    + "bypass(?:ing)?\\s+(?:(?:the|a|an)\\s+)?(?:safety\\s+)?(?:lockout|tagout|interlock)s?|"
-                    + "(?:remove|disable|defeat|ignore)\\s+(?:(?:the|a|an)\\s+)?(?:safety\\s+)?(?:guard|interlock|lockout|tagout)s?|"
-                    + "(?:continue|proceed|enter|handle)\\w*\\s+(?:during|into|an?\\s+)?"
-                    + "(?:a\\s+)?(?:suspected\\s+)?(?:gas\\s+leak|fire|structural\\s+instability|"
-                    + "confined\\s+space|unknown\\s+hazardous\\s+material)|"
-                    + "without\\s+(?:the\\s+)?(?:required\\s+)?(?:ppe|personal\\s+protective\\s+equipment|protective\\s+equipment))\\b");
-    private static final Pattern SAFETY_NEGATION = Pattern.compile(
-            "(?i)\\b(?:do\\s+not|don't|never|avoid)\\s+(?:work(?:ing)?\\s+on\\s+(?:an?\\s+)?(?:live|energized)|"
-                    + "bypass(?:ing)?\\s+(?:(?:the|a|an)\\s+)?(?:safety\\s+)?(?:lockout|tagout|interlock)s?|"
-                    + "(?:remove|disable|defeat|ignore)\\s+(?:(?:the|a|an)\\s+)?(?:safety\\s+)?(?:guard|interlock|lockout|tagout)s?|"
-                    + "(?:continue|proceed|enter|handle)\\w*\\s+(?:during|into|an?\\s+)?"
-                    + "(?:a\\s+)?(?:suspected\\s+)?(?:gas\\s+leak|fire|structural\\s+instability|"
-                    + "confined\\s+space|unknown\\s+hazardous\\s+material)|"
-                    + "without\\s+(?:the\\s+)?(?:required\\s+)?(?:ppe|personal\\s+protective\\s+equipment|protective\\s+equipment))\\b|"
-                    + "(?i)\\b(?:stop(?:\\s+and\\s+escalate)?|escalate)\\s+(?:before|if|when)\\s+(?:you\\s+)?"
-                    + "(?:work(?:ing)?\\s+on\\s+(?:an?\\s+)?(?:live|energized)|enter(?:ing)?\\s+(?:a\\s+)?confined\\s+space|"
-                    + "handle(?:ing)?\\s+(?:unknown\\s+)?hazardous\\s+material|continue(?:ing)?\\s+during\\s+"
-                    + "(?:a\\s+)?(?:suspected\\s+)?(?:gas\\s+leak|fire|structural\\s+instability))\\b");
-    private static final Pattern STOP_GUIDANCE = Pattern.compile(
-            "(?i)\\b(?:stop|escalat(?:e|ion|ing|ed)?|seek\\s+(?:help|assistance))\\b");
-    private static final Pattern STOP_HAZARD = Pattern.compile(
-            "(?i)\\b(?:live|energized|gas\\s+leak|fire|structural|confined|hazardous|"
-                    + "lockout|tagout|interlock|ppe|protective\\s+equipment|unknown|chemical|injur|emergency)\\b");
-    private static final Pattern CONDITIONAL_AUTHORIZATION = Pattern.compile(
-            "(?i)\\b(?:unless|except|provided|authorized|authori[sz]ation|supervisor|approval|permit)\\b");
     private static final Pattern FORBIDDEN_IDENTIFIER = Pattern.compile(
             "(?i)(?:\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b|\\bFF-[0-9]{6}\\b|<\\/?request-data>)");
 
@@ -213,15 +187,12 @@ final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
                 List<String> evidenceChecklist = textArray(root, "evidenceChecklist", 1, 8, 200);
                 List<String> stopOrEscalateWhen = textArray(root, "stopOrEscalateWhen", 1, 5, 300);
                 String rationale = text(root, "rationale", 500);
-                if (stopOrEscalateWhen.stream().noneMatch(value -> STOP_GUIDANCE.matcher(value).find()
-                        && STOP_HAZARD.matcher(value).find())) {
+                if (!WorkPlanSafetyPolicy.hasStopEscalation(stopOrEscalateWhen)) {
                     throw new IllegalArgumentException("missing stop or escalation guidance");
                 }
-                for (String value : all(diagnosticSteps, safetyPrecautions, suggestedTools, requesterQuestions,
-                        evidenceChecklist, stopOrEscalateWhen, List.of(rationale))) {
-                    if (isUnsafeAdvice(value)) {
-                        throw new IllegalArgumentException("unsafe advice");
-                    }
+                if (WorkPlanSafetyPolicy.rejects(all(diagnosticSteps, safetyPrecautions, suggestedTools,
+                        requesterQuestions, evidenceChecklist, stopOrEscalateWhen, List.of(rationale)))) {
+                    throw new IllegalArgumentException("unsafe advice");
                 }
                 return new WorkPlanResult(diagnosticSteps, safetyPrecautions, suggestedTools,
                         requesterQuestions, evidenceChecklist, stopOrEscalateWhen, rationale);
@@ -275,19 +246,6 @@ final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
             throw new IllegalArgumentException("unsafe work plan text");
         }
         return normalized;
-    }
-
-    private static boolean isUnsafeAdvice(String value) {
-        String[] sentences = value.split("(?<=[.!?;])\\s+");
-        for (String sentence : sentences) {
-            if (DANGEROUS_ACTION.matcher(sentence).find()) {
-                if (!SAFETY_NEGATION.matcher(sentence).find()
-                        || CONDITIONAL_AUTHORIZATION.matcher(sentence).find()) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     @SafeVarargs
