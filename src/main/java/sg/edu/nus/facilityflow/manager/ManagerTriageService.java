@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import sg.edu.nus.facilityflow.ai.AiAccessGuard;
+import sg.edu.nus.facilityflow.ai.AiReadinessDeadline;
 import sg.edu.nus.facilityflow.ai.AiInvocationCoordinator;
 import sg.edu.nus.facilityflow.ai.AiInvocationTelemetry;
 import sg.edu.nus.facilityflow.ai.AiInvocationTelemetry.Status;
@@ -40,6 +41,7 @@ public final class ManagerTriageService {
     private final TriageCandidateRanker ranker;
     private final AiInvocationTelemetry telemetry;
     private final Clock clock;
+    private final AiReadinessDeadline readinessDeadline;
     private final String model;
     private final int timeoutSeconds;
 
@@ -69,6 +71,23 @@ public final class ManagerTriageService {
             AiInvocationTelemetry telemetry,
             AiConfiguration configuration,
             Clock clock) {
+        this(authorization, accessGuard, coordinator, lifecycle, repository, assistant, ranker,
+                telemetry, configuration, clock, AiReadinessDeadline.system());
+    }
+
+    /** Injectable readiness scheduler for deterministic deadline verification. */
+    public ManagerTriageService(
+            IdentityAuthorization authorization,
+            AiAccessGuard accessGuard,
+            AiInvocationCoordinator coordinator,
+            AiProviderLifecycle lifecycle,
+            ManagerTriageRepository repository,
+            TriageAssistant assistant,
+            TriageCandidateRanker ranker,
+            AiInvocationTelemetry telemetry,
+            AiConfiguration configuration,
+            Clock clock,
+            AiReadinessDeadline readinessDeadline) {
         this.authorization = authorization;
         this.accessGuard = accessGuard;
         this.coordinator = coordinator;
@@ -78,6 +97,7 @@ public final class ManagerTriageService {
         this.ranker = ranker;
         this.telemetry = telemetry;
         this.clock = java.util.Objects.requireNonNull(clock, "clock");
+        this.readinessDeadline = java.util.Objects.requireNonNull(readinessDeadline, "readinessDeadline");
         this.model = configuration instanceof AiConfiguration.Available available
                 ? available.model() : null;
         this.timeoutSeconds = configuration instanceof AiConfiguration.Available available
@@ -154,10 +174,12 @@ public final class ManagerTriageService {
             return finish(permit.get(), invocation,
                     ManagerTriageResponse.failure(TriageFailureCode.AI_UNAVAILABLE));
         }
-        return readiness.handle((state, failure) ->
-                        failure == null && state == AiProviderLifecycle.State.READY)
-                .thenCompose(ready -> invokeIfReady(
-                        ready, deadline, manager, permit.get(), invocation, context));
+        return readinessDeadline.await(readiness, deadline, clock)
+                .thenCompose(outcome -> outcome == AiReadinessDeadline.Outcome.TIMED_OUT
+                        ? finish(permit.get(), invocation,
+                                ManagerTriageResponse.failure(TriageFailureCode.AI_TIMEOUT))
+                        : invokeIfReady(outcome == AiReadinessDeadline.Outcome.READY,
+                                deadline, manager, permit.get(), invocation, context));
     }
 
     private CompletionStage<ManagerTriageResponse> invokeIfReady(

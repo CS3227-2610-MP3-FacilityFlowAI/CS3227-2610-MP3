@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import sg.edu.nus.facilityflow.ai.AiAccessGuard;
+import sg.edu.nus.facilityflow.ai.AiReadinessDeadline;
 import sg.edu.nus.facilityflow.ai.AiInvocationCoordinator;
 import sg.edu.nus.facilityflow.ai.AiInvocationTelemetry;
 import sg.edu.nus.facilityflow.ai.AiInvocationTelemetry.Status;
@@ -38,6 +39,7 @@ public final class TechnicianWorkPlanService {
     private final AiInvocationTelemetry telemetry;
     private final String model;
     private final Clock clock;
+    private final AiReadinessDeadline readinessDeadline;
     private final int timeoutSeconds;
 
     @Autowired
@@ -64,6 +66,22 @@ public final class TechnicianWorkPlanService {
             AiInvocationTelemetry telemetry,
             AiConfiguration configuration,
             Clock clock) {
+        this(authorization, aiAccessGuard, invocationCoordinator, lifecycle, repository, assistant,
+                telemetry, configuration, clock, AiReadinessDeadline.system());
+    }
+
+    /** Injectable readiness scheduler for deterministic deadline verification. */
+    public TechnicianWorkPlanService(
+            IdentityAuthorization authorization,
+            AiAccessGuard aiAccessGuard,
+            AiInvocationCoordinator invocationCoordinator,
+            AiProviderLifecycle lifecycle,
+            TechnicianWorkPlanRepository repository,
+            WorkPlanAssistant assistant,
+            AiInvocationTelemetry telemetry,
+            AiConfiguration configuration,
+            Clock clock,
+            AiReadinessDeadline readinessDeadline) {
         this.authorization = authorization;
         this.aiAccessGuard = aiAccessGuard;
         this.invocationCoordinator = invocationCoordinator;
@@ -72,6 +90,7 @@ public final class TechnicianWorkPlanService {
         this.assistant = assistant;
         this.telemetry = telemetry;
         this.clock = java.util.Objects.requireNonNull(clock, "clock");
+        this.readinessDeadline = java.util.Objects.requireNonNull(readinessDeadline, "readinessDeadline");
         this.model = configuration instanceof AiConfiguration.Available available
                 ? available.model()
                 : null;
@@ -139,14 +158,14 @@ public final class TechnicianWorkPlanService {
         if (readiness == null) {
             return finish(permit.get(), invocation, WorkPlanResponse.failure(WorkPlanFailureCode.AI_UNAVAILABLE));
         }
-        return readiness.handle((state, readinessFailure) ->
-                readinessFailure == null && state == AiProviderLifecycle.State.READY)
-                .thenCompose(ready -> {
-                    if (!clock.instant().isBefore(deadline)) {
+        return readinessDeadline.await(readiness, deadline, clock)
+                .thenCompose(outcome -> {
+                    if (outcome == AiReadinessDeadline.Outcome.TIMED_OUT
+                            || !clock.instant().isBefore(deadline)) {
                         return finish(permit.get(), invocation,
                                 WorkPlanResponse.failure(WorkPlanFailureCode.AI_TIMEOUT));
                     }
-                    if (!ready) {
+                    if (outcome != AiReadinessDeadline.Outcome.READY) {
                         return finish(permit.get(), invocation,
                                 WorkPlanResponse.failure(WorkPlanFailureCode.AI_UNAVAILABLE));
                     }

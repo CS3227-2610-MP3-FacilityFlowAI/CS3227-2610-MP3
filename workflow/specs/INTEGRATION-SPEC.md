@@ -509,6 +509,11 @@ The model never receives usernames, Account IDs, internal IDs, display IDs,
 workload tables, assignee candidates, Work Logs, Audit Events, session data,
 secrets or unrelated records.
 
+Before provider dispatch, reject serialized feature input containing a protected
+UUID/display identifier or a literal opening/closing `request-data` boundary
+marker. This preserves the server-owned prompt boundary even when the marker
+appears in user text or stored Request data. Rejection is `AI_INVALID_REQUEST`.
+
 The initial Work Plan sends no playbook excerpt. A later revision may add only
 source-controlled, versioned and human-reviewed excerpts after the role context
 contract and security tests are reviewed. No user upload, web retrieval or
@@ -532,6 +537,18 @@ model-selected retrieval is in scope.
 
 No partial result is displayed. Provider error bodies are not exposed to users.
 The manual form or role operation remains available.
+
+Each role invocation bounds its readiness wait by the original absolute request
+deadline. Expiry returns `AI_TIMEOUT`, records the terminal status and releases
+the admitted permit. A timed-out caller neither cancels nor mutates shared model
+readiness; late readiness completion cannot invoke its provider operation.
+JDK HTTP request/connect timeouts map to the existing timeout category. Failures
+after a recorded retry retain that retry count on every terminal path, including
+expiry, dispatch rejection and shutdown. In-memory token-usage recording is
+best-effort and cannot swallow a validated completion; durable terminal telemetry
+failure continues to withhold the result under the existing fail-closed rule.
+Synchronous provider dispatch failures return `AI_UNAVAILABLE` independently
+of deterministic input-validation failures.
 
 Gateway failure responses retain the existing `code` field and include a
 source-controlled `message` describing the broad category (unavailable,

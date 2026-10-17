@@ -84,16 +84,23 @@ final class SocLlmTriageAssistant implements TriageAssistant {
     @Override
     public CompletionStage<TriageResponse> request(TriageContext context, Instant absoluteDeadline) {
         CompletableFuture<TriageResponse> result = new CompletableFuture<>();
+        PreparedPrompt prompt;
         try {
-            PreparedPrompt prompt = prepare(context);
-            CallHandle call = core.complete(
-                    new PreparedChat(prompt.systemMessage(), prompt.userMessage()), absoluteDeadline);
-            call.stage().whenComplete((completion, failure) ->
-                    result.complete(mapCompletion(context, completion, failure, prompt.denyMaterial())));
+            prompt = prepare(context);
         } catch (RuntimeException invalidRequest) {
             ProviderDiagnostics.report(ProviderDiagnostics.Stage.TRIAGE_INPUT,
                     ProviderDiagnostics.Reason.INVALID_INPUT);
             result.complete(TriageResponse.failure(TriageFailureCode.AI_INVALID_REQUEST));
+            return result.minimalCompletionStage();
+        }
+        try {
+            CallHandle call = core.complete(
+                    new PreparedChat(prompt.systemMessage(), prompt.userMessage()), absoluteDeadline);
+            call.stage().whenComplete((completion, failure) ->
+                    result.complete(mapCompletion(context, completion, failure, prompt.denyMaterial())));
+        } catch (RuntimeException providerFailure) {
+            ProviderDiagnostics.reportFailure(ProviderDiagnostics.Stage.COMPLETION, providerFailure);
+            result.complete(TriageResponse.failure(TriageFailureCode.AI_UNAVAILABLE));
         }
         return result.minimalCompletionStage();
     }
@@ -130,7 +137,11 @@ final class SocLlmTriageAssistant implements TriageAssistant {
         rules.putArray("priorityValues").add("Low").add("Medium").add("High").add("Critical");
         rules.put("maxClarificationQuestions", 5).put("maxRequiredSkillTags", 8).put("maxOptionalSkillTags", 8);
 
-        String userMessage = "<request-data>\n" + user + "\n</request-data>";
+        String serializedUser = user.toString();
+        if (FORBIDDEN_IDENTIFIER.matcher(serializedUser).find()) {
+            throw new IllegalArgumentException("request data contains a protected identifier or boundary");
+        }
+        String userMessage = "<request-data>\n" + serializedUser + "\n</request-data>";
         int codePoints = SYSTEM_MESSAGE.codePointCount(0, SYSTEM_MESSAGE.length())
                 + userMessage.codePointCount(0, userMessage.length());
         if (codePoints > 12_000) {

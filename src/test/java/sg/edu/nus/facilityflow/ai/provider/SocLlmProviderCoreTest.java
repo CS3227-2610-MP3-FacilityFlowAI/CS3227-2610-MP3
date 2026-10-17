@@ -647,6 +647,76 @@ class SocLlmProviderCoreTest {
         return rig;
     }
 
+    @Test
+    void reqAi007RetryCountSurvivesEveryPostRetryTerminalFailure() {
+        for (String terminal : java.util.List.of(
+                "timeout", "executor", "synchronous", "shutdown", "queued-expiry")) {
+            TestRig rig = readyRig();
+            CompletableFuture<ProviderCompletion> first = rig.port.enqueueChat();
+            CallHandle call = rig.core.complete(
+                    new PreparedChat("system", "user"), rig.clock.instant().plusSeconds(10));
+            rig.executor.runNext();
+            first.completeExceptionally(new ProviderFailure(ProviderFailure.Code.NETWORK_FAILURE));
+            FailureCode expected = FailureCode.PROVIDER_UNAVAILABLE;
+            switch (terminal) {
+                case "timeout" -> {
+                    rig.port.enqueueChat();
+                    rig.scheduler.advanceBy(Duration.ofMillis(250));
+                    rig.executor.runNext();
+                    rig.scheduler.advanceBy(Duration.ofSeconds(10));
+                    expected = FailureCode.DEADLINE_EXCEEDED;
+                }
+                case "executor" -> {
+                    rig.executor.rejectNewTasks();
+                    rig.scheduler.advanceBy(Duration.ofMillis(250));
+                }
+                case "synchronous" -> {
+                    rig.scheduler.advanceBy(Duration.ofMillis(250));
+                    rig.port.throwOnChat();
+                    rig.executor.runNext();
+                }
+                case "shutdown" -> {
+                    rig.core.close();
+                    expected = FailureCode.MODEL_UNAVAILABLE;
+                }
+                case "queued-expiry" -> {
+                    rig.scheduler.advanceBy(Duration.ofMillis(250));
+                    rig.clock.advance(Duration.ofSeconds(10));
+                    rig.executor.runNext();
+                    expected = FailureCode.DEADLINE_EXCEEDED;
+                }
+                default -> throw new AssertionError(terminal);
+            }
+            Failure failure = assertInstanceOf(Failure.class, join(call.stage()));
+            assertEquals(expected, failure.code(), terminal);
+            assertEquals(1, failure.retryCount(), terminal);
+            rig.core.close();
+        }
+    }
+
+    @Test
+    void reqAi007UsageRecordingFailureCannotSwallowValidatedCompletion() {
+        TestRig rig = readyRig();
+        AiInvocationTelemetry.Invocation invocation = org.mockito.Mockito.mock(
+                AiInvocationTelemetry.Invocation.class);
+        org.mockito.Mockito.doThrow(new IllegalStateException("telemetry-private-canary"))
+                .when(invocation).recordUsage(1L, 2L, 3L);
+        CompletableFuture<ProviderCompletion> providerStage = rig.port.enqueueChat();
+        CallHandle call;
+        try (AiInvocationTelemetry.Scope ignored = AiInvocationTelemetry.bind(invocation)) {
+            call = rig.core.complete(new PreparedChat("system", "user"), rig.clock.instant().plusSeconds(10));
+        }
+        rig.executor.runNext();
+        providerStage.complete(new ProviderCompletion("answer", Optional.of(new ProviderUsage(1L, 2L, 3L))));
+
+        Completion completion = assertInstanceOf(Completion.class, join(call.stage()));
+        assertEquals("answer", completion.content());
+        assertEquals(3L, completion.usage().orElseThrow().totalTokens().orElseThrow());
+        rig.scheduler.advanceBy(Duration.ofSeconds(11));
+        assertInstanceOf(Completion.class, join(call.stage()));
+        rig.core.close();
+    }
+
     private static void assertFailure(CompletionResult result, FailureCode expected) {
         assertEquals(expected, assertInstanceOf(Failure.class, result).code());
     }

@@ -397,7 +397,7 @@ final class SocLlmProviderCore implements AutoCloseable {
         if (expired) {
             call.unregister();
             cancelTimer(expiredTimer);
-            call.result.publish(new Failure(FailureCode.DEADLINE_EXCEEDED));
+            call.result.publish(new Failure(FailureCode.DEADLINE_EXCEEDED, call.retryCount));
             return;
         }
         CompletableFuture<ProviderCompletion> providerStage;
@@ -769,6 +769,8 @@ final class SocLlmProviderCore implements AutoCloseable {
             cancelTimer(timer);
             if (failureCode != null) {
                 ProviderDiagnostics.reportFailure(ProviderDiagnostics.Stage.COMPLETION, failure);
+            } else {
+                recordUsage((Completion) success);
             }
             result.publish(failureCode == null ? success : new Failure(failureCode, retryCount));
         }
@@ -847,7 +849,7 @@ final class SocLlmProviderCore implements AutoCloseable {
             unregister();
             cancelTimer(timer);
             cancelProvider(stageToCancel);
-            result.publish(new Failure(FailureCode.DEADLINE_EXCEEDED));
+            result.publish(new Failure(FailureCode.DEADLINE_EXCEEDED, retryCount));
         }
 
         private boolean cancelByCaller() {
@@ -881,7 +883,7 @@ final class SocLlmProviderCore implements AutoCloseable {
             }
             unregister();
             cancelTimer(timer);
-            result.publish(new Failure(code));
+            result.publish(new Failure(code, retryCount));
         }
 
         private void closeFromCore() {
@@ -900,7 +902,7 @@ final class SocLlmProviderCore implements AutoCloseable {
             unregister();
             cancelTimer(timer);
             cancelProvider(stageToCancel);
-            result.publish(new Failure(FailureCode.MODEL_UNAVAILABLE));
+            result.publish(new Failure(FailureCode.MODEL_UNAVAILABLE, retryCount));
         }
 
         private void unregister() {
@@ -911,15 +913,23 @@ final class SocLlmProviderCore implements AutoCloseable {
 
         private Completion toCompletion(ProviderCompletion providerCompletion) {
             Optional<Usage> usage = providerCompletion.usage().map(CallControl::toUsage);
-            usage.ifPresent(value -> {
+            return new Completion(providerCompletion.content(), usage, retryCount);
+        }
+
+        private void recordUsage(Completion completion) {
+            completion.usage().ifPresent(value -> {
                 if (telemetryInvocation != null) {
-                    telemetryInvocation.recordUsage(
-                            optionalLongValue(value.promptTokens()),
-                            optionalLongValue(value.completionTokens()),
-                            optionalLongValue(value.totalTokens()));
+                    try {
+                        telemetryInvocation.recordUsage(
+                                optionalLongValue(value.promptTokens()),
+                                optionalLongValue(value.completionTokens()),
+                                optionalLongValue(value.totalTokens()));
+                    } catch (RuntimeException telemetryFailure) {
+                        ProviderDiagnostics.report(ProviderDiagnostics.Stage.COMPLETION,
+                                ProviderDiagnostics.Reason.TELEMETRY_RECORDING_FAILED);
+                    }
                 }
             });
-            return new Completion(providerCompletion.content(), usage, retryCount);
         }
 
         private static Long optionalLongValue(OptionalLong value) {

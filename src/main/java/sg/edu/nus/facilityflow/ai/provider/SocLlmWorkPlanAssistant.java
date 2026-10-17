@@ -80,16 +80,23 @@ final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
     @Override
     public CompletionStage<WorkPlanResponse> request(WorkPlanContext context, Instant absoluteDeadline) {
         CompletableFuture<WorkPlanResponse> result = new CompletableFuture<>();
+        PreparedPrompt prompt;
         try {
-            PreparedPrompt prompt = prepare(context);
-            CallHandle call = core.complete(
-                    new PreparedChat(prompt.systemMessage(), prompt.userMessage()), absoluteDeadline);
-            call.stage().whenComplete((completion, failure) ->
-                    result.complete(mapCompletion(completion, failure, prompt.denyMaterial())));
+            prompt = prepare(context);
         } catch (RuntimeException invalidRequest) {
             ProviderDiagnostics.report(ProviderDiagnostics.Stage.WORK_PLAN_INPUT,
                     ProviderDiagnostics.Reason.INVALID_INPUT);
             result.complete(WorkPlanResponse.failure(WorkPlanFailureCode.AI_INVALID_REQUEST));
+            return result.minimalCompletionStage();
+        }
+        try {
+            CallHandle call = core.complete(
+                    new PreparedChat(prompt.systemMessage(), prompt.userMessage()), absoluteDeadline);
+            call.stage().whenComplete((completion, failure) ->
+                    result.complete(mapCompletion(completion, failure, prompt.denyMaterial())));
+        } catch (RuntimeException providerFailure) {
+            ProviderDiagnostics.reportFailure(ProviderDiagnostics.Stage.COMPLETION, providerFailure);
+            result.complete(WorkPlanResponse.failure(WorkPlanFailureCode.AI_UNAVAILABLE));
         }
         return result.minimalCompletionStage();
     }
@@ -122,7 +129,11 @@ final class SocLlmWorkPlanAssistant implements WorkPlanAssistant {
             item.put("createdAt", update.createdAt().toString());
             item.put("note", update.note());
         }
-        String userMessage = "<request-data>\n" + user + "\n</request-data>";
+        String serializedUser = user.toString();
+        if (FORBIDDEN_IDENTIFIER.matcher(serializedUser).find()) {
+            throw new IllegalArgumentException("request data contains a protected identifier or boundary");
+        }
+        String userMessage = "<request-data>\n" + serializedUser + "\n</request-data>";
         int codePoints = SYSTEM_MESSAGE.codePointCount(0, SYSTEM_MESSAGE.length())
                 + userMessage.codePointCount(0, userMessage.length());
         if (codePoints > 12_000) {

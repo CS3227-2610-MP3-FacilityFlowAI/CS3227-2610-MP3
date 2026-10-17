@@ -84,16 +84,23 @@ final class SocLlmSmartReportAssistant implements SmartReportAssistant {
     public CompletionStage<SmartReportResponse> request(
             SmartReportContext context, Instant absoluteDeadline) {
         CompletableFuture<SmartReportResponse> result = new CompletableFuture<>();
+        PreparedPrompt prompt;
         try {
-            PreparedPrompt prompt = prepare(context);
-            CallHandle call = core.complete(
-                    new PreparedChat(prompt.systemMessage(), prompt.userMessage()), absoluteDeadline);
-            call.stage().whenComplete((completion, failure) ->
-                    result.complete(mapCompletion(context, completion, failure, prompt.denyMaterial())));
+            prompt = prepare(context);
         } catch (RuntimeException invalidRequest) {
             ProviderDiagnostics.report(ProviderDiagnostics.Stage.SMART_REPORT_INPUT,
                     ProviderDiagnostics.Reason.INVALID_INPUT);
             result.complete(SmartReportResponse.failure(SmartReportFailureCode.AI_INVALID_REQUEST));
+            return result.minimalCompletionStage();
+        }
+        try {
+            CallHandle call = core.complete(
+                    new PreparedChat(prompt.systemMessage(), prompt.userMessage()), absoluteDeadline);
+            call.stage().whenComplete((completion, failure) ->
+                    result.complete(mapCompletion(context, completion, failure, prompt.denyMaterial())));
+        } catch (RuntimeException providerFailure) {
+            ProviderDiagnostics.reportFailure(ProviderDiagnostics.Stage.COMPLETION, providerFailure);
+            result.complete(SmartReportResponse.failure(SmartReportFailureCode.AI_UNAVAILABLE));
         }
         return result.minimalCompletionStage();
     }
@@ -129,7 +136,11 @@ final class SocLlmSmartReportAssistant implements SmartReportAssistant {
         rules.put("locationMinCodePoints", 2).put("locationMaxCodePoints", 120);
         rules.putArray("urgencyValues").add("Low").add("Normal").add("High").add("Emergency");
 
-        String userMessage = "<request-data>\n" + user + "\n</request-data>";
+        String serializedUser = user.toString();
+        if (FORBIDDEN_IDENTIFIER.matcher(serializedUser).find()) {
+            throw new IllegalArgumentException("request data contains a protected identifier or boundary");
+        }
+        String userMessage = "<request-data>\n" + serializedUser + "\n</request-data>";
         int codePoints = SYSTEM_MESSAGE.codePointCount(0, SYSTEM_MESSAGE.length())
                 + userMessage.codePointCount(0, userMessage.length());
         if (codePoints > 12_000) {

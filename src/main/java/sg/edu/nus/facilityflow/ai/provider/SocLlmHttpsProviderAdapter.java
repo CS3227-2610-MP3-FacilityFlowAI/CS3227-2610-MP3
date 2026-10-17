@@ -294,7 +294,7 @@ final class SocLlmHttpsProviderAdapter implements SocLlmProviderPort {
         if (current instanceof CancellationException) {
             return new ProviderFailure(ProviderFailure.Code.CANCELLED);
         }
-        if (current instanceof TimeoutException) {
+        if (current instanceof TimeoutException || current instanceof java.net.http.HttpTimeoutException) {
             return new ProviderFailure(ProviderFailure.Code.TIMEOUT);
         }
         return new ProviderFailure(ProviderFailure.Code.NETWORK_FAILURE);

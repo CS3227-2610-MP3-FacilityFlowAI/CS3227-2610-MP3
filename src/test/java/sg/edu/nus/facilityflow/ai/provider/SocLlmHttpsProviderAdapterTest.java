@@ -284,6 +284,24 @@ class SocLlmHttpsProviderAdapterTest {
     }
 
     @Test
+    void reqAi006JdkHttpTimeoutsRemainTimeoutsThroughAsyncWrappers() {
+        for (Throwable timeout : List.of(
+                new java.net.http.HttpTimeoutException(KEY_CANARY),
+                new java.net.http.HttpConnectTimeoutException(KEY_CANARY),
+                new java.util.concurrent.CompletionException(
+                        new java.net.http.HttpTimeoutException(KEY_CANARY)))) {
+            FakeTransport transport = new FakeTransport();
+            transport.failure = timeout;
+
+            ProviderFailure failure = failureOf(newAdapter(transport).listModels());
+
+            assertCode(ProviderFailure.Code.TIMEOUT, failure);
+            assertFalse(diagnostics(failure).contains(KEY_CANARY));
+            assertNull(failure.getCause());
+        }
+    }
+
+    @Test
     void reqAi006CallerCancellationCancelsTransportStageAndClosesLateResponseBody() {
         FakeTransport transport = new FakeTransport();
         CompletableFuture<HttpResponse<InputStream>> stage = transport.pending();
