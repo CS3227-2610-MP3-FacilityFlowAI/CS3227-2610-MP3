@@ -233,10 +233,12 @@ may select a feature, actor, template, parser, model or arbitrary context map.
   diagnostic, result or log.
 
   Model discovery is bodyless GET. Completion is UTF-8 POST JSON containing only
-  model, exactly two ordered system/user messages with role/content, validated
-  `max_tokens`, and `stream: false`; deterministic escaping rejects malformed
-  surrogates before transport. No tool, function, history or extra member is
-  sent. Response `Content-Encoding` is absent or identity-only. The identity
+  model, exactly two ordered system/user messages with role/content,
+  `reasoning_effort: none`, validated `max_tokens`, and `stream: false`; the
+  non-reasoning setting reserves the bounded output budget for the typed feature
+  result. Deterministic escaping rejects malformed surrogates before transport.
+  No tool, function, history or extra member is sent. Response `Content-Encoding`
+  is absent or identity-only. The identity
   stream is passed to the existing bounded post-decompression decoder; unsupported
   encoding fails closed. The decoder owns and closes a handed-off HTTP 200
   identity body; the adapter closes every rejected, cancelled, timed-out, late or

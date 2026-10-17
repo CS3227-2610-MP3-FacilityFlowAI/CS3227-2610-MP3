@@ -113,12 +113,14 @@ The adapter applies exactly these application-controlled request values:
   `Accept-Encoding: identity`, and `Authorization: Bearer <server credential>`;
 - completion: `POST`, UTF-8 JSON, the same three headers, plus
   `Content-Type: application/json`;
-- the completion JSON root contains exactly `model`, `messages`, `max_tokens`
-  and `stream`; `messages` contains exactly one `system` message followed by one
-  `user` message, each with only `role` and `content`; `max_tokens` is the
-  validated request value and `stream` is `false`. No tools, functions, prior
-  messages, response identifier or unlisted request member is sent. JSON string
-  escaping is deterministic, and malformed surrogate input fails before send.
+- the completion JSON root contains exactly `model`, `messages`,
+  `reasoning_effort`, `max_tokens` and `stream`; `messages` contains exactly one
+  `system` message followed by one `user` message, each with only `role` and
+  `content`; `reasoning_effort` is `none` so the bounded output budget is reserved
+  for the feature result, `max_tokens` is the validated request value and `stream`
+  is `false`. No tools, functions, prior messages, response identifier or unlisted
+  request member is sent. JSON string escaping is deterministic, and malformed
+  surrogate input fails before send.
 
 The validated `AiConfiguration.Available` supplies bearer authorization through
 a credential-applying capability. The adapter can apply that capability to an

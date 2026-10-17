@@ -326,7 +326,7 @@ final class SocLlmHttpsProviderAdapter implements SocLlmProviderPort {
         appendJsonString(json, request.systemMessage());
         json.append("},{\"role\":\"user\",\"content\":");
         appendJsonString(json, request.userDataMessage());
-        json.append("}],\"max_tokens\":").append(request.maxOutputTokens())
+        json.append("}],\"reasoning_effort\":\"none\",\"max_tokens\":").append(request.maxOutputTokens())
                 .append(",\"stream\":false}");
         return json.toString();
     }

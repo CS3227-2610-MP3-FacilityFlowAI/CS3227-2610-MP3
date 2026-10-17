@@ -70,7 +70,7 @@ class SocLlmHttpsProviderAdapterTest {
     }
 
     @Test
-    void reqAi002BuildsNonStreamingCompletionPostWithEscapedMessagesAndConfiguredLimits() {
+    void reqAi002BuildsNonStreamingNonReasoningCompletionPostWithEscapedMessagesAndConfiguredLimits() {
         FakeTransport transport = new FakeTransport();
         transport.completeWith(response(200,
                 "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"ok\"},"
@@ -90,7 +90,8 @@ class SocLlmHttpsProviderAdapterTest {
         assertEquals(
                 "{\"model\":\"approved-model\",\"messages\":[{\"role\":\"system\",\"content\":"
                         + "\"system \\\"line\\n\\t\\\\\"},{\"role\":\"user\",\"content\":"
-                        + "\"user \\\"line\\n\\t\\\\\"}],\"max_tokens\":321,\"stream\":false}",
+                        + "\"user \\\"line\\n\\t\\\\\"}],\"reasoning_effort\":\"none\","
+                        + "\"max_tokens\":321,\"stream\":false}",
                 body);
         assertFalse(body.contains(KEY_CANARY));
     }
