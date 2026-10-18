@@ -1,0 +1,26 @@
+{
+  "baseline": "172eaff",
+  "kind": "frozen backend review scope; canonical UTF-8/LF",
+  "files": [
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianQueryService.java",
+      "sha256": "9bfbe59370c88a47fd8f69ea7d7c9d5b8c589d09c342a110af6b9ce4bac12b14"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianQueryRepository.java",
+      "sha256": "b0b0e57542cb8d9de766d873605ed7d6b351a90073339a9a6ba3f54beac99bc1"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/JdbcTechnicianQueryRepository.java",
+      "sha256": "d67306ccce96afc166f682d1260193170b8acc00dd3b86c1eb2a46bbe477416e"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianReadModels.java",
+      "sha256": "1e9b767cf6871640e92906fd856cf47509d032561593560716f0a96f76e46a34"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianQueryException.java",
+      "sha256": "974b559afff2acc78a334772ca55d3671afab9e6abfb6c0bde73b6508de708af"
+    }
+  ]
+}

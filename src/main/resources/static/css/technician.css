@@ -1,0 +1,42 @@
+body {
+    font-family: system-ui, sans-serif;
+    line-height: 1.5;
+    margin: 0 auto;
+    max-width: 72rem;
+    padding: 1rem;
+}
+header, .counts, .filters, .request-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+header {
+    border-bottom: 1px solid #777;
+    justify-content: space-between;
+    padding-bottom: 1rem;
+}
+main { padding-top: 1rem; }
+.counts { margin: 1rem 0; }
+.count {
+    border: 1px solid #777;
+    border-radius: .35rem;
+    min-width: 9rem;
+    padding: .65rem;
+}
+.count strong { display: block; font-size: 1.4rem; }
+.filters { align-items: end; }
+.filters label { display: grid; gap: .25rem; }
+input, select, button, a { font: inherit; }
+:focus-visible { outline: 3px solid #075db5; outline-offset: 2px; }
+.error { border-left: .3rem solid #a31919; padding: .5rem .75rem; }
+.request-row {
+    align-items: start;
+    border-top: 1px solid #aaa;
+    justify-content: space-between;
+    padding: .8rem 0;
+}
+.request-row p { margin: .2rem 0; }
+dt { font-weight: 700; margin-top: .5rem; }
+dd { margin-left: 0; }
+.preserved-text { white-space: pre-wrap; overflow-wrap: anywhere; }

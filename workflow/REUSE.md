@@ -97,3 +97,13 @@ applied migrations are unchanged. See the dated review-fix log.
 
 Additional 16 October initializer review fixes (profile guard, bounded lock wait,
 regressions and guide updates) are new MP3 work; no MP2 source copied.
+
+Technician T1 (18 October): new query service/repository/read models, MVC
+controller, templates/CSS, requirement-based tests and scoped guide additions
+are **new** MP3 implementation based on the approved MP3 specifications and
+existing MP3 authentication/PostgreSQL seams. No MP2 files were consulted or
+copied in this iteration. Shared DashboardController wiring and the H2
+authentication test's synthetic read fixtures adapt existing MP3 files, not MP2 source.
+Exact added/deleted application/resource/test line counts and executed evidence are
+recorded in `logs/technician/T1-REPORT.md`; final project-wide reuse percentages
+remain release work.

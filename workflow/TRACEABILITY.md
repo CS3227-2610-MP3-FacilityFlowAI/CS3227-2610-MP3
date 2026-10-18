@@ -53,7 +53,10 @@ review evidence.
 | NFR-DOC-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | pending | documentation/reuse/process review pending | approved |
 | REQ-RQ-001–011 | [Requester manual workflow](specs/ROLE-REQUESTER.md#manual-workflow-requirements) | pending | RQ-A01–A07 pending | approved |
 | REQ-RQ-012–017 | [Smart Report Assistant](specs/ROLE-REQUESTER.md#smart-report-assistant) | typed Smart Report provider seam plus `RequesterSmartReportService`, authorization/freshness JDBC repository and POST create/edit endpoints; active-category allowlist, approved urgency vocabulary and non-empty suggestion invariant | `SocLlmSmartReportAssistantTest`, `RequesterSmartReportServiceTest`, `JdbcRequesterSmartReportRepositoryTest` and `SecurityIntegrationTest`; browser review-panel acceptance and ordinary create/update submission remain pending | backend orchestration and provider contract locally verified; UI/manual-workflow completion and v0.2 role-owner/teammate review pending |
-| REQ-TECH-001–011 | [Technician manual workflow](specs/ROLE-TECHNICIAN.md#manual-workflow-requirements) | pending | TECH-A01–A06 pending | approved |
+| REQ-TECH-001–003 | [Technician manual workflow](specs/ROLE-TECHNICIAN.md#manual-workflow-requirements) | TechnicianQueryService/JdbcTechnicianQueryRepository, immutable read models, TechnicianQueueController, combined dashboard/queue templates | TechnicianQueryServiceTest, JdbcTechnicianQueryRepositoryTest, TechnicianQueueControllerTest and authenticated SecurityIntegrationTest rendering; [T1 report](../logs/technician/T1-REPORT.md), 547-test full check passed | locally verified; teammate/browser/hosted review pending |
+| REQ-TECH-004–008 | [Technician manual workflow](specs/ROLE-TECHNICIAN.md#manual-workflow-requirements) | pending T2/T3 | TECH-A01/A03–A05 pending | approved |
+| REQ-TECH-009 | [Technician manual workflow](specs/ROLE-TECHNICIAN.md#manual-workflow-requirements) | assigned-only Request detail, scoped full Requester Update/Work Log reads, retained historical authorship and safe 404 | PostgreSQL history/reassignment checks, service/controller tests and authenticated escaped-history rendering; [T1 report](../logs/technician/T1-REPORT.md), full check passed | locally verified; teammate/browser/hosted review pending |
+| REQ-TECH-010–011 | [Technician manual workflow](specs/ROLE-TECHNICIAN.md#manual-workflow-requirements) | write workflows pending T2/T3; T1 exposes read routes only | stale write/forbidden mutation acceptance pending | approved |
 | REQ-TECH-012–017 | [Work Plan Assistant](specs/ROLE-TECHNICIAN.md#work-plan-assistant) | `WorkPlanAssistant`, `TechnicianWorkPlanService`, `AiInvocationCoordinator`, `JdbcAiAdmissionBackend`, bounded JDBC context/freshness repository, typed Work Plan decoder, disclosure policy and POST `/technician/requests/{displayId}/work-plan` seam | `SocLlmWorkPlanAssistantTest`, `TechnicianWorkPlanServiceTest`, `AiInvocationCoordinatorTest`, `DatabaseMigrationTest`, `WorkPlanAuthorizationBoundaryTest`, focused Gradle suite | Technician slice and gateway controls locally verified; AI-SEC-028 current-session revalidation now covered by captured identity/session snapshot and persisted recheck; approved safety corpus and role-owner/teammate/security review remain pending |
 | REQ-MGR-001–012 | [Manager request/review](specs/ROLE-MANAGER.md#request-and-review-requirements) | pending | MGR-A01–A05 pending | approved |
 | REQ-MGR-013–015 | [Manager accounts](specs/ROLE-MANAGER.md#account-administration) | pending | MGR-A06 pending | approved |
@@ -79,8 +82,9 @@ Technician T0 (18 October 2026) adds [implementation contracts](technician/CONTR
 [T1 task packets](../logs/technician/T1-backend-task.md) under the scoped
 Technician development workflow. This is design/evidence only: no application
 implementation, test execution or requirement verification is claimed. Manual
-REQ-TECH-001-011 and T1 implementation remain pending; existing AI evidence and
-human-review statuses above are unchanged. The [T0 report](../logs/technician/T0-REPORT.md)
+REQ-TECH-001-011 and T1 implementation were pending at T0; current T1 status is
+recorded above. Existing AI evidence and human-review statuses remain unchanged.
+The [T0 report](../logs/technician/T0-REPORT.md)
 records actual agent work and configuration/document checks.
 
 Part 3 storage prerequisites: `V2__maintenance_records.sql`,

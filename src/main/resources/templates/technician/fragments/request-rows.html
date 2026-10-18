@@ -1,0 +1,15 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="rows(rows, displayZone)">
+<li class="request-row" th:each="request : ${rows}">
+    <div>
+        <h3><a th:href="@{/technician/requests/{id}(id=${request.displayId})}" th:text="${request.displayId + ' · ' + request.title}">FF-000001 · Request title</a></h3>
+        <p><span th:text="${request.location}">Location</span> · <span th:text="${request.category}">Category</span></p>
+        <p>Status: <span th:text="${#strings.replace(request.status.name(), '_', ' ')}">ASSIGNED</span>
+            · Reported urgency: <span th:text="${#strings.capitalize(#strings.toLowerCase(request.urgency.name()))}">Normal</span>
+            · Manager priority: <span th:text="${request.priority == null ? 'Not set' : #strings.capitalize(#strings.toLowerCase(request.priority.name()))}">Not set</span></p>
+        <p>Assigned: <time th:if="${request.assignedAt != null}"
+                th:datetime="${request.assignedAt}"
+                th:text="${#temporals.format(request.assignedAt.atZone(displayZone), 'dd MMM uuuu HH:mm z')}">18 Oct 2026 15:00 +08</time>
+            <span th:if="${request.assignedAt == null}">Assignment time unavailable</span></p>
+    </div>
+</li>
+</th:block>

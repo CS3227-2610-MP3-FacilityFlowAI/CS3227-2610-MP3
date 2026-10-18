@@ -1,0 +1,75 @@
+{
+  "baseline": "172eaff",
+  "kind": "T1 frozen production/test inputs after test compilation/fixture corrections; UTF-8/LF",
+  "files": [
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/JdbcTechnicianQueryRepository.java",
+      "sha256": "95d7a94c9fe3c25c1abfbb871dd02254812cc68fad62b5f9b5a362f15d71234d"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianQueryException.java",
+      "sha256": "974b559afff2acc78a334772ca55d3671afab9e6abfb6c0bde73b6508de708af"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianQueryRepository.java",
+      "sha256": "b0b0e57542cb8d9de766d873605ed7d6b351a90073339a9a6ba3f54beac99bc1"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianQueryService.java",
+      "sha256": "9bfbe59370c88a47fd8f69ea7d7c9d5b8c589d09c342a110af6b9ce4bac12b14"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianReadModels.java",
+      "sha256": "1e9b767cf6871640e92906fd856cf47509d032561593560716f0a96f76e46a34"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/web/DashboardController.java",
+      "sha256": "ec1f3e2ffc0a92de0b685662f516854bfef814430b2123d2468dda46aecdacdf"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/web/TechnicianQueueController.java",
+      "sha256": "1c242a9fca500456046cf4574e3a8359a58e54411d75f6fa027d8db26b1a2aab"
+    },
+    {
+      "path": "src/main/resources/static/css/technician.css",
+      "sha256": "8a950c27369b40ac1a130699574b5f64dd7abb60c121997e35d49e4f4235bef7"
+    },
+    {
+      "path": "src/main/resources/templates/technician/fragments/history.html",
+      "sha256": "d0a70ec6d0495db7d971edfb385485917f4a14a5c7f1febe8a03a0a4a4f8a298"
+    },
+    {
+      "path": "src/main/resources/templates/technician/fragments/request-rows.html",
+      "sha256": "5bf92bf0656c9cb9d2a8885b054e11b89f73d6010f267e3253017334c58d234d"
+    },
+    {
+      "path": "src/main/resources/templates/technician/queue.html",
+      "sha256": "74ea1888159ed140514ca39da90a0d5887e928bdf9af260b442dbfa506e8f172"
+    },
+    {
+      "path": "src/main/resources/templates/technician/request-detail.html",
+      "sha256": "f0a5c23cb44a04216f3cc5abbc1e0cf01ac52082eebb75aafd00cb8b09c12e24"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/technician/JdbcTechnicianQueryRepositoryTest.java",
+      "sha256": "ff86ea32fa49b42c96d31826d5e0d7aa1415abd2a217d622b6894eb7c899b832"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/technician/TechnicianQueryFixtures.java",
+      "sha256": "67b4c927a5b07dc80785322f88f7996361ff53df6857396b07f3c53c8e4dd235"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/technician/TechnicianQueryServiceTest.java",
+      "sha256": "f9ebfb1698458b306541fa24c284814f9bdf3687ff86091dc1baf63501562c44"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/web/SecurityIntegrationTest.java",
+      "sha256": "e87768038733b5a115538c7a0145aaa441ab8c4a3d3bce11c642abd3d7db67d3"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/web/TechnicianQueueControllerTest.java",
+      "sha256": "4361d179251cda0443d3406b68f3fe331d1cd4e5f61a6966ab4b5b983221bb66"
+    }
+  ],
+  "sha256": "abf7a2cfc67d41849754d328e7a1532ec0e9ab623080687cb5145672d5201b7f"
+}

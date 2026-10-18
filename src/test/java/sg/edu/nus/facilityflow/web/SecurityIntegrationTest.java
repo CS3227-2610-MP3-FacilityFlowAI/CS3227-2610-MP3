@@ -68,6 +68,32 @@ class SecurityIntegrationTest {
                 .apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity())
                 .build();
         jdbc = context.getBean(JdbcTemplate.class);
+        // This identity-only H2 fixture needs an empty read workspace for the
+        // Technician landing route. PostgreSQL behavior has its own isolated tests.
+        jdbc.execute("""
+                CREATE TABLE IF NOT EXISTS facilityflow.category (
+                    id UUID PRIMARY KEY, name VARCHAR(50), active BOOLEAN DEFAULT TRUE)
+                """);
+        jdbc.execute("""
+                CREATE TABLE IF NOT EXISTS facilityflow.maintenance_request (
+                    id UUID PRIMARY KEY, display_id VARCHAR(9), assigned_technician_id UUID,
+                    category_id UUID, status VARCHAR(20), manager_priority VARCHAR(20),
+                    reported_urgency VARCHAR(20), assigned_at TIMESTAMP WITH TIME ZONE,
+                    title VARCHAR(100), description VARCHAR(2000), location VARCHAR(120),
+                    version BIGINT DEFAULT 0, created_at TIMESTAMP WITH TIME ZONE,
+                    updated_at TIMESTAMP WITH TIME ZONE, resolution_summary VARCHAR(2000),
+                    completed_at TIMESTAMP WITH TIME ZONE)
+                """);
+        jdbc.execute("""
+                CREATE TABLE IF NOT EXISTS facilityflow.requester_update (
+                    id UUID PRIMARY KEY, request_id UUID, author_id UUID, note VARCHAR(1000),
+                    created_at TIMESTAMP WITH TIME ZONE)
+                """);
+        jdbc.execute("""
+                CREATE TABLE IF NOT EXISTS facilityflow.work_log (
+                    id UUID PRIMARY KEY, request_id UUID, author_id UUID, note VARCHAR(1000),
+                    minutes INTEGER, created_at TIMESTAMP WITH TIME ZONE)
+                """);
         passwordEncoder = context.getBean(PasswordEncoder.class);
         validPasswordHash = passwordEncoder.encode(VALID_PASSWORD);
     }
@@ -81,6 +107,10 @@ class SecurityIntegrationTest {
     void seedAccounts() {
         jdbc.update("DELETE FROM facilityflow.spring_session_attributes");
         jdbc.update("DELETE FROM facilityflow.spring_session");
+        jdbc.update("DELETE FROM facilityflow.requester_update");
+        jdbc.update("DELETE FROM facilityflow.work_log");
+        jdbc.update("DELETE FROM facilityflow.maintenance_request");
+        jdbc.update("DELETE FROM facilityflow.category");
         jdbc.update("DELETE FROM facilityflow.user_account");
         insertAccount(REQUESTER_ID, "requester1", AccountRole.REQUESTER, true);
         insertAccount(TECHNICIAN_ID, "technician1", AccountRole.TECHNICIAN, true);
@@ -102,6 +132,67 @@ class SecurityIntegrationTest {
 
         Cookie manager = login("manager1", VALID_PASSWORD, "/manager");
         mockMvc.perform(get("/manager").cookie(manager)).andExpect(status().isOk());
+    }
+
+    @Test
+    void reqTech001009AssignedQueueAndDetailRenderEscapedHistoryAndLocalTimes() throws Exception {
+        UUID requestId = UUID.fromString("30000000-0000-0000-0000-000000000051");
+        UUID categoryId = UUID.fromString("30000000-0000-0000-0000-000000000061");
+        UUID priorTechnician = UUID.fromString("30000000-0000-0000-0000-000000000005");
+        insertAccount(priorTechnician, "previous-tech", AccountRole.TECHNICIAN, false);
+        OffsetDateTime time = OffsetDateTime.parse("2026-10-18T01:02:03Z");
+        jdbc.update("INSERT INTO facilityflow.category (id, name) VALUES (?, 'Electrical')", categoryId);
+        jdbc.update("""
+                INSERT INTO facilityflow.maintenance_request
+                    (id, display_id, assigned_technician_id, category_id, status, manager_priority,
+                     reported_urgency, assigned_at, title, description, location,
+                     version, created_at, updated_at)
+                VALUES (?, 'FF-000051', ?, ?, 'IN_PROGRESS', 'HIGH', 'EMERGENCY', ?,
+                        'Light <script>canary</script>', 'Check <b>panel</b>', 'Block A', 3, ?, ?)
+                """, requestId, TECHNICIAN_ID, categoryId, time, time, time);
+        jdbc.update("""
+                INSERT INTO facilityflow.requester_update (id, request_id, author_id, note, created_at)
+                VALUES (?, ?, ?, 'Update <script>canary</script>', ?)
+                """, UUID.fromString("30000000-0000-0000-0000-000000000071"), requestId, REQUESTER_ID, time);
+        jdbc.update("""
+                INSERT INTO facilityflow.work_log (id, request_id, author_id, note, minutes, created_at)
+                VALUES (?, ?, ?, 'Prior inspection <b>note</b>', 12, ?)
+                """, UUID.fromString("30000000-0000-0000-0000-000000000072"), requestId, priorTechnician, time);
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        String queue = mockMvc.perform(get("/technician/requests").cookie(technician))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CACHE_CONTROL, org.hamcrest.Matchers.containsString("no-store")))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(queue).contains("FF-000051", "&lt;script&gt;canary&lt;/script&gt;", "09:02", "/css/technician.css")
+                .doesNotContain("<script>", "<style>");
+        String detail = mockMvc.perform(get("/technician/requests/FF-000051").cookie(technician))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(detail).contains("&lt;b&gt;panel&lt;/b&gt;", "previous-tech display", "12", "09:02", "2026")
+                .doesNotContain("<script>", "<b>panel</b>");
+        mockMvc.perform(get("/technician/requests/FF-000051")
+                        .cookie(login("requester1", VALID_PASSWORD, "/requester")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void reqTech002InvalidFilterRendersErrorsWithoutQueueOrBroadenedResults() throws Exception {
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        String html = mockMvc.perform(get("/technician/requests").cookie(technician)
+                        .param("q", "<script>search</script>").param("status", "INVALID")
+                        .param("category", "not-a-uuid"))
+                .andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
+        assertThat(html).contains("Choose a valid status.", "Choose a valid category.", "not-a-uuid", "&lt;script&gt;")
+                .doesNotContain("<script>", "Completed, awaiting review");
+    }
+
+    @Test
+    void reqTech009MissingAndUnassignedDetailsRenderTheSameSafe404() throws Exception {
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        for (String displayId : new String[]{"bad-id", "FF-000000", "FF-999999"}) {
+            mockMvc.perform(get("/technician/requests/" + displayId).cookie(technician))
+                    .andExpect(status().isNotFound())
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("The requested work is not available.")));
+        }
     }
 
     @Test

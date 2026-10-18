@@ -1,7 +1,8 @@
 # User Guide
 
-Status: authentication foundation implemented 13 October 2026; teammate review
-pending. Maintenance and AI workflows are not yet released.
+Status: authentication foundation and Technician assigned-work reads implemented
+in source; teammate and hosted-release verification remain pending. Technician
+work recording/completion and the AI browser interface are not yet available.
 
 This guide must be updated continuously to match the deployed product exactly.
 It will document how Requesters, Technicians, and Facilities Managers access,
@@ -9,8 +10,9 @@ test, and use every released feature, including AI fallbacks and limitations.
 
 ## Introduction
 
-The current walking skeleton supports secure sign-in, sign-out and separate
-placeholder workspaces for the three FacilityFlow roles.
+The application supports secure sign-in/sign-out and separate role workspaces.
+The Technician workspace lists assigned work; Requester and Manager manual
+workspaces remain placeholders.
 
 ## Accessing the deployed application
 
@@ -31,6 +33,34 @@ The authenticated header shows display name, username and role. Select
 **Sign out** to end the server-side session. A deactivated Account, a Manager
 password reset represented by a session-version change, or a persisted role
 change takes effect on the next request.
+
+## Technician assigned work
+
+After signing in as a Technician, `/technician` shows counts for Assigned,
+In progress and Completed awaiting Manager review, followed by your assigned
+Requests. `/technician/requests` opens the same queue with search and filters.
+Counts describe your entire assigned workload and do not change when filtering.
+Retained Closed or Cancelled assignments remain readable; they are not included
+in those three count cards.
+
+Search by display ID, title or location. Search ignores outer spaces and letter
+case; `%` and `_` are ordinary search characters. Combine status, category and
+Manager-priority filters, select **Apply filters**, or select **Reset** to clear
+them. The default order is Manager priority, reported urgency, oldest assignment
+time and display ID. Unknown migrated assignment times follow known times within
+the same priority/urgency group. Empty assigned work and no filter matches have
+different messages.
+
+Open a Request's display ID/title to read its facts, Requester Updates and Work
+Logs. Earlier technicians' Work Logs retain their author names and times when
+the Request is now assigned to you. Times include the Singapore local date,
+time and zone. Requests currently assigned to somebody else are unavailable.
+
+Invalid filters show field errors while preserving submitted values. Unavailable
+or reassigned details use the same safe message. If assigned work cannot be
+loaded, use the retry/reset link; an operational failure is not shown as an empty
+queue. Starting work, adding Work Logs, completion, change password and Work Plan
+controls are outside this read-only increment.
 
 ## AI features
 

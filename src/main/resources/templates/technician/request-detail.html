@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/technician.css}">
+    <title th:text="${title} + ' · FacilityFlow AI'">Request details · FacilityFlow AI</title>
+</head>
+<body>
+<header>
+    <div><strong th:text="${displayName}">Display name</strong>
+        <span th:text="${username}">username</span>
+        <span th:text="${role}">TECHNICIAN</span></div>
+    <form method="post" th:action="@{/logout}"><button type="submit">Sign out</button></form>
+</header>
+<main>
+    <p><a th:href="@{/technician/requests}">Back to assigned requests</a></p>
+    <p th:if="${pageError}" class="error" role="alert" th:text="${pageError}">Request details are unavailable.</p>
+    <article th:if="${detail}" aria-labelledby="request-title">
+        <h1 id="request-title"><span th:text="${detail.request.displayId}">FF-000001</span> ·
+            <span th:text="${detail.request.title}">Request title</span></h1>
+        <section aria-labelledby="facts-heading">
+            <h2 id="facts-heading">Request details</h2>
+            <dl>
+                <dt>Status</dt><dd th:text="${#strings.replace(detail.request.status.name(), '_', ' ')}">ASSIGNED</dd>
+                <dt>Location</dt><dd th:text="${detail.request.location}">Location</dd>
+                <dt>Category</dt><dd th:text="${detail.request.category}">Category</dd>
+                <dt>Reported urgency</dt><dd th:text="${#strings.capitalize(#strings.toLowerCase(detail.request.urgency.name()))}">Normal</dd>
+                <dt>Manager priority</dt><dd th:text="${detail.request.priority == null ? 'Not set' : #strings.capitalize(#strings.toLowerCase(detail.request.priority.name()))}">Not set</dd>
+                <dt>Description</dt><dd class="preserved-text" th:text="${detail.description}">Request description</dd>
+                <dt>Created</dt><dd><time th:datetime="${detail.createdAt}"
+                    th:text="${#temporals.format(detail.createdAt.atZone(displayZone), 'dd MMM uuuu HH:mm z')}">18 Oct 2026 15:00 +08</time></dd>
+                <dt>Assigned</dt><dd><time th:if="${detail.request.assignedAt != null}"
+                    th:datetime="${detail.request.assignedAt}"
+                    th:text="${#temporals.format(detail.request.assignedAt.atZone(displayZone), 'dd MMM uuuu HH:mm z')}">18 Oct 2026 15:00 +08</time>
+                    <span th:if="${detail.request.assignedAt == null}">Assignment time unavailable (legacy record)</span></dd>
+                <dt>Last updated</dt><dd><time th:datetime="${detail.updatedAt}"
+                    th:text="${#temporals.format(detail.updatedAt.atZone(displayZone), 'dd MMM uuuu HH:mm z')}">18 Oct 2026 15:00 +08</time></dd>
+                <dt>Resolution summary</dt><dd class="preserved-text" th:text="${detail.resolutionSummary == null ? 'No resolution summary recorded.' : detail.resolutionSummary}">No resolution summary recorded.</dd>
+                <dt>Completed</dt><dd><span th:if="${detail.completedAt == null}">Not completed</span>
+                    <time th:if="${detail.completedAt != null}" th:datetime="${detail.completedAt}"
+                        th:text="${#temporals.format(detail.completedAt.atZone(displayZone), 'dd MMM uuuu HH:mm z')}">18 Oct 2026 15:00 +08</time></dd>
+            </dl>
+        </section>
+        <th:block th:replace="~{technician/fragments/history :: history(requesterUpdates=${detail.requesterUpdates}, workLogs=${detail.workLogs}, displayZone=${displayZone})}"></th:block>
+    </article>
+</main>
+</body>
+</html>

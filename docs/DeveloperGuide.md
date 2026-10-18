@@ -2,8 +2,9 @@
 
 Status: Shared database schema and explicit initialization supplied; V1 application
 and permissions evidenced by user screenshots. Hosted V2/V3/demo results are
-reported matching by the user; independent hosted queries and product features
-remain pending. Follow [DatabaseCompletion](DatabaseCompletion.md).
+reported matching by the user; independent hosted verification remains pending.
+Technician assigned-work reads are implemented in source as described below.
+Follow [DatabaseCompletion](DatabaseCompletion.md).
 
 Part 2b supplies the private identity/audit/session schema, restricted-role
 provisioning and isolated PostgreSQL migration tests. See
@@ -43,14 +44,16 @@ latest release rather than the intended design.
 
 ## Project overview
 
-FacilityFlow AI, CS3227 MP3. Database and authentication foundations integrated;
-role business workflows remain pending. See README and AGENTS.md.
+FacilityFlow AI, CS3227 MP3. Database/authentication foundations and Technician
+assigned-work reads are integrated in source; manual mutation workflows remain
+pending. See README and AGENTS.md.
 
 ## Repository structure
 
 src/: application code/tests; workflow/: specs/process; docs/: guides/planning;
 logs/: summaries; .github/: PR-Agent/contribution template. The Gradle build
-packages the minimal application; feature modules are pending.
+packages the application and Technician query/read module; manual mutation
+modules remain pending.
 
 ## Architecture
 
@@ -86,6 +89,40 @@ The accepted entities, relationships, transaction boundaries, invariants and
 concurrency approach are defined in `../workflow/specs/TECHNICAL-SPEC.md`.
 
 ## Role model
+
+### Technician assigned-work reads (T1)
+
+`TechnicianQueryService` supplies queue/detail use cases through immutable nested
+`TechnicianReadModels`. Its JDBC repository owns a read-only REQUIRES_NEW,
+REPEATABLE_READ transaction and a callback-scoped, thread-confined ReadSession.
+Persisted active state, TECHNICIAN role and exact session version are checked
+before Request reads, including direct use-case calls. Session capabilities are
+closed on every callback exit. Query SQL repeats current-assignment scope for
+Request history; original historical authorship is retained.
+
+Queue counts are unfiltered while rows use combined filters and parameterized
+literal ILIKE search. Priority/urgency rank expressions precede assignment time
+with NULLS LAST and display ID. Retained terminal assignments remain readable.
+Invalid filters, inaccessible detail and operational failures map to safe
+400/404/503 views; failures never broaden results. New read paths do not write
+business or Audit Events.
+
+`TechnicianQueueController` handles `/technician/requests` and detail routes.
+The existing `DashboardController` reuses its default-filter workspace renderer
+for `/technician`; other role routes remain unchanged. Templates use escaped
+text, UTC Instants rendered in Asia/Singapore, and external `/css/technician.css`
+under the existing CSP. No write/AI browser controls are part of T1.
+
+See [contracts](../workflow/technician/CONTRACTS.md),
+[acceptance map](../workflow/technician/ACCEPTANCE-MAP.md) and the
+[T1 report](../logs/technician/T1-REPORT.md) for executed evidence. SQL/transaction
+tests use disposable embedded PostgreSQL with the runtime database role;
+the existing H2 authentication suite uses minimal maintenance read tables and
+synthetic rows for authenticated landing/detail rendering; it does not prove
+PostgreSQL SQL semantics. JUnit 5 tests construct Spring contexts manually where needed because
+the pinned Spring 7 JUnit extension requires JUnit 6.
+
+### Slice ownership
 
 Requester owner: `yooplo`; Technician owner: `ngkhengyang`; Facilities Manager
 owner: `yu-sutong`. Members may contribute across slices, but each owner remains
