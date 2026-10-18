@@ -3,6 +3,12 @@
 These documents define a lightweight process, separate from application LLM
 assistants. No autonomous framework or orchestration runtime is installed.
 
+For explicitly authorized Technician iterations, use the scoped
+[Technician implementation workflow](technician-workflow.md) for concurrent
+dispatch, model selection and iteration evidence. Requester and Manager work
+continue with this shared process. The handoff protocol and human gates below
+still apply to every role.
+
 | Agent | Main artifact | Allowed write scope |
 | --- | --- | --- |
 | [Analyst](analyst.md) | Draft requirements and ambiguity | workflow/specs only |

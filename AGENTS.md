@@ -39,6 +39,16 @@ authorization.
    `workflow/agents/README.md`; the model invokes `$facilityflow-handoff` to
    produce temporary context and a durable project handoff record.
 
+## Technician implementation workflow
+
+For Technician implementation, use `workflow/agents/technician-workflow.md` and
+`workflow/TECHNICIAN-PLAN.md` before dispatch unless the user requests single-agent
+work. This scheduling/model configuration applies only to the Technician slice;
+Requester and Manager work retain the shared process. Commit approved workflow
+configuration and verified iteration artifacts separately using explicit paths.
+Before each iteration, present its scope, deliverables, agents/models and checks;
+wait for the user's explicit permission for that iteration before starting it.
+
 ## Ownership
 
 - `yooplo`: Requester slice; authentication and access-control foundation.
