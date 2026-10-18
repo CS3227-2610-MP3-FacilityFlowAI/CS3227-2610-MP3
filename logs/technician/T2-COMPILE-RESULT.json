@@ -1,0 +1,17 @@
+{
+  "candidate": "298c7e63fdf4c221ce2f79529382dfbc1275d52f3342f09dc43b60303387b745",
+  "command": "./gradlew.bat --offline --no-daemon --console=plain test --tests sg.edu.nus.facilityflow.technician.TechnicianCommandServiceTest --tests sg.edu.nus.facilityflow.technician.JdbcTechnicianCommandRepositoryTest --tests sg.edu.nus.facilityflow.web.TechnicianCommandControllerTest --tests sg.edu.nus.facilityflow.web.SecurityIntegrationTest",
+  "outcome": "BUILD FAILED in16s: compileTestJava, production/resources up-to-date",
+  "testsExecuted": 0,
+  "errors": [
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/web/TechnicianCommandControllerTest.java",
+      "lines": [
+        67,
+        79
+      ],
+      "problem": "Two callers of checked-exception redirect helper omitted throws Exception"
+    }
+  ],
+  "independentFinding": "T2-R05; reviewer also found two detail reloads incorrectly verified as one, before test runtime"
+}

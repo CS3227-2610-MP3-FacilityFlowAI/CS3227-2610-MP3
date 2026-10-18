@@ -1,0 +1,38 @@
+{
+  "candidate": "1037b72d2f815e03ca1469e97c219a62a0a87c8b0bfb9191a0e40633c4140be3",
+  "command": ".\\gradlew.bat --offline --no-daemon --console=plain test --tests PasswordChangeSecurityIntegrationTest --tests SharedPagesControllerTest --tests SecurityIntegrationTest",
+  "outcome": "FAIL",
+  "totals": {
+    "tests": 45,
+    "failures": 2,
+    "errors": 0,
+    "skipped": 0
+  },
+  "classes": 3,
+  "suites": [
+    {
+      "name": "sg.edu.nus.facilityflow.identity.PasswordChangeSecurityIntegrationTest",
+      "tests": "2",
+      "failures": "1",
+      "errors": "0",
+      "skipped": "0",
+      "time": "5.057"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.web.SecurityIntegrationTest",
+      "tests": "39",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "17.866"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.web.SharedPagesControllerTest",
+      "tests": "4",
+      "failures": "1",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.126"
+    }
+  ]
+}

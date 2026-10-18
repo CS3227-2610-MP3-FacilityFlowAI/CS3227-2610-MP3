@@ -1,0 +1,65 @@
+{
+  "baseline": "57098d9",
+  "kind": "T2 final frozen inputs after independently reviewed R05/R06 test repairs; UTF8/LF",
+  "files": [
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/JdbcTechnicianCommandRepository.java",
+      "sha256": "6692db8a7444996c1d7ffa8468edbc96f7cfda32c89d899a889dd4a4a906e2c7"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianCommandException.java",
+      "sha256": "55671d8d3b4dc0d5083330de35c9ceb23bf7ee1211ebafde139bb6c480b60b14"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianCommandRepository.java",
+      "sha256": "d15c8eb41fa56b11bf999522454db7659322ff9968ebdf39f5d8192ef5899786"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianCommandService.java",
+      "sha256": "3cfe8d66afd1d609d35fea40b33d9ad4cfb256fb1fcbf56f29eb02a276a6e864"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/web/TechnicianCommandController.java",
+      "sha256": "fd236da6eb1e42198c066b409e8aad2cee9a8c8eb4fd965daa0b242b6ee91563"
+    },
+    {
+      "path": "src/main/resources/static/css/technician.css",
+      "sha256": "214f3585c16e6ad30264d96b77116686397dbfb32bb18367956ba9819ce67cc3"
+    },
+    {
+      "path": "src/main/resources/static/js/technician-commands.js",
+      "sha256": "fad0c315eb4f204d59816ba009c94107db378e708ad2cb625f330f2da6661aa2"
+    },
+    {
+      "path": "src/main/resources/templates/technician/request-detail.html",
+      "sha256": "36ba1389bde715be88d150e6a54d2c1df684dfe7e1db83817c093b33b72f7918"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/technician/JdbcTechnicianCommandRepositoryTest.java",
+      "sha256": "d7b50eaff011c0e0ce797ae41c34c0ba618a39c0eb9364e00845e1ee398e7c8c"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/technician/TechnicianCommandFixtures.java",
+      "sha256": "a7da2ac339a8903ad64cdb049492e74f2627371c25fb509371d38ecbce0bce7c"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/technician/TechnicianCommandServiceTest.java",
+      "sha256": "a4607ae58e636dc609c31c3229569b9045b0ae59648ffc5da2b4a5d473df1d6a"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/web/SecurityIntegrationTest.java",
+      "sha256": "f56a927bb6fdd0e21dc41123c900d176e1ec57e4e0f8ab1143cf234e4307fe47"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/web/TechnicianCommandControllerTest.java",
+      "sha256": "e73370b1fbec9b4a38f1681d35723830d837b502b8508be51c8ef98451ab0780"
+    },
+    {
+      "path": "src/test/js/technician-commands.test.cjs",
+      "sha256": "917d620c516b08158a2d0ae2487a0dace19dee38764c5a8718f41112b058b729"
+    }
+  ],
+  "patch": "build/T2-CANDIDATE.patch",
+  "patchSha256": "c3e901e9d8a61a5fb97ad4b54983b68205bc42ec118d5f1c67ad6a909085db61",
+  "sha256": "60bd42eeccf00d0a85cbeb3772ad2efe0ea10ff11fc7e28eeb5dd6b4e1f6e0b2"
+}

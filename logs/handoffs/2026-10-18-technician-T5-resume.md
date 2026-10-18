@@ -1,0 +1,18 @@
+- Source agent: user-approved retained coordinator.
+- Destination agent: same T5 coordinator and retained authors; independent verifier after preflight.
+- Task/goal: resume paused T5 verification and local close.
+- Approved requirement IDs: scoped REQ-SH/NFR and Technician IDs in [contract](../technician/T5-CONTRACT.md).
+- Approved specification revision/evidence: approved PRODUCT-SPEC baseline; user explicitly said “Resume” after implementation pause; baseline c15d26e.
+- Authorized scope/permissions: compile/preflight, needed corrections with retained owners, fixed-candidate batched review, scoped/browser acceptance, full check/bootJar and exact local commit. No push/merge/deploy/live systems; no browser-setting bypass.
+- Relevant input artifacts/provenance: [report](../technician/T5-REPORT.md), [pause](2026-10-18-technician-T5-pause.md), task packets/returns and new root-owned PasswordChangeSecurityIntegrationTest.
+- Assumptions: existing schema and maintained encoder reused; current session version retained.
+- Unresolved questions: browser use disabled by Work setting; acceptance pending, user notified. Runtime/independent results pending where report says so.
+- Files changed: all owned T5 artifacts plus root real-stack integration test and resume evidence.
+- Commands/tools: offline Gradle preflight; node actual-script checks; metadata/source/status reads.
+- Verification performed/results/evidence: eight Java preflight cases and three script checks passed after one test-fixture repair; direct results linked in report. New integration preflight pending.
+- Security considerations/unresolved risks: pending full persisted/transaction/session/security execution and independent review; no raw credentials in evidence.
+- Suggestions accepted/rejected: fix event-listener test model rather than weaken assertions; add real stack session/audit proof; do not bypass disabled browser tools.
+- Human approval required and reason: teammate merge and existing gateway/release gates remain. User resume already authorizes this local phase.
+- Human reviewer/outcome/evidence: pending.
+- Next authorized action: complete preflight, freeze, combined review/scoped run, final checks and exact local commit; preserve explicit pending browser gate if settings remain disabled.
+- Status: resumed; verification in progress.

@@ -1,0 +1,19 @@
+# Technician T1-U implementation handoff
+
+- Source agent: UI developer (`gpt-6-luna`, high; 18 Oct 2026).
+- Destination: T1 coordinator / assigned runner.
+- Goal/requirements: Implement assigned-only queue/detail presentation for REQ-TECH-001–003/009 and shared filtering/date/accessibility requirements.
+- Authority: `logs/technician/T1-DISPATCH.md`; user approved T1. Final interfaces and UI behavior: `workflow/technician/CONTRACTS.md`; task scope: `logs/technician/T1-ui-task.md`; behavior authority: `workflow/specs/ROLE-TECHNICIAN.md`, `PRODUCT-SPEC.md`, `TECHNICAL-SPEC.md`.
+- Files changed (only assigned application files plus this handoff): `src/main/java/sg/edu/nus/facilityflow/web/TechnicianQueueController.java`; `src/main/resources/templates/technician/queue.html`; `technician/request-detail.html`; `technician/fragments/request-rows.html`; `technician/fragments/history.html`; `src/main/resources/static/css/technician.css` (added to UI ownership during coordinator pre-freeze review).
+- Controller contract: constructor `TechnicianQueueController(TechnicianQueryService)`; public `String workspace(CurrentAccountPrincipal, Model, HttpServletResponse)` returns `technician/queue` for the coordinator-owned `/technician` mapping. The controller itself maps only GET `/technician/requests` and GET `/technician/requests/{displayId}`.
+- Implementation: binds raw q/status/category/priority; trims q in QueueFilter; validates enum tokens and canonical lowercase UUIDs before calling service; malformed filters return 400 with field-associated errors and preserved escaped submitted options, with no queue result/service fallback. Detail exceptions map NOT_AVAILABLE to one generic 404 and UNAVAILABLE to generic retryable 503. Queue outages show generic retryable message/503. Views include count cards, filters/reset, distinct no-assignment/no-match states, request facts/current completion metadata, requester updates and work logs. History text uses escaped `th:text` plus preserved whitespace. All displayed instants render in Asia/Singapore with zone; nullable priority, assignment time, resolution and completion have explicit labels. Responses set Cache-Control no-store.
+- Coordination: shared `DashboardController` wiring remains coordinator-owned. Backend message confirmed service/record/exception package and signatures match CONTRACTS. No SQL, new dependency, write/AI control, shared template or shared security change.
+- Verification: no build or tests run; T1 dispatch prohibits worker checks until the coordinator freezes writers and assigns a runner. Static source review only. No behavior is claimed verified.
+- OS-temp copy: `$env:TEMP/facilityflow-technician-T1-ui.md` written and verified in the same command as the durable record.
+- Risks/next action: coordinator wires `/technician` using `workspace`, freezes authoring, and assigns the scoped MVC/accessibility runner. Fixes should return to the owner. Continue T1 only under the existing approval; no later iteration authorization inferred.
+- Suggested receiver skill: `facilityflow-handoff`; keep `cs3227-unit-test` work with the dispatched tester/runner.
+- Status: ready for coordinator integration review.
+
+## Pre-freeze review adjustments
+
+Coordinator review identified that failed/unavailable queue rendering must not dereference absent queue data; category option iteration is now guarded, and a raw submitted category option is retained for validation failures, unknown UUIDs, and service outages without displaying protected results. Inline styles conflicted with the current CSP, so both pages now link `src/main/resources/static/css/technician.css`; the history fragment contains no inline style. Removed the undocumented search length limit. Detail now displays assignment time with an explicit legacy/unknown label when null. These are in-scope corrections to the assigned controller/templates/stylesheet; no tests/builds run.

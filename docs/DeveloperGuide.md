@@ -2,8 +2,11 @@
 
 Status: Shared database schema and explicit initialization supplied; V1 application
 and permissions evidenced by user screenshots. Hosted V2/V3/demo results are
-reported matching by the user; independent hosted queries and product features
-remain pending. Follow [DatabaseCompletion](DatabaseCompletion.md).
+reported matching by the user; independent hosted verification remains pending.
+Technician assigned-work reads, start/log/completion commands and Work Plan
+browser controls, plus Manager lifecycle, administration and Triage Assistant
+workflows, are implemented in source as described below.
+Follow [DatabaseCompletion](DatabaseCompletion.md).
 
 Part 2b supplies the private identity/audit/session schema, restricted-role
 provisioning and isolated PostgreSQL migration tests. See
@@ -43,16 +46,18 @@ latest release rather than the intended design.
 
 ## Project overview
 
-FacilityFlow AI, CS3227 MP3. Database and authentication foundations are
-integrated. The first Manager overview/queue/audit/on-behalf-create slice is
-implemented locally together with the non-mutating Triage Assistant review
-surface; remaining role workflows are pending. See README and AGENTS.md.
+FacilityFlow AI, CS3227 MP3. Database/authentication foundations, shared password
+and navigation screens, Technician assigned-work reads, start/log/completion and
+advisory Work Plan controls, and Manager request lifecycle, administration and
+Triage Assistant workflows are integrated in source. Requester manual workflows
+remain pending. See README and AGENTS.md.
 
 ## Repository structure
 
 src/: application code/tests; workflow/: specs/process; docs/: guides/planning;
 logs/: summaries; .github/: PR-Agent/contribution template. The Gradle build
-packages the minimal application; feature modules are pending.
+packages the application, Technician read/command modules and Manager workflow
+and administration modules; Requester manual workflows remain pending.
 
 ## Architecture
 
@@ -81,8 +86,9 @@ Password storage is Boot-managed Spring Security crypto 7.1.1, PBKDF2 v5.8 defau
 16-byte random salt, 310,000 SHA-256 iterations and 256-bit output. Stored hashes
 carry `{pbkdf2@SpringSecurity_v5_8}` and are verified in tests with Spring's
 delegating encoder. Login accepts this format through a delegating encoder; new passwords use
-`{argon2}` and the pinned parameters below. Business lifecycle and AI limits
-remain pending application integration; migrations alone do not implement those controls.
+`{argon2}` and the pinned parameters below. Technician and Manager business
+lifecycle services and shared AI limits are integrated as described below;
+migrations alone do not implement those controls.
 
 The accepted entities, relationships, transaction boundaries, invariants and
 concurrency approach are defined in `../workflow/specs/TECHNICAL-SPEC.md`.
@@ -136,6 +142,130 @@ validation before any mutation. AI code remains non-mutating.
 
 ## Role model
 
+### Technician assigned-work reads (T1)
+
+`TechnicianQueryService` supplies queue/detail use cases through immutable nested
+`TechnicianReadModels`. Its JDBC repository owns a read-only REQUIRES_NEW,
+REPEATABLE_READ transaction and a callback-scoped, thread-confined ReadSession.
+Persisted active state, TECHNICIAN role and exact session version are checked
+before Request reads, including direct use-case calls. Session capabilities are
+closed on every callback exit. Query SQL repeats current-assignment scope for
+Request history; original historical authorship is retained.
+
+Queue counts are unfiltered while rows use combined filters and parameterized
+literal ILIKE search. Priority/urgency rank expressions precede assignment time
+with NULLS LAST and display ID. Retained terminal assignments remain readable.
+Invalid filters, inaccessible detail and operational failures map to safe
+400/404/503 views; failures never broaden results. New read paths do not write
+business or Audit Events.
+
+`TechnicianQueueController` handles `/technician/requests` and detail routes.
+The existing `DashboardController` reuses its default-filter workspace renderer
+for `/technician`; other role routes remain unchanged. Templates use escaped
+text, UTC Instants rendered in Asia/Singapore, and external `/css/technician.css`
+under the existing CSP. No write/AI browser controls are part of T1.
+
+See [contracts](../workflow/technician/CONTRACTS.md),
+[acceptance map](../workflow/technician/ACCEPTANCE-MAP.md) and the
+[T1 report](../logs/technician/T1-REPORT.md) for executed evidence. SQL/transaction
+tests use disposable embedded PostgreSQL with the runtime database role;
+the existing H2 authentication suite uses minimal maintenance read tables and
+synthetic rows for authenticated landing/detail rendering; it does not prove
+PostgreSQL SQL semantics. JUnit 5 tests construct Spring contexts manually where needed because
+the pinned Spring 7 JUnit extension requires JUnit 6.
+
+### Technician work commands (T2)
+
+`TechnicianCommandService` exposes only start-work and append-Work-Log commands.
+It captures the server-side Technician identity and validates display ID,
+nonnegative expected Request version, trimmed note code points and whole minutes.
+`JdbcTechnicianCommandRepository` independently validates its direct inputs and
+uses one READ_COMMITTED, REQUIRES_NEW transaction per command. Account FOR SHARE
+locks protect persisted active/role/exact session-version validation; the scoped
+Request FOR UPDATE lock serializes assignment/state/version checks and writes.
+Every success increments Request.version once, making in-flight Work Plans stale.
+
+Start changes ASSIGNED to IN_PROGRESS; Work Log append requires IN_PROGRESS and
+preserves original author/UTC time. Request mutation, optional Work Log INSERT
+and one safe Audit Event commit together, including rollback when audit fails.
+Audit details contain only allowlisted status/version or minutes/version, never
+free-text notes. Existing runtime grants forbid history/audit UPDATE and DELETE.
+No migration or additional dependency is introduced.
+
+`TechnicianCommandController` handles POST `/{displayId}/start` and
+`/{displayId}/work-logs` under `/technician/requests`, with existing role/CSRF
+protection. Success uses a fixed same-origin 303 detail redirect. Validation,
+conflict, inaccessible-object and operational failures map to safe 400/409/404/503;
+only the assigned query service can reload fresh details after a failure.
+Submitted drafts remain escaped and visible even if the Request is unavailable
+or no longer accepts a log. Forms use persisted versions; conflicts need explicit
+review/resubmission. External JavaScript blocks duplicate pending submissions
+and restores buttons on page return without weakening CSP.
+
+See the [T2 contract](../logs/technician/T2-CONTRACT.md) and
+[T2 report](../logs/technician/T2-REPORT.md) for ownership, cases and execution.
+PostgreSQL command tests use a class-scoped disposable server with isolated
+per-test data and the restricted runtime role. Authenticated MVC tests use a
+command-service double plus real assigned-query/Thymeleaf rendering; those H2
+checks prove web behavior, while PostgreSQL tests prove transaction semantics.
+The standalone JavaScript event check models pending-submit/page-return behavior;
+it does not replace supported-browser visual/keyboard acceptance.
+
+### Technician Work Plan browser integration (T4)
+
+The existing POST `/technician/requests/{displayId}/work-plan` returns either
+`{plan: ...}` or `{code, message}` with `Cache-Control: no-store`. The detail page
+shows its separate CSRF-protected form only for ASSIGNED/IN_PROGRESS. External
+`technician-work-plan.js` validates the entire seven-field result before rendering
+plain text, prioritizes safety/stop guidance and maps safe errors to manual
+fallback. It neither fills nor disables manual forms. Abort/generation checks
+discard late results on manual submission and page lifecycle changes. No plan is
+stored in browser persistence or server session.
+
+`TechnicianWorkPlanRepository` requires a captured `CurrentAccountSnapshot` for
+both context loading and final eligibility checks. The JDBC implementation
+requires an active persisted TECHNICIAN and exact nonnegative session version
+before loading assigned context, in a short read-only repeatable-read snapshot.
+No transaction spans provider execution. Final checks require the same account,
+session, assignment, original status and Request version; changed access discards
+the whole result and cannot produce successful telemetry. Existing provider
+allowlisting, schema/safety/disclosure rejection, admission and deadline behavior
+remain in force. No new business mutation or migration is involved.
+
+T4 evidence separates actual MVC/security/Thymeleaf tests (service double),
+asynchronous orchestration tests, real isolated PostgreSQL repository tests and
+actual-script deterministic DOM/fetch tests. Existing provider adversarial tests
+cover stored injection and unsafe advice; no live provider was used. See
+`logs/technician/T4-REPORT.md` for executed results and remaining human/browser gates.
+
+### Technician completion (T3)
+
+`completeWork` extends the existing command service/repository without a generic
+status setter. The repository reuses persisted account and scoped Request locks,
+then checks IN_PROGRESS, exact expected version and at least one existing Work
+Log (including prior authors). Service and repository enforce a trimmed
+10–2,000-code-point resolution. Missing logs produce WORK_LOG_REQUIRED, safe400;
+existing invalid-input/access/conflict/operational semantics remain.
+
+Completion retains assignment, increments version once, records server author
+and one database completion instant in current metadata and a new immutable
+completion-history row, and appends one safe TECHNICIAN_WORK_COMPLETED audit
+(statuses/version only). Request/history/audit commit together or roll back.
+Prior history remains on later return/recompletion. No auto-close or schema or
+dependency change is introduced.
+
+POST `/technician/requests/{displayId}/complete` uses existing CSRF/role checks,
+versioned form, pending-submit script and fixed303 detail redirect. The controller
+preserves escaped unsaved resolutions even when a fresh scoped read is no longer
+available. COMPLETED shows persisted metadata and no work mutation controls.
+See [T3 contract](../logs/technician/T3-CONTRACT.md) and
+[T3 report](../logs/technician/T3-REPORT.md) for completion tests, fault-injection
+rollback, concurrent completion/reassignment and per-agent evidence. Real
+PostgreSQL proves writes; authenticated H2 MVC uses the existing command double
+and actual query/template path. Browser/release acceptance remains separate.
+
+### Slice ownership
+
 Requester owner: `yooplo`; Technician owner: `ngkhengyang`; Facilities Manager
 owner: `yu-sutong`. Members may contribute across slices, but each owner remains
 accountable for completing their role features. Detailed permissions and
@@ -175,9 +305,9 @@ admission/lease coordination, telemetry, bounded retry, a single end-to-end
 Technician deadline, strict typed Work Plan/Smart Report/Triage provider
 contracts, deterministic Manager candidate ranking and server-side output
 disclosure checks. The provider core remains advisory and mutation-free. Only
-the Manager slice currently adds a role-facing review page over its service/API;
-Requester Smart Report and Technician Work Plan remain API/service seams until
-their owners add workflow UI. Compressed responses remain deferred by the
+the Manager and Technician slices include role-facing review controls over their
+services/APIs; Requester Smart Report remains an API/service seam until its owner
+adds workflow UI. Compressed responses remain deferred by the
 authoritative integration specification.
 
 `AI_ENABLED` defaults to `false`. When enabled, the application binds all
@@ -284,3 +414,50 @@ tests, and documentation separately and acknowledge every source before merge.
 
 Team: ../AGENTS.md. AI evidence: ../logs/. Reused material: reuse ledger.
 Other source/dependency acknowledgements: TBD.
+
+
+## T5 shared identity and screens
+
+T5 was paused after authorship and resumed by explicit user instruction. Scoped
+automated checks passed; final integrated results and independent verdict are
+recorded in `logs/technician/T5-REPORT.md`. Historical pause records remain as
+history. Full browser/keyboard/viewport/accessibility acceptance is blocked by
+the disabled local-browser Work setting; hosted and human gates remain pending.
+
+`PasswordChangeService` captures the authenticated snapshot and validates raw
+Unicode code-point bounds and exact confirmation. `JdbcPasswordChangeRepository`
+revalidates direct inputs, locks the account FOR UPDATE in READ_COMMITTED
+REQUIRES_NEW, checks persisted active/same role/exact nonnegative session version
+before reading the latest stored hash, and verifies/replaces it with the existing
+maintained encoder. Account version/UTC time and one safe ACCOUNT_PASSWORD_CHANGED
+event commit together; failures roll back. Session_version is retained, preserving
+the current and other sessions. Manager reset/deactivation invalidation is separate.
+
+Protected GET/POST `/account/password` and GET `/about` use the shared authenticated
+header, fixed role routes, no-store and CSRF. Password success is fixed303
+`/account/password?changed`;400/403/503 responses expose fixed field/general errors
+with password inputs cleared. No password/hash goes into models, flash/session,
+audit or diagnostic causes. Shared focus/skip/required/error labels and wrapping
+target accessibility; ordinary business drafts keep their failure behavior.
+
+Preflight's real session-byte regression exposed Spring's default failed-login
+exception retaining attempted credentials in JDBC session storage. SecurityConfiguration
+now uses a fixed context-relative `/login?error` redirect, clears any existing
+authentication-exception attribute and stores no new exception. Generic error,
+CSRF and destination behavior remain. This demonstrated NFR-SEC-002 correction
+is covered by real-stack and existing-session MVC regressions and independent review.
+
+Generic `form-submission.js` is public at that exact asset path for login, acts
+only on data-pending-form, reads no field values and restores every form on
+pageshow. Manual command handlers remain separate. Work Plan invalidation clears
+obsolete status, disables AI immediately on manual submission, and preserves
+whole-result plain-text/safety/failure/late-response boundaries.
+
+Evidence separates service units, restricted-role isolated PostgreSQL repository
+tests, standalone controller tests, real Thymeleaf/security MVC (password-service
+double) and `PasswordChangeSecurityIntegrationTest` using actual PBKDF2→Argon2,
+PostgreSQL account/audit, filters and JDBC sessions. The latter verifies both
+existing sessions, next-login credentials, credential-free serialization after
+failed login and audit-fault rollback. Script tests execute actual scripts in
+deterministic DOM fixtures. These do not substitute for the pending browser
+checklist. No migration, dependency, live-provider or hosted database was used.

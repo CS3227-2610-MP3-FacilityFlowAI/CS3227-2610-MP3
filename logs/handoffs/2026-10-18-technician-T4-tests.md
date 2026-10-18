@@ -1,0 +1,18 @@
+- Source agent: T4 tests, gpt-6-luna / high.
+- Destination agent: coordinator/root.
+- Task/goal: author independent T4 service, PostgreSQL repository, and actual-script tests.
+- Approved requirement IDs: REQ-TECH-012–017, TECH-AI01–04; linked AI-SEC rules.
+- Approved specification revision/evidence: [ROLE-TECHNICIAN](../../workflow/specs/ROLE-TECHNICIAN.md), [AI-SECURITY-SPEC](../../workflow/specs/AI-SECURITY-SPEC.md), [T4 contract](../technician/T4-CONTRACT.md).
+- Authorized scope/permissions: tester-owned files in [T4 task packet](../technician/T4-tests-task.md); no production/build configuration edits. Coordinator is sole runner.
+- Relevant input artifacts/provenance: [dispatch](2026-10-18-technician-T4-dispatch-tests.md), existing `TechnicianCommandFixtures` and Technician service/repository sources.
+- Assumptions: the fixed contract controls while shared implementation work is in progress; PostgreSQL fixture migrations and dependencies remain available.
+- Unresolved questions: PostgreSQL UUID order across the high bit needs execution; category rename semantics are not required by the Work Plan clause of AI-SEC-028.
+- Files changed: `src/test/java/sg/edu/nus/facilityflow/technician/TechnicianWorkPlanServiceTest.java`, `src/test/java/sg/edu/nus/facilityflow/technician/JdbcTechnicianWorkPlanRepositoryTest.java`, `src/test/js/technician-work-plan.test.cjs`.
+- Commands/tools: targeted `Get-Content`/`rg` source reads and `apply_patch` authoring only.
+- Verification performed/results/evidence: tests authored against current fixed contract; no build, test, Git, network, live provider, or live database command was run, per coordinator instruction. Execution remains pending.
+- Security considerations/unresolved risks: PG tests cover active role/session, assignment/state/version freshness, category deactivation, no business writes and latest-ten ordering. High-bit UUID ordering can expose signed Java UUID comparison divergence from PostgreSQL order. UI tests cover CSRF-only POST, no-store, fixed errors, atomic validation, no partial/unsafe advice and manual/lifecycle invalidation.
+- Suggestions accepted/rejected: root request accepted to exercise category deactivation and both sides of UUID's high bit; no production behavior changed.
+- Human approval required and reason: teammate review before merge; no merge requested.
+- Human reviewer/outcome/evidence: pending.
+- Next authorized action: root runs targeted suite after writers pause, handles implementation failures separately, and requests independent delta verification after corrections.
+- Status: ready for coordinator review; execution pending.

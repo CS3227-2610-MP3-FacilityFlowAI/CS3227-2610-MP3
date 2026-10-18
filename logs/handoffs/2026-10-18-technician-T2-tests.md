@@ -1,0 +1,18 @@
+- Source agent: Personal CS3227 unit-test Tester.
+- Destination agent: T2 coordinator (`/root`).
+- Task/goal: Author requirement tests for Technician T2 command backend and web controller.
+- Approved requirement IDs: REQ-TECH-004–006/010–011, TECH-A01/A03/A06, REQ-SH-002/006/007/010/014, NFR-SEC-001.
+- Approved specification revision/evidence: Baseline `57098d9da1c2af1ee12395a3ced774bfbece4781`; task packet `logs/technician/T2-tests-task.md`; API contract `logs/technician/T2-CONTRACT.md`.
+- Authorized scope/permissions: New test classes and their test-owned fixture only. No implementation/build configuration edits, no delegation, no local test execution.
+- Relevant input artifacts/provenance: `workflow/specs/ROLE-TECHNICIAN.md`, `PRODUCT-SPEC.md`, `TECHNICAL-SPEC.md`; T2 contract; existing Technician query tests and fixture.
+- Assumptions: PostgreSQL embedded server is isolated; `facilityflow_app` is used by the SUT and migrator/admin only seed/reset. Repository API follows T2 contract.
+- Unresolved questions: Coordinator's broader full check and `bootJar` are still running; outcome pending.
+- Files changed: `src/test/java/sg/edu/nus/facilityflow/technician/TechnicianCommandServiceTest.java`; `JdbcTechnicianCommandRepositoryTest.java`; `TechnicianCommandFixtures.java`; `src/test/java/sg/edu/nus/facilityflow/web/TechnicianCommandControllerTest.java`.
+- Commands/tools: Read task/contract/specifications and existing test/API sources; authored only the four owned files. No local build or test command was run.
+- Verification performed/results/evidence: Coordinator first reported an earlier checkpoint passed `compileJava`, `compileTestJava`, 7 service tests and 1 PostgreSQL smoke (43 seconds); this preceded expanded test edits. Expanded scoped run then compiled and executed 56 tests: 54 passed, 2 repository audit-key assertions failed because `jsonb_object_length` is unavailable in the embedded PostgreSQL version. Replaced those assertions with supported `jsonb_object_keys` enumeration; the coordinator's focused rerun of both affected audit tests passed (2/2 in 37 seconds). The reviewed test-only repairs also fixed two checked-exception declarations and the expected count of error-detail reloads. The coordinator reports all 56 scoped cases now have passing evidence across the comprehensive run and focused repair rerun. Exact unchanged input hashes: 14. Fixture uses class-scoped embedded PostgreSQL, least-privilege app SUT and deterministic synthetic reset. Lock-wait tests use bounded `pg_stat_activity` observation. Audit-fault triggers are removed in `finally` and reset.
+- Security considerations/unresolved risks: No committed secrets or live database use. Broader full check/`bootJar` result pending.
+- Suggestions accepted/rejected: Incorporated review feedback on lock waits, audit rollback of both commands, exact shared datasource transaction test, typed fixture parameters, trigger cleanup, controller exception declarations/reload count, and PostgreSQL JSON-key counting.
+- Human approval required and reason: No new human approval requested; task packet authorizes tests and sole-coordinator execution.
+- Human reviewer/outcome/evidence: Independent reviewer checked the test-only corrections; broader candidate review remains with coordinator.
+- Next authorized action: Coordinator completes the running full check and `bootJar`, then records the outcome in the T2 iteration evidence.
+- Status: ready for review.

@@ -1,0 +1,30 @@
+{
+  "candidate": "09e9a58476d87814e8da69448248257b1ac80f02c602dc9032eb64fdcae3d8e8",
+  "command": ".\\gradlew.bat --offline --no-daemon --console=plain test --tests sg.edu.nus.facilityflow.technician.JdbcTechnicianWorkPlanRepositoryTest --tests sg.edu.nus.facilityflow.technician.TechnicianWorkPlanServiceTest",
+  "outcome": "PASS",
+  "totals": {
+    "tests": 13,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "classes": 2,
+  "suites": [
+    {
+      "name": "sg.edu.nus.facilityflow.technician.JdbcTechnicianWorkPlanRepositoryTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "5.862"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.technician.TechnicianWorkPlanServiceTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.061"
+    }
+  ]
+}

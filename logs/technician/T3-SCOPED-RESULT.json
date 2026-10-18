@@ -1,0 +1,46 @@
+{
+  "candidate": "47a88bdd231c0c162bb7dad2d446634a2d960ef9d41d7d34eb26a90a98d72d2d",
+  "command": "./gradlew.bat --offline --no-daemon --console=plain test --tests sg.edu.nus.facilityflow.technician.TechnicianCompletionServiceTest --tests sg.edu.nus.facilityflow.technician.JdbcTechnicianCompletionRepositoryTest --tests sg.edu.nus.facilityflow.web.TechnicianCompletionControllerTest --tests sg.edu.nus.facilityflow.web.SecurityIntegrationTest",
+  "outcome": "BUILD FAILED:2 of52tests, see scoped XML/log",
+  "totals": {
+    "tests": 52,
+    "failures": 2,
+    "errors": 0,
+    "skipped": 0
+  },
+  "classes": 4,
+  "suites": [
+    {
+      "name": "sg.edu.nus.facilityflow.technician.JdbcTechnicianCompletionRepositoryTest",
+      "tests": "8",
+      "failures": "1",
+      "errors": "0",
+      "skipped": "0",
+      "time": "12.055"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.technician.TechnicianCompletionServiceTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "2.278"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.web.SecurityIntegrationTest",
+      "tests": "32",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "15.604"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.web.TechnicianCompletionControllerTest",
+      "tests": "8",
+      "failures": "1",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.096"
+    }
+  ]
+}

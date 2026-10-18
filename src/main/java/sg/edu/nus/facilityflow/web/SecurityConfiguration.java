@@ -35,7 +35,9 @@ public class SecurityConfiguration {
             PersistentAccountVerificationFilter accountVerificationFilter) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/health", "/login", "/error", "/css/**").permitAll()
+                        .requestMatchers(
+                                "/health", "/login", "/error", "/css/**", "/js/form-submission.js")
+                        .permitAll()
                         .requestMatchers("/requester/**").hasRole("REQUESTER")
                         .requestMatchers("/technician/**").hasRole("TECHNICIAN")
                         .requestMatchers("/manager/**").hasRole("FACILITIES_MANAGER")
@@ -43,7 +45,15 @@ public class SecurityConfiguration {
                 .formLogin(form -> form
                         .loginPage("/login")
                         .successHandler(successHandler)
-                        .failureUrl("/login?error")
+                        // NFR-SEC-002: do not serialize AuthenticationException, which can
+                        // retain the failed request's credentials, in the JDBC session.
+                        .failureHandler((request, response, failure) -> {
+                            var existing = request.getSession(false);
+                            if (existing != null) {
+                                existing.removeAttribute(org.springframework.security.web.WebAttributes.AUTHENTICATION_EXCEPTION);
+                            }
+                            response.sendRedirect(request.getContextPath() + "/login?error");
+                        })
                         .permitAll())
                 .logout(logout -> logout
                         .logoutUrl("/logout")

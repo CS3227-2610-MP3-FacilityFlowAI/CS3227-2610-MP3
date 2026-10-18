@@ -3,15 +3,17 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/technician.css}">
+    <script defer th:src="@{/js/form-submission.js}"></script>
     <title>Sign in · FacilityFlow AI</title>
 </head>
 <body>
-<main>
+<main id="main-content">
     <h1>FacilityFlow AI</h1>
     <p>Sign in to your maintenance workspace.</p>
     <p role="alert" th:if="${error}" th:text="${error}">Invalid username or password</p>
     <p role="status" th:if="${loggedOut}">You have signed out.</p>
-    <form method="post" th:action="@{/login}">
+    <form method="post" th:action="@{/login}" data-pending-form>
         <div>
             <label for="username">Username</label>
             <input id="username" name="username" type="text" autocomplete="username" required autofocus>
