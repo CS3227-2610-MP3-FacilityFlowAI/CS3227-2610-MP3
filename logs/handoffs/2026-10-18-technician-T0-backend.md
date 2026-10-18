@@ -1,0 +1,44 @@
+# Technician T0-B backend handoff
+
+- Source agent: T0-B architect; gpt-6.1-sol / medium, 18 October 2026.
+- Destination agent: T0 coordinator, then approved T1 backend owner.
+- Task/goal: concrete read contracts and later mutation boundaries.
+- Approved requirement IDs: REQ-TECH-001–011; REQ-SH-002/006–010/013–014/018.
+- Approved specification revision/evidence: [dispatch authority](../technician/T0-DISPATCH.md), [Technician baseline](../../workflow/specs/ROLE-TECHNICIAN.md), [Product](../../workflow/specs/PRODUCT-SPEC.md), [Technical](../../workflow/specs/TECHNICAL-SPEC.md).
+- Authorized scope/permissions: this handoff and OS-temp handoff only; application read-only; no tests, Git mutations, delegation, or T1 implementation.
+
+## Proposal (design choices unless explicitly required)
+
+**Exact T1 paths:** beneath `src/main/java/sg/edu/nus/facilityflow/technician/`, add `TechnicianQueryService.java`, `TechnicianQueryRepository.java`, `JdbcTechnicianQueryRepository.java`, `TechnicianReadModels.java`, `TechnicianQueryException.java`. Keep records/enums nested in `TechnicianReadModels`; web controllers depend only on service/models.
+
+**Use cases:** `QueueView queue(QueueFilter filter)`; `RequestDetail detail(String displayId)`. Repository: `<T> T readSnapshot(Function<ReadSession,T> reader)`; nested `ReadSession` exposes `void requireCurrentTechnician(CurrentAccountSnapshot actor)`, `DashboardCounts counts(UUID actorId)`, `List<QueueRow> queue(UUID actorId, QueueFilter filter)`, `List<CategoryOption> categories(UUID actorId)`, `Optional<RequestDetail> detail(UUID actorId,String displayId)`. Repository owns read-only REPEATABLE_READ transaction; every session call requires its live context. Service captures `IdentityAuthorization.requireRoleSnapshot(TECHNICIAN)`, then verifies persisted account active/TECHNICIAN/session-version inside snapshot before data access. Never accept actor IDs from browser. This supports direct service calls and consistent account/assignment/count/history snapshots.
+
+**DTOs:** `QueueFilter(String q, RequestStatus status, UUID categoryId, ManagerPriority priority)` (nullable filters); `DashboardCounts(long assigned,long inProgress,long completed)`; `QueueView(filter,counts,List<CategoryOption> categories,long assignedTotal,List<QueueRow> rows)`; `CategoryOption(UUID id,String name)`; `QueueRow(String displayId,String title,String location,UUID categoryId,String category,RequestStatus status,ManagerPriority priority,ReportedUrgency urgency,Instant assignedAt)`; `RequestDetail` adds description, createdAt, updatedAt, long version, nullable resolutionSummary/completedAt, and lists of `RequesterUpdateView(note,authorDisplayName,createdAt)`, `WorkLogView(note,int minutes,authorDisplayName,createdAt)`, `CompletionView(resolutionSummary,technicianDisplayName,completedAt)`. Internal IDs stay server-side except category filter IDs. Instants remain UTC. Enums exactly mirror V2: six RequestStatus values, priorities LOW/MEDIUM/HIGH/CRITICAL, urgencies LOW/NORMAL/HIGH/EMERGENCY.
+
+**Reads:** all queries require current assignment, including retained CLOSED/CANCELLED assignments; counts cover only specified three states and ignore filters. assignedTotal counts every scoped row, distinguishing no assignments from zero matches. Category options derive from scoped requests, including inactive historical categories. Trim q; case-insensitive literal substring across display ID/title/location; escape SQL LIKE wildcards, bind parameters. AND filters; no pagination/new sort controls in T1. Required ordering: priority descending, urgency descending, assignedAt ascending NULLS LAST, displayId ascending (explicit CASE ranks). Histories sort timestamp then immutable ID ascending; show full assigned-request Updates/Logs/completion evidence with original authors; exclude private audit/account data. Reassignment denies entire detail; never filter logs by current author.
+
+**Failures:** `TechnicianQueryException.Code` = INVALID_FILTER, NOT_AVAILABLE, UNAVAILABLE. Reject malformed IDs/filter enums/category UUIDs; missing and inaccessible valid IDs share NOT_AVAILABLE and generic text. Valid unknown category UUID returns zero rows. Persistence failures reveal no SQL/data; fail entire snapshot, never substitute empty success. Identity failures retain Spring authentication/access exceptions. No mutation/audit on reads.
+
+**T2/T3:** add transaction-scoped command repository and audit writer only after approval; lock/re-read persisted account and Request, check assignment/state/expectedVersion, then validate. Start ASSIGNED→IN_PROGRESS; log only IN_PROGRESS (trimmed 1–1000 code points, 1–1440 integer minutes); completion requires existing log and trimmed 10–2000-code-point summary. Every successful command increments Request.version, including log append, updates UTC metadata and inserts one safe audit event atomically. Completion additionally appends completion history and retains assignment. Version predicate rejects duplicates/concurrency; failure rolls back business/history/audit together. Reassignment/stale writes return safe refresh guidance without redisclosing inaccessible detail. No arbitrary status setter; no Work Plan mutation dependency.
+
+## Evidence and transition
+
+- Relevant inputs: inspected identity/{IdentityAuthorization,CurrentAccountProvider,SpringSecurityCurrentAccountProvider,AccountRepository,JdbcAccountRepository,CurrentAccountSnapshot}.java; web/PersistentAccountVerificationFilter.java; technician/{TechnicianWorkPlanService,TechnicianWorkPlanRepository,JdbcTechnicianWorkPlanRepository}.java; migrations V1/V2/V4 (all under src/main). Provider reads principal; filter refreshes persisted identity; V2 supplies storage; V4 preserves unknown migrated assignment times. Existing AI eligibility/version seam remains separate.
+- Commands/tools: PowerShell Get-Content, rg --files, rg -n; one wildcard-path rg failed (Windows syntax), corrected with directory inventory. No application tests/builds executed.
+- Verification performed/results: static source/spec inspection only; proposed behavior remains unverified. No demonstrated schema gap; no migration proposed.
+- Assumptions/unresolved questions: no blocking product ambiguity; coordinator reconciles DTO names with UI. Proposed historical completion list is supporting evidence, not private audit history.
+- Files changed: this file and OS-temp `facilityflow-technician-T0-backend.md` only.
+- Security considerations/unresolved risks: identity snapshot must not rely solely on principal/filter; AI freshness needs version increments on all manual writes.
+- Suggestions accepted/rejected: reuse PostgreSQL/identity/data seams; reject extending AI context repository into general history API.
+- Human approval required and reason: T1 iteration authorization required by workflow; no approval inferred here.
+- Human reviewer/outcome/evidence: pending.
+- Next authorized action: coordinator reconciles T0 contracts/packets and verifies planning artifacts; implementation waits for T1 approval.
+- Status: ready for review.
+
+## Independent reconciliation review addendum
+
+- Scope: narrow review of `workflow/technician/CONTRACTS.md` and `logs/technician/T1-backend-task.md` against previously inspected ROLE-TECHNICIAN/Product/Technical requirements, identity seams and V1/V2/V4. Model/effort remains gpt-6.1-sol / medium.
+- Result: no material contradiction or unimplementable signature found. Both artifacts preserve separate T1 authorization and application write ownership. Explicit callback-scoped read sessions can share one PostgreSQL REPEATABLE_READ connection for account, assignment, counts, categories and child history. Required exact nonnegative session-version matching correctly rejects the provider's legacy -1 fallback; realistic direct-call test snapshots are required.
+- Reconciled choices supersede this handoff's initial proposal where different: `ReadSession.assignedTotal(UUID)` is explicit; T1 detail includes current completion metadata without `CompletionView` history; malformed/unknown/unassigned detail IDs share generic 404, invalid filters map to 400 and operational failures to 503. These are implementable with existing schema and safe-error rules. Nullable priority/assignment timestamp handling covers historical CANCELLED/migrated rows without weakening ordering.
+- Checks: read both complete artifacts using PowerShell Get-Content; compared signatures, DTO columns/enums, scope, unfiltered counts, history author visibility and T2/T3 version/audit boundaries to inspected sources. No implementation, tests/builds, database commands, delegation or Git mutations. Existing static evidence supports planning consistency only; runtime behavior remains unverified.
+- Findings/blockers: none. Coordinator may integrate this review within authorized T0; T1 implementation still requires explicit approval.

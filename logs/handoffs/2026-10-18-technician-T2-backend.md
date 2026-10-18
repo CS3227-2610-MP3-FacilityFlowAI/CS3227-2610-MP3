@@ -1,0 +1,22 @@
+# Technician T2 backend handoff
+
+- Source agent: T2 backend Developer, gpt-6.1-sol / medium, 18 October 2026.
+- Destination agent: Technician T2 coordinator and independent verifier.
+- Task/goal: Implement start-work and append-Work-Log commands under the fixed [T2 contract](../technician/T2-CONTRACT.md).
+- Approved requirement IDs: REQ-TECH-004–006/010–011; REQ-SH-002/006/007/010/014; NFR-SEC-001; TECH-A01/A03/A06.
+- Approved specification revision/evidence: approved v0.1 role/shared/technical specifications and user approval recorded in [task packet](../technician/T2-backend-task.md), baseline 57098d9.
+- Authorized scope/permissions: exactly four new backend files below and this handoff. No Git mutation, build/test execution, live DB access, delegation, migrations, dependencies, security configuration or T3 work.
+- Relevant input artifacts/provenance: AGENTS.md; workflow/agents/developer.md; workflow/agents/technician-workflow.md; workflow/TECHNICIAN-PLAN.md; workflow/specs/README.md, ROLE-TECHNICIAN.md, PRODUCT-SPEC.md, TECHNICAL-SPEC.md; existing identity/query source; V1/V2 migrations. Applied .agents/skills/facilityflow-handoff/SKILL.md and workflow/agents/README.md protocol.
+- Assumptions: existing PostgreSQL schema/grants are authoritative; database-generated UUID/time defaults retain immutable Work Log/audit identity. Public interfaces exactly follow the T2 contract.
+- Unresolved questions: none identified in authored scope.
+- Files changed: new src/main/java/sg/edu/nus/facilityflow/technician/{TechnicianCommandService,TechnicianCommandRepository,JdbcTechnicianCommandRepository,TechnicianCommandException}.java; this handoff.
+- Commands/tools: read-only Get-Content, rg, Select-Object; apply_patch for owned files; collaboration messages confirming readiness/interfaces. No builds/tests or database processes executed.
+- Verification performed/results/evidence: manually inspected the four authored sources against the contract and existing schema/grants. Confirmed snapshot capture, validation, account FOR SHARE before assigned Request FOR UPDATE, REQUIRES_NEW/READ_COMMITTED, state/version predicates, one version increment, DB clock timestamp, append-only inserts and exact insert counts, allowlisted audit JSON, and safe error vocabulary. These are source-inspection results only; compilation, SQL execution, concurrency, rollback and HTTP behavior remain unverified until coordinator checks.
+- Security considerations/unresolved risks: persisted active/role/session rechecked under account lock; assignment/state/version under Request lock; no actor input from browser, generic inaccessible errors, no free text in audit, SQL values bound. Operational causes are discarded. Deadlock/transaction failures return safe UNAVAILABLE. Fresh review and isolated PostgreSQL concurrency/rollback checks remain required.
+- Suggestions accepted/rejected: accepted contract lock order and fixed API; retained T1 read API unchanged. No scope expansion.
+- Human approval required and reason: teammate review before non-trivial merge under AGENTS.md; no merge/push/deployment authorized here.
+- Human reviewer/outcome/evidence: pending; no human review claimed.
+- Next authorized action: coordinator freezes candidate, runs scoped/full checks as sole runner, and obtains fresh independent review; return findings to owning worker. No T3 authority transferred.
+- Temporary handoff: OS-temp facilityflow-T2-backend-20261018.md (resolved absolute path returned with task result).
+- Status: ready for review; runtime verification pending.
+- Metrics: tokens and precise elapsed timing unavailable to this leaf.

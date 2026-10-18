@@ -1,0 +1,10 @@
+{
+  "candidate": "bf02c41c486d1e932f484eb05316618074acbf7a3a405d8966ca952893dd8cbf",
+  "commands": [
+    {"command": "node src/test/js/form-submission.test.cjs", "outcome": "PASS", "scope": "actual script: per-form duplicate suppression, both-form pageshow reset, aria-busy, no credential value reads"},
+    {"command": "node src/test/js/technician-work-plan.test.cjs", "outcome": "PASS", "scope": "actual script: atomic typed/plain-text result, safe failures, CSRF-only/no-store, manual invalidation disabling/status, discard, pagehide/visibility/bfcache late-result suppression"},
+    {"command": "node src/test/js/technician-commands.test.cjs", "outcome": "PASS", "scope": "existing actual manual script: pending duplicate suppression, independent forms, retained inputs, pageshow reset"}
+  ],
+  "preflightCorrection": "Generic form fixture initially overwrote window event listeners. Retained tester repaired it to retain/invoke all listeners without changing both-form reset expectations. Corrected fixture passed.",
+  "limits": "Deterministic DOM/fetch fixtures, not browser rendering/keyboard/accessibility acceptance. Browser discovery reports local browser use disabled in Work settings."
+}

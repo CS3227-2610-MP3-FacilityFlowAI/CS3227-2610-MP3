@@ -1,0 +1,21 @@
+{
+  "candidate": "74770d6d57be69666d2e421a1eecfac10bea4d0413302b863111a0994d3ebdef",
+  "command": "./gradlew.bat --offline --no-daemon --console=plain test -x compileTestJava --tests sg.edu.nus.facilityflow.web.SecurityIntegrationTest",
+  "outcome": "BUILD SUCCESSFUL in41s",
+  "totals": {
+    "tests": 26,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "suites": [
+    {
+      "name": "sg.edu.nus.facilityflow.web.SecurityIntegrationTest",
+      "tests": "26",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "13.784"
+    }
+  ]
+}

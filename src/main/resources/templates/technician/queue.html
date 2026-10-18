@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/technician.css}">
+    <title th:text="${title} + ' · FacilityFlow AI'">Technician workspace · FacilityFlow AI</title>
+</head>
+<body>
+<div th:replace="~{fragments/authenticated-header :: header(${username}, ${displayName}, ${role})}"></div>
+<main id="main-content">
+    <h1 th:text="${title}">Assigned Requests</h1>
+    <p th:if="${pageError}" class="error" role="alert" th:text="${pageError}">Requests could not be loaded. Try again.</p>
+    <section th:if="${queue}" aria-labelledby="counts-heading">
+        <h2 id="counts-heading">My work</h2>
+        <div class="counts">
+            <div class="count"><strong th:text="${queue.counts.assigned}">0</strong><span>Assigned</span></div>
+            <div class="count"><strong th:text="${queue.counts.inProgress}">0</strong><span>In progress</span></div>
+            <div class="count"><strong th:text="${queue.counts.completed}">0</strong><span>Completed, awaiting review</span></div>
+        </div>
+    </section>
+
+    <section aria-labelledby="queue-heading">
+        <h2 id="queue-heading">Assigned requests</h2>
+        <form class="filters" method="get" th:action="@{/technician/requests}">
+            <label for="q">Search display ID, title or location
+                <input id="q" name="q" type="search" th:value="${submittedFilters.q}">
+            </label>
+            <label for="status">Status
+                <select id="status" name="status" th:attr="aria-invalid=${fieldErrors != null and fieldErrors.containsKey('status')},aria-describedby=${fieldErrors != null and fieldErrors.containsKey('status') ? 'status-error' : null}">
+                    <option value="">All statuses</option>
+                    <option th:if="${fieldErrors != null and fieldErrors.containsKey('status')}" th:value="${submittedFilters.status}"
+                            th:text="${'Invalid value: ' + submittedFilters.status}" selected>Invalid value</option>
+                    <option th:each="value : ${T(sg.edu.nus.facilityflow.technician.TechnicianReadModels.RequestStatus).values()}"
+                            th:value="${value.name()}" th:text="${#strings.replace(value.name(), '_', ' ')}"
+                            th:selected="${submittedFilters.status == value.name()}">ASSIGNED</option>
+                </select>
+                <span id="status-error" th:if="${fieldErrors != null and fieldErrors.containsKey('status')}" class="error" th:text="${fieldErrors.status}">Choose a valid status.</span>
+            </label>
+            <label for="category">Category
+                <select id="category" name="category" th:attr="aria-invalid=${fieldErrors != null and fieldErrors.containsKey('category')},aria-describedby=${fieldErrors != null and fieldErrors.containsKey('category') ? 'category-error' : null}">
+                    <option value="">All categories</option>
+                    <option th:if="${preserveCategoryOption}" th:value="${submittedFilters.category}"
+                            th:text="${'Submitted category value: ' + submittedFilters.category}" selected>Submitted category</option>
+                    <th:block th:if="${queue != null}">
+                        <option th:each="category : ${queue.categories}"
+                                th:value="${category.id}" th:text="${category.name}"
+                                th:selected="${submittedFilters.category == category.id.toString()}">Electrical</option>
+                    </th:block>
+                </select>
+                <span id="category-error" th:if="${fieldErrors != null and fieldErrors.containsKey('category')}" class="error" th:text="${fieldErrors.category}">Choose a valid category.</span>
+            </label>
+            <label for="priority">Manager priority
+                <select id="priority" name="priority" th:attr="aria-invalid=${fieldErrors != null and fieldErrors.containsKey('priority')},aria-describedby=${fieldErrors != null and fieldErrors.containsKey('priority') ? 'priority-error' : null}">
+                    <option value="">All priorities</option>
+                    <option th:if="${fieldErrors != null and fieldErrors.containsKey('priority')}" th:value="${submittedFilters.priority}"
+                            th:text="${'Invalid value: ' + submittedFilters.priority}" selected>Invalid value</option>
+                    <option value="CRITICAL" th:selected="${submittedFilters.priority == 'CRITICAL'}">Critical</option>
+                    <option value="HIGH" th:selected="${submittedFilters.priority == 'HIGH'}">High</option>
+                    <option value="MEDIUM" th:selected="${submittedFilters.priority == 'MEDIUM'}">Medium</option>
+                    <option value="LOW" th:selected="${submittedFilters.priority == 'LOW'}">Low</option>
+                </select>
+                <span id="priority-error" th:if="${fieldErrors != null and fieldErrors.containsKey('priority')}" class="error" th:text="${fieldErrors.priority}">Choose a valid Manager priority.</span>
+            </label>
+            <button type="submit">Apply filters</button>
+            <a th:href="@{/technician/requests}">Reset</a>
+        </form>
+        <ul th:if="${queryErrors != null and !queryErrors.isEmpty()}" class="error" role="alert">
+            <li th:each="error : ${queryErrors}" th:text="${error}">Invalid filter.</li>
+        </ul>
+        <p th:if="${queue != null}" th:text="${queue.rows.size()} + ' matching requests'">0 matching requests</p>
+        <p th:if="${queue != null and queue.assignedTotal == 0}">You have no assigned requests.</p>
+        <p th:if="${queue != null and queue.assignedTotal > 0 and queue.rows.isEmpty()}">No requests match these filters. Change a filter or reset the search.</p>
+        <ul th:if="${queue != null and !queue.rows.isEmpty()}" class="request-list">
+            <th:block th:replace="~{technician/fragments/request-rows :: rows(rows=${queue.rows}, displayZone=${displayZone})}"></th:block>
+        </ul>
+    </section>
+</main>
+</body>
+</html>

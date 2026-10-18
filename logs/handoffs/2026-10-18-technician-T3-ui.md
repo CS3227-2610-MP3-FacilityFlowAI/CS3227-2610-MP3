@@ -1,0 +1,18 @@
+- Source agent: Developer (T3 UI).
+- Destination agent: coordinator / integration.
+- Task/goal: implement the Technician completion POST and assigned-request detail UI for T3.
+- Approved requirement IDs: REQ-TECH-007/008/010/011; TECH-A04/A05/A06; REQ-SH-002/006/007/010; NFR-SEC-001.
+- Approved specification revision/evidence: baseline 9ba7009; [task](../technician/T3-ui-task.md), [contract](../technician/T3-CONTRACT.md).
+- Authorized scope/permissions: existing `TechnicianCommandController.java`, `request-detail.html`, and this handoff only. No tests, builds, Git mutation, live database, or T4.
+- Relevant input artifacts/provenance: approved T3 UI contract, existing T2 controller/template and pending-command JavaScript, backend completion API as specified in the contract.
+- Assumptions: backend completion API and `WORK_LOG_REQUIRED` code are being implemented concurrently according to the contract; shared checkout changes were preserved.
+- Unresolved questions: coordinator should verify MVC rendering, CSRF, escaped draft preservation, 303 response, and real database completion behavior in its authorized checks.
+- Files changed: `src/main/java/sg/edu/nus/facilityflow/web/TechnicianCommandController.java`; `src/main/resources/templates/technician/request-detail.html`; this handoff.
+- Commands/tools: read task/contract, scoped workflow/role/spec sections and handoff skill; static PowerShell source assertions only. No tests/build command run.
+- Verification performed/results/evidence: seven static assertions passed: completion route/API call, actionable missing-log message, generic `WORK_LOG_REQUIRED` handling in both existing exhaustive command switch pairs, in-progress pending form, required labelled summary without `maxlength`, terminal draft fallback after protected article, and completed review state. This is source inspection, not runtime verification.
+- Security considerations/unresolved risks: raw summary stays in `submittedResolution` through all completion failures and is rendered via `th:text`; failure refresh remains assigned-only through existing query path; no browser actor/state is accepted; response retains existing safe 303 and no-store behavior. MVC/CSRF/output-encoding acceptance remains pending coordinator checks.
+- Suggestions accepted/rejected: none.
+- Human approval required and reason: teammate review before non-trivial merge; no merge performed.
+- Human reviewer/outcome/evidence: pending.
+- Next authorized action: coordinator freezes candidate and runs approved compile, PostgreSQL success/audit/history smoke, independent review and scoped/full checks.
+- Status: ready for review and integration; runtime checks not run.

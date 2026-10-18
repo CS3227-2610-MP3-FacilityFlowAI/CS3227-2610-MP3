@@ -1,0 +1,34 @@
+{
+  "candidate": "abed7ee706b23bbf75cefc26661c7e22802275b6d40963160e8f8a91a462cb5a",
+  "result": "43 executed; 34 passed, 9 privileged-fixture setup failures; not a passing final result",
+  "suites": [
+    {
+      "class": "sg.edu.nus.facilityflow.technician.JdbcTechnicianQueryRepositoryTest",
+      "tests": 11,
+      "failures": 9,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "sg.edu.nus.facilityflow.technician.TechnicianQueryServiceTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "sg.edu.nus.facilityflow.web.SecurityIntegrationTest",
+      "tests": 18,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "sg.edu.nus.facilityflow.web.TechnicianQueueControllerTest",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ]
+}

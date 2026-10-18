@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/technician.css}">
+    <script defer th:src="@{/js/technician-commands.js}"></script>
+    <script defer th:src="@{/js/technician-work-plan.js}"></script>
+    <title th:text="${title} + ' · FacilityFlow AI'">Request details · FacilityFlow AI</title>
+</head>
+<body>
+<div th:replace="~{fragments/authenticated-header :: header(${username}, ${displayName}, ${role})}"></div>
+<main id="main-content">
+    <p><a th:href="@{/technician/requests}">Back to assigned requests</a></p>
+    <p th:if="${pageError}" class="error" role="alert" th:text="${pageError}">Request details are unavailable.</p>
+    <section th:if="${commandErrors != null and !commandErrors.isEmpty()}" class="error command-errors" role="alert" aria-labelledby="command-errors-title">
+        <h2 id="command-errors-title">The command was not saved</h2>
+        <ul><li th:each="message : ${commandErrors}" th:text="${message}">Please review the form.</li></ul>
+    </section>
+    <p th:if="${commandRefreshGuidance != null}" class="refresh-guidance" th:text="${commandRefreshGuidance}">Review the current request before trying again.</p>
+    <article th:if="${detail}" aria-labelledby="request-title">
+        <h1 id="request-title"><span th:text="${detail.request.displayId}">FF-000001</span> ·
+            <span th:text="${detail.request.title}">Request title</span></h1>
+        <section aria-labelledby="facts-heading">
+            <h2 id="facts-heading">Request details</h2>
+            <dl>
+                <dt>Status</dt><dd th:text="${#strings.replace(detail.request.status.name(), '_', ' ')}">ASSIGNED</dd>
+                <dt>Location</dt><dd th:text="${detail.request.location}">Location</dd>
+                <dt>Category</dt><dd th:text="${detail.request.category}">Category</dd>
+                <dt>Reported urgency</dt><dd th:text="${#strings.capitalize(#strings.toLowerCase(detail.request.urgency.name()))}">Normal</dd>
+                <dt>Manager priority</dt><dd th:text="${detail.request.priority == null ? 'Not set' : #strings.capitalize(#strings.toLowerCase(detail.request.priority.name()))}">Not set</dd>
+                <dt>Description</dt><dd class="preserved-text" th:text="${detail.description}">Request description</dd>
+                <dt>Created</dt><dd><time th:datetime="${detail.createdAt}"
+                    th:text="${#temporals.format(detail.createdAt.atZone(displayZone), 'dd MMM uuuu HH:mm z')}">18 Oct 2026 15:00 +08</time></dd>
+                <dt>Assigned</dt><dd><time th:if="${detail.request.assignedAt != null}"
+                    th:datetime="${detail.request.assignedAt}"
+                    th:text="${#temporals.format(detail.request.assignedAt.atZone(displayZone), 'dd MMM uuuu HH:mm z')}">18 Oct 2026 15:00 +08</time>
+                    <span th:if="${detail.request.assignedAt == null}">Assignment time unavailable (legacy record)</span></dd>
+                <dt>Last updated</dt><dd><time th:datetime="${detail.updatedAt}"
+                    th:text="${#temporals.format(detail.updatedAt.atZone(displayZone), 'dd MMM uuuu HH:mm z')}">18 Oct 2026 15:00 +08</time></dd>
+                <dt>Resolution summary</dt><dd class="preserved-text" th:text="${detail.resolutionSummary == null ? 'No resolution summary recorded.' : detail.resolutionSummary}">No resolution summary recorded.</dd>
+                <dt>Completed</dt><dd><span th:if="${detail.completedAt == null}">Not completed</span>
+                    <time th:if="${detail.completedAt != null}" th:datetime="${detail.completedAt}"
+                        th:text="${#temporals.format(detail.completedAt.atZone(displayZone), 'dd MMM uuuu HH:mm z')}">18 Oct 2026 15:00 +08</time></dd>
+            </dl>
+        </section>
+        <section th:if="${detail.request.status.name() == 'COMPLETED'}" class="command-panel" aria-labelledby="completed-heading">
+            <h2 id="completed-heading">Work submitted for Manager review</h2>
+            <p>The Technician assignment is retained while the Manager reviews this completion.</p>
+        </section>
+        <section th:if="${detail.request.status.name() == 'ASSIGNED'}" aria-labelledby="start-work-heading" class="command-panel">
+            <h2 id="start-work-heading">Start work</h2>
+            <form method="post" data-command-form th:action="@{/technician/requests/{id}/start(id=${detail.request.displayId})}">
+                <input type="hidden" name="version" th:value="${commandRefreshGuidance != null ? detail.version : (submittedVersion != null ? submittedVersion : detail.version)}">
+                <p th:if="${commandFieldErrors != null and commandFieldErrors.containsKey('version')}" class="field-error" role="alert" th:text="${commandFieldErrors.get('version')}">Refresh this request before submitting.</p>
+                <button type="submit">Start work</button>
+            </form>
+        </section>
+        <section th:if="${detail.request.status.name() == 'ASSIGNED' or detail.request.status.name() == 'IN_PROGRESS'}"
+                 id="work-plan-panel" class="command-panel work-plan-panel" aria-labelledby="work-plan-heading">
+            <h2 id="work-plan-heading">AI Work Plan suggestions</h2>
+            <p>These suggestions are read-only advice. Use your training and professional judgment; they are not an approved procedure or safety certification. You choose which steps, if any, to follow.</p>
+            <div class="work-plan-safety" aria-label="Safety guidance">
+                <h3>Safety precautions</h3>
+                <ul id="work-plan-safetyPrecautions"></ul>
+                <h3>Stop or escalate when</h3>
+                <ul id="work-plan-stopOrEscalateWhen"></ul>
+            </div>
+            <form id="work-plan-form" method="post" th:action="@{/technician/requests/{id}/work-plan(id=${detail.request.displayId})}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button id="work-plan-request" type="submit">Request Work Plan</button>
+                <button id="work-plan-discard" type="button" hidden>Discard suggestions</button>
+            </form>
+            <p id="work-plan-status" role="status" aria-live="polite" aria-atomic="true"></p>
+            <div id="work-plan-result" class="work-plan-result" hidden>
+                <h3>Diagnostic steps</h3><ol id="work-plan-diagnosticSteps"></ol>
+                <h3>Suggested tools</h3><ul id="work-plan-suggestedTools"></ul>
+                <h3>Questions for the requester</h3><ul id="work-plan-requesterQuestions"></ul>
+                <h3>Evidence checklist</h3><ul id="work-plan-evidenceChecklist"></ul>
+                <h3>Rationale</h3><p id="work-plan-rationale"></p>
+            </div>
+            <noscript><p>Work Plan suggestions need JavaScript. The manual Technician workflow above remains available.</p></noscript>
+        </section>
+        <section th:if="${detail.request.status.name() == 'IN_PROGRESS'}" aria-labelledby="work-log-heading" class="command-panel">
+            <h2 id="work-log-heading">Add a Work Log</h2>
+            <form method="post" data-command-form th:action="@{/technician/requests/{id}/work-logs(id=${detail.request.displayId})}">
+                <input type="hidden" name="version" th:value="${commandRefreshGuidance != null ? detail.version : (submittedVersion != null ? submittedVersion : detail.version)}">
+                <p th:if="${commandFieldErrors != null and commandFieldErrors.containsKey('version')}" class="field-error" role="alert" th:text="${commandFieldErrors.get('version')}">Refresh this request before submitting.</p>
+                <label for="work-log-note">Work performed <span>(required)</span></label>
+                <textarea id="work-log-note" name="note" rows="5" required
+                    th:text="${submittedWorkLog != null ? submittedWorkLog.note : ''}"
+                    th:attr="aria-invalid=${commandFieldErrors != null and commandFieldErrors.containsKey('note') ? 'true' : 'false'}, aria-describedby=${commandFieldErrors != null and commandFieldErrors.containsKey('note') ? 'work-log-note-error' : null}"></textarea>
+                <p th:if="${commandFieldErrors != null and commandFieldErrors.containsKey('note')}" id="work-log-note-error" class="field-error" role="alert" th:text="${commandFieldErrors.get('note')}">Enter a valid note.</p>
+                <label for="work-log-minutes">Time spent in whole minutes (1–1,440) <span>(required)</span></label>
+                <input id="work-log-minutes" name="minutes" type="text" inputmode="numeric" pattern="[0-9]+" title="Enter a whole number from 1 to 1,440"
+                    autocomplete="off" required
+                    th:value="${submittedWorkLog != null ? submittedWorkLog.minutes : ''}"
+                    th:attr="aria-invalid=${commandFieldErrors != null and commandFieldErrors.containsKey('minutes') ? 'true' : 'false'}, aria-describedby=${commandFieldErrors != null and commandFieldErrors.containsKey('minutes') ? 'work-log-minutes-error' : null}">
+                <p th:if="${commandFieldErrors != null and commandFieldErrors.containsKey('minutes')}" id="work-log-minutes-error" class="field-error" role="alert" th:text="${commandFieldErrors.get('minutes')}">Enter valid minutes.</p>
+                <button type="submit">Add Work Log</button>
+            </form>
+        </section>
+        <section th:if="${detail.request.status.name() == 'IN_PROGRESS'}" aria-labelledby="completion-heading" class="command-panel">
+            <h2 id="completion-heading">Complete work</h2>
+            <p th:if="${detail.workLogs.isEmpty()}" class="field-guidance">Add a Work Log before completing this request.</p>
+            <form method="post" data-command-form th:action="@{/technician/requests/{id}/complete(id=${detail.request.displayId})}">
+                <input type="hidden" name="version" th:value="${commandRefreshGuidance != null ? detail.version : (submittedVersion != null ? submittedVersion : detail.version)}">
+                <p th:if="${commandFieldErrors != null and commandFieldErrors.containsKey('version')}" class="field-error" role="alert" th:text="${commandFieldErrors.get('version')}">Refresh this request before submitting.</p>
+                <label for="resolution-summary">Resolution Summary <span>(required, 10–2,000 Unicode code points after trimming)</span></label>
+                <textarea id="resolution-summary" name="resolutionSummary" rows="5" required
+                    th:text="${submittedResolution != null ? submittedResolution : ''}"
+                    th:attr="aria-invalid=${commandFieldErrors != null and commandFieldErrors.containsKey('resolutionSummary') ? 'true' : 'false'}, aria-describedby=${commandFieldErrors != null and commandFieldErrors.containsKey('resolutionSummary') ? 'resolution-summary-error' : null}"></textarea>
+                <p th:if="${commandFieldErrors != null and commandFieldErrors.containsKey('resolutionSummary')}" id="resolution-summary-error" class="field-error" role="alert" th:text="${commandFieldErrors.get('resolutionSummary')}">Enter a valid Resolution Summary.</p>
+                <button type="submit">Submit for Manager review</button>
+            </form>
+        </section>
+        <th:block th:replace="~{technician/fragments/history :: history(requesterUpdates=${detail.requesterUpdates}, workLogs=${detail.workLogs}, displayZone=${displayZone})}"></th:block>
+    </article>
+    <section th:if="${submittedWorkLog != null and commandAction == 'log' and (detail == null or detail.request.status.name() != 'IN_PROGRESS')}"
+             class="command-panel preserved-draft" aria-labelledby="preserved-draft-heading">
+        <h2 id="preserved-draft-heading">Your unsaved Work Log draft</h2>
+        <p>This draft was not saved. Keep a copy before leaving this page.</p>
+        <dl>
+            <dt>Work performed</dt>
+            <dd class="preserved-text" th:text="${submittedWorkLog.note}"></dd>
+            <dt>Time spent in whole minutes</dt>
+            <dd class="preserved-text" th:text="${submittedWorkLog.minutes}"></dd>
+        </dl>
+    </section>
+    <section th:if="${commandAction == 'complete' and (detail == null or detail.request.status.name() != 'IN_PROGRESS')}"
+             class="command-panel preserved-draft" aria-labelledby="preserved-resolution-heading">
+        <h2 id="preserved-resolution-heading">Your unsaved Resolution Summary</h2>
+        <p>This summary was not saved. Keep a copy before leaving this page.</p>
+        <dl><dt>Resolution Summary</dt><dd class="preserved-text" th:text="${submittedResolution}"></dd></dl>
+    </section>
+</main>
+</body>
+</html>

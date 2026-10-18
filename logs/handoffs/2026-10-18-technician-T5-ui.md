@@ -1,0 +1,18 @@
+- Source agent: T5 UI implementation agent.
+- Destination agent: root integrator.
+- Task/goal: Implement the UI lane under the T5 implementation-only pause.
+- Approved requirement IDs: REQ-SH-002/004/006/009/010/012/014/018, NFR-SEC-001/002, NFR-A11Y-001/002, NFR-REL-001, NFR-DOC-001; ROLE-TECHNICIAN manual and Work Plan boundaries.
+- Approved specification revision/evidence: PRODUCT-SPEC approved baseline and explicit T5 implementation-only approval; details in logs/technician/T5-CONTRACT.md.
+- Authorized scope/permissions: Exact UI-owned paths in the T5 contract. No execution, review dispatch, Git mutation, or scope expansion.
+- Relevant input artifacts/provenance: logs/technician/T5-ui-task.md, logs/technician/T5-CONTRACT.md, workflow/specs/PRODUCT-SPEC.md, workflow/specs/ROLE-TECHNICIAN.md, workflow/agents/developer.md, .agents/skills/facilityflow-handoff/SKILL.md.
+- Assumptions: Existing CurrentAccountPrincipal role/identity supplies header data; backend identity interfaces follow the fixed T5 contract; existing Spring/Thymeleaf security integration supplies CSRF form tokens.
+- Unresolved questions: Root should confirm Thymeleaf fragment rendering and fixed 303 response behavior during authorized verification. Runtime and test integration remain pending.
+- Files changed: src/main/java/sg/edu/nus/facilityflow/web/SharedPagesController.java; src/main/resources/templates/fragments/authenticated-header.html; src/main/resources/templates/account/change-password.html; src/main/resources/templates/about.html; src/main/resources/templates/dashboard.html; src/main/resources/templates/login.html; src/main/resources/templates/technician/queue.html; src/main/resources/templates/technician/request-detail.html; src/main/resources/static/css/technician.css; src/main/resources/static/js/form-submission.js; src/main/resources/static/js/technician-work-plan.js.
+- Commands/tools: Read scoped specs, templates, controllers, and scripts; applied source patches. No build/test/script/browser/Git command was run.
+- Verification performed/results/evidence: Authoring only. Static source inspection against the contract; all runtime and test evidence remains pending.
+- Security considerations/unresolved risks: Password values are never added to the model or rendered after errors. Password and shared pages set no-store. POST delegates to current-account-only service; CSRF remains in the existing chain. Empty 400 field-error maps receive fixed safe page-level messages. Header links are contextual fixed role routes and are not authorization. The Technician workspace header link targets /technician. The browser handler reads no fields and handles only data-pending-form. Redirect uses a context-relative RedirectView with 303 status; verify under MVC/security integration.
+- Suggestions accepted/rejected: Kept Technician command forms and technician-commands.js independent; Work Plan invalidation disables a new AI request and clears obsolete status text for manual submits and page lifecycle invalidations. The Technician main workspace link follows the fixed /technician route.
+- Human approval required and reason: User requested pause after implementation. Resume is required before execution/review/commit.
+- Human reviewer/outcome/evidence: Pending.
+- Next authorized action: Root performs static integration against concurrent backend/security/test/docs work, then pause. After explicit user resume, run scoped checks and repair integration issues with owners.
+- Status: draft / implementation authored, unverified.

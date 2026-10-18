@@ -1,0 +1,18 @@
+- Source agent: coordinator.
+- Destination agent: T4 independent reviewer, gpt-6.1-sol / high.
+- Task/goal: execute [task packet](../technician/T4-review-task.md).
+- Approved requirement IDs: REQ-TECH-012–017, TECH-AI01–04; linked AI-SEC rules.
+- Approved specification revision/evidence: role baseline and gateway candidate status as recorded in ROLE-TECHNICIAN; user authorized this T4 implementation, not specification changes.
+- Authorized scope/permissions: read-only combined review; own reviewer durable and temp handoff only; no Git/build/live database/provider or delegation.
+- Relevant input artifacts/provenance: [contract](../technician/T4-CONTRACT.md), baseline 1640606, current source paths in packet.
+- Assumptions: existing provider safety/decoder reused; no new schema.
+- Unresolved questions: none blocking dispatch; report material conflicts.
+- Files changed: frozen 11-input T4 candidate prepared after all authors paused.
+- Commands/tools: git status, targeted source/spec reads.
+- Verification performed/results/evidence: compile and 13 PostgreSQL/service tests passed; both actual script checks passed; see T4-PREFLIGHT-RESULT.json, T4-CANDIDATE.json and build/T4-preflight.log; scoped/full execution pending.
+- Security considerations/unresolved risks: strict persisted identity and freshness, no advice mutations, manual fallback; human gateway review remains pending.
+- Suggestions accepted/rejected: fixed bounded integration; no gateway rewrite.
+- Human approval required and reason: teammate review before merge; no merge authorized.
+- Human reviewer/outcome/evidence: pending.
+- Next authorized action: one independent consolidated source review concurrent with root scoped tests, then delta/final verdict; suggested skills facilityflow-handoff.
+- Status: ready for assigned task.

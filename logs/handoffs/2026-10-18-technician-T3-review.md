@@ -1,0 +1,20 @@
+# Technician T3 independent review handoff
+
+- Source agent: Independent combined reviewer, gpt-6.1-sol/high; no implementation or test authorship.
+- Destination agent: T3 coordinator and human teammate reviewer.
+- Task/goal: Security, specification, standards and test-adequacy review of approved T3 completion; fresh verification of the single correction batch.
+- Approved requirement IDs: REQ-TECH-007/008/010/011; TECH-A04/A05/A06; scoped REQ-SH-002/006/007/009/010/014 and NFR-SEC-001.
+- Approved specification revision/evidence: Approved baseline v0.1; user-approved T3 from baseline `9ba7009`. Authority and acceptance: [contract](../technician/T3-CONTRACT.md), [dispatch](../technician/T3-DISPATCH.md), [review packet](../technician/T3-review-task.md).
+- Authorized scope/permissions: Read-only source/tests; write this handoff and OS-temp context only. No builds, Git, delegation, live database or T4.
+- Relevant input artifacts/provenance: [Final candidate](../technician/T3-CANDIDATE.json), digest `acdb9a67839d3b133d50c5e5bf41ce50f59f4502a0cf4878f43d31ee336a8be1`; frozen saved patch; approved role/shared/technical specifications; existing migrations/grants/T2 fixture; affected guides, TRACEABILITY and REUSE.
+- Assumptions: Coordinator is sole runner and supplies candidate/patch mechanical checks. All production inputs remained unchanged through corrections.
+- Unresolved questions: None blocking T3 local acceptance.
+- Files changed: This handoff only; separate compact temporary context created through the project-local `facilityflow-handoff` skill.
+- Commands/tools: Read-only PowerShell/Get-Content/rg; inspected original and corrected test source, direct scoped/correction/full XML and build log. Reviewer executed no builds or tests.
+- Verification performed/results/evidence: **PASS for approved T3 local scope.** Source checks cover persisted identity/session, assignment/state/version locks, any-author log prerequisite, retained assignment, atomic completion/history/safe audit, append-only recompletion evidence, CSRF/role/fixed303, encoded drafts and COMPLETED controls. One batch combined R1-R3 test gaps with executed R4-R5 failures; all are closed by fresh correction-source and direct regression XML checks. R1 adds competing completion and actual pending-reassignment tests; R2 verifies full rollback metadata and shared completion instant; R3 exercises persisted-role and direct-input denials; R4 corrects synthetic recompletion version; R5 safely restubs throwing mocks. [Correction result](../technician/T3-CORRECTION-RESULT.json) passed 19 affected tests. [Final result](../technician/T3-RESULT.json) records `check bootJar` success: 614 tests, 44 suites, zero failures/errors/skips. Direct full-run XML confirms completion regressions, six authenticated MVC completion cases, service boundaries and retained T2 command regressions. `build/T3-check.log` confirms packaging/check completion. Guides, traceability and reuse match scoped behavior and retain release limits.
+- Security considerations/unresolved risks: No blocking production defect found. Isolated restricted-role PostgreSQL proves writes/locks/rollback; H2 authenticated MVC uses the documented command double. Browser/keyboard/visual/performance/hosted acceptance remains pending.
+- Suggestions accepted/rejected: R1-R5 accepted and verified. Optional nonexistent `TECH-A07` display-label cleanup is deferred outside the gate; actual requirement is REQ-SH-002, as recorded in the report.
+- Human approval required and reason: Teammate approval remains mandatory before non-trivial merge; agent PASS is not human approval or deployment authorization.
+- Human reviewer/outcome/evidence: Pending.
+- Next authorized action: Coordinator completes exact-path local T3 evidence/commit/report. Any T4 work requires its own preview and explicit user authorization. Suggested skill for transition: project-local `facilityflow-handoff`.
+- Status: Verified for approved local T3 scope; no open blocking findings.

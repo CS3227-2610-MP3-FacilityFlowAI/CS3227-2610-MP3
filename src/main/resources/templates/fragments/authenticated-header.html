@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<header class="site-header" th:fragment="header(username, displayName, role)">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <div class="identity">
+        <strong th:text="${displayName}">Display name</strong>
+        <span th:text="${username}">username</span>
+        <span th:text="${role}">ROLE</span>
+    </div>
+    <nav aria-label="Main navigation">
+        <a th:if="${role == 'REQUESTER'}" th:href="@{/requester}">My workspace</a>
+        <a th:if="${role == 'TECHNICIAN'}" th:href="@{/technician}">My workspace</a>
+        <a th:if="${role == 'FACILITIES_MANAGER'}" th:href="@{/manager}">My workspace</a>
+        <a th:href="@{/account/password}">Change password</a>
+        <a th:href="@{/about}">About</a>
+        <form method="post" th:action="@{/logout}" data-pending-form>
+            <button type="submit">Sign out</button>
+        </form>
+    </nav>
+    <script defer th:src="@{/js/form-submission.js}"></script>
+</header>
+</body>
+</html>

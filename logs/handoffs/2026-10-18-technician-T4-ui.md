@@ -1,0 +1,18 @@
+- Source agent: T4 UI author.
+- Destination agent: T4 coordinator/root.
+- Task/goal: implement the Technician read-only Work Plan browser panel and lifecycle-safe client script.
+- Approved requirement IDs: REQ-TECH-012–017, TECH-AI01–04; linked AI-SEC-001–017 and AI-SEC-028–030.
+- Approved specification revision/evidence: approved MP3 specifications referenced by logs/technician/T4-CONTRACT.md; user authorization recorded in logs/technician/T4-ui-task.md. Gateway human review remains pending.
+- Authorized scope/permissions: only request-detail.html, technician.css, technician-work-plan.js, and this handoff; authoring only. No tests/build/Git/network/database/delegation.
+- Relevant input artifacts/provenance: logs/technician/T4-ui-task.md; logs/technician/T4-CONTRACT.md; workflow/specs/{PRODUCT-SPEC,ROLE-TECHNICIAN,TECHNICAL-SPEC,INTEGRATION-SPEC,AI-SECURITY-SPEC}.md; workflow/agents/developer.md; workflow/specs/README.md.
+- Assumptions: the fixed controller response is `{"plan":...}` or `{"code":...,"message":...}`; Thymeleaf provides the CSRF request token.
+- Unresolved questions: none blocking; coordinator should verify against the parallel UI acceptance tests.
+- Files changed: src/main/resources/templates/technician/request-detail.html; src/main/resources/static/css/technician.css; src/main/resources/static/js/technician-work-plan.js.
+- Commands/tools: read-only PowerShell Get-Content/rg source and specification reads; patch edits. No test/build/Git commands run as instructed.
+- Verification performed/results/evidence: authoring only; no automated or browser verification performed.
+- Security considerations/unresolved risks: script uses same-origin POST with CSRF URLSearchParams, no-store, no browser-supplied context, fixed safe failure messages, complete seven-field validation, textContent/createElement rendering, local-only DOM display, abort/generation invalidation, and preserves manual workflow. Server remains authoritative for authorization, output safety and freshness. Integrated execution remains pending.
+- Suggestions accepted/rejected: implemented contract's required panel, visible safety/stop-first layout, fixed failure guidance, refresh-required states, and lifecycle invalidation.
+- Human approval required and reason: teammate review before merge per project workflow; no merge authorized.
+- Human reviewer/outcome/evidence: pending.
+- Next authorized action: coordinator integrates and runs the frozen-candidate JS/security/spec suite, then final integrated checks.
+- Status: ready for review.
