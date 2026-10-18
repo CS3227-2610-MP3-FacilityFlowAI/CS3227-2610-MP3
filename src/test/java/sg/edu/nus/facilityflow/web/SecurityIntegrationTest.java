@@ -42,6 +42,19 @@ class SecurityIntegrationTest {
 
     private MockMvc mockMvc;
 
+    private sg.edu.nus.facilityflow.technician.TechnicianCommandService commandService;
+
+    // MVC uses a command double: PostgreSQL command atomicity/locking is tested
+    // separately. This context verifies real routing, security and Thymeleaf.
+    @org.springframework.boot.test.context.TestConfiguration(proxyBeanMethods = false)
+    static class TechnicianCommandMvcConfiguration {
+        @org.springframework.context.annotation.Bean
+        @org.springframework.context.annotation.Primary
+        sg.edu.nus.facilityflow.technician.TechnicianCommandService technicianMvcCommands() {
+            return org.mockito.Mockito.mock(sg.edu.nus.facilityflow.technician.TechnicianCommandService.class);
+        }
+    }
+
     private JdbcTemplate jdbc;
 
     private PasswordEncoder passwordEncoder;
@@ -54,6 +67,7 @@ class SecurityIntegrationTest {
         // TECHNICAL-SPEC pins JUnit 5; Spring 7's JUnit extension requires JUnit 6.
         var application = new org.springframework.boot.SpringApplication(
                 sg.edu.nus.facilityflow.FacilityFlowApplication.class);
+        application.addPrimarySources(java.util.Set.of(TechnicianCommandMvcConfiguration.class));
         var environment = new org.springframework.web.context.support.StandardServletEnvironment();
         environment.getPropertySources().remove(
                 org.springframework.core.env.StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME);
@@ -68,6 +82,7 @@ class SecurityIntegrationTest {
                 .apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity())
                 .build();
         jdbc = context.getBean(JdbcTemplate.class);
+        commandService = context.getBean(sg.edu.nus.facilityflow.technician.TechnicianCommandService.class);
         // This identity-only H2 fixture needs an empty read workspace for the
         // Technician landing route. PostgreSQL behavior has its own isolated tests.
         jdbc.execute("""
@@ -105,6 +120,7 @@ class SecurityIntegrationTest {
 
     @BeforeEach
     void seedAccounts() {
+        org.mockito.Mockito.reset(commandService);
         jdbc.update("DELETE FROM facilityflow.spring_session_attributes");
         jdbc.update("DELETE FROM facilityflow.spring_session");
         jdbc.update("DELETE FROM facilityflow.requester_update");
@@ -193,6 +209,150 @@ class SecurityIntegrationTest {
                     .andExpect(status().isNotFound())
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("The requested work is not available.")));
         }
+    }
+
+    @Test
+    void reqTech004006RequiredVersionedFormsFollowPersistedStateAndIncludeCsrf() throws Exception {
+        seedTechnicianCommandRequest("ASSIGNED", 4);
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        String assigned = mockMvc.perform(get("/technician/requests/FF-000081").cookie(technician))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(assigned).contains("/technician/requests/FF-000081/start", "name=\"version\"", "value=\"4\"", "_csrf")
+                .doesNotContain("/technician/requests/FF-000081/work-logs");
+        jdbc.update("UPDATE facilityflow.maintenance_request SET status = 'IN_PROGRESS' WHERE display_id = 'FF-000081'");
+        String inProgress = mockMvc.perform(get("/technician/requests/FF-000081").cookie(technician))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(inProgress).contains("/technician/requests/FF-000081/work-logs", "name=\"note\"", "name=\"minutes\"", "required",
+                "/js/technician-commands.js").doesNotContain("/technician/requests/FF-000081/start", "onclick=", "<style>");
+        mockMvc.perform(get("/js/technician-commands.js").cookie(technician))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Security-Policy", org.hamcrest.Matchers.containsString("default-src 'self'")));
+    }
+
+    @Test
+    void reqTech004005SuccessfulCommandPostsUseSafeSeeOtherRedirect() throws Exception {
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        mockMvc.perform(post("/technician/requests/FF-000081/start").cookie(technician).with(csrf())
+                        .param("version", "4"))
+                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/technician/requests/FF-000081"));
+        org.mockito.Mockito.verify(commandService).startWork("FF-000081", 4);
+        mockMvc.perform(post("/technician/requests/FF-000081/work-logs").cookie(technician).with(csrf())
+                        .param("version", "5").param("note", "  Inspected lamp  ").param("minutes", "15"))
+                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/technician/requests/FF-000081"));
+        org.mockito.Mockito.verify(commandService).appendWorkLog("FF-000081", 5, "  Inspected lamp  ", 15);
+    }
+
+    @Test
+    void reqSh010MalformedCommandInputsRenderEscapedUnsavedValuesWithoutSubmission() throws Exception {
+        seedTechnicianCommandRequest("IN_PROGRESS", 4);
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        String html = mockMvc.perform(post("/technician/requests/FF-000081/work-logs").cookie(technician).with(csrf())
+                        .param("version", "not-a-version").param("note", "<script>unsaved</script>").param("minutes", "1.5"))
+                .andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
+        assertThat(html).contains("&lt;script&gt;unsaved&lt;/script&gt;", "1.5").doesNotContain("<script>unsaved</script>");
+        org.mockito.Mockito.verifyNoInteractions(commandService);
+    }
+
+    @Test
+    void reqTech010StaleWriteRendersCurrentAssignedStateAndPreservesNoteWithoutReplay() throws Exception {
+        seedTechnicianCommandRequest("IN_PROGRESS", 5);
+        var conflict = new sg.edu.nus.facilityflow.technician.TechnicianCommandException(
+                sg.edu.nus.facilityflow.technician.TechnicianCommandException.Code.CONFLICT);
+        org.mockito.Mockito.doThrow(conflict).when(commandService).appendWorkLog("FF-000081", 4, "Unsaved <b>inspection</b>", 25);
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        String html = mockMvc.perform(post("/technician/requests/FF-000081/work-logs").cookie(technician).with(csrf())
+                        .param("version", "4").param("note", "Unsaved <b>inspection</b>").param("minutes", "25"))
+                .andExpect(status().isConflict()).andReturn().getResponse().getContentAsString();
+        assertThat(html).contains("&lt;b&gt;inspection&lt;/b&gt;", "25", "IN PROGRESS").doesNotContain("<b>inspection</b>");
+        org.mockito.Mockito.verify(commandService, org.mockito.Mockito.times(1))
+                .appendWorkLog("FF-000081", 4, "Unsaved <b>inspection</b>", 25);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM facilityflow.work_log", Integer.class)).isZero();
+    }
+
+    @Test
+    void reqTech010ReassignedAndMissingCommandsRenderSafe404WithoutDetails() throws Exception {
+        seedTechnicianCommandRequest("ASSIGNED", 4);
+        jdbc.update("UPDATE facilityflow.maintenance_request SET assigned_technician_id = ? WHERE display_id = 'FF-000081'", MANAGER_ID);
+        var unavailable = new sg.edu.nus.facilityflow.technician.TechnicianCommandException(
+                sg.edu.nus.facilityflow.technician.TechnicianCommandException.Code.NOT_AVAILABLE);
+        org.mockito.Mockito.doThrow(unavailable).when(commandService).startWork("FF-000081", 4);
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        String html = mockMvc.perform(post("/technician/requests/FF-000081/start").cookie(technician).with(csrf())
+                        .param("version", "4"))
+                .andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+        assertThat(html).doesNotContain("Private assigned title", "Private assigned description", "name=\"version\"");
+    }
+
+    @Test
+    void reqSh010OperationalCommandFailureRendersSafe503WithUnsavedNote() throws Exception {
+        seedTechnicianCommandRequest("IN_PROGRESS", 4);
+        org.mockito.Mockito.doThrow(new sg.edu.nus.facilityflow.technician.TechnicianCommandException(
+                sg.edu.nus.facilityflow.technician.TechnicianCommandException.Code.UNAVAILABLE))
+                .when(commandService).appendWorkLog("FF-000081", 4, "Inspect <panel>", 25);
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        String html = mockMvc.perform(post("/technician/requests/FF-000081/work-logs").cookie(technician).with(csrf())
+                        .param("version", "4").param("note", "Inspect <panel>").param("minutes", "25"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(header().string(HttpHeaders.CACHE_CONTROL, org.hamcrest.Matchers.containsString("no-store")))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(html).contains("Inspect &lt;panel&gt;").doesNotContain("SQLException", "jdbc:", "<panel>");
+    }
+
+    @Test
+    void reqSh010StaleLogKeepsDraftAfterStateChangesOrAssignmentDisappears() throws Exception {
+        seedTechnicianCommandRequest("ASSIGNED", 5);
+        String note = "Unsent <inspection> draft";
+        org.mockito.Mockito.doThrow(new sg.edu.nus.facilityflow.technician.TechnicianCommandException(
+                sg.edu.nus.facilityflow.technician.TechnicianCommandException.Code.CONFLICT))
+                .when(commandService).appendWorkLog("FF-000081", 4, note, 35);
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        String changed = mockMvc.perform(post("/technician/requests/FF-000081/work-logs").cookie(technician).with(csrf())
+                        .param("version", "4").param("note", note).param("minutes", "35"))
+                .andExpect(status().isConflict()).andReturn().getResponse().getContentAsString();
+        assertThat(changed).contains("Unsent &lt;inspection&gt; draft", "35")
+                .doesNotContain("Unsent <inspection> draft", "/technician/requests/FF-000081/work-logs");
+        jdbc.update("UPDATE facilityflow.maintenance_request SET assigned_technician_id = ? WHERE display_id = 'FF-000081'", MANAGER_ID);
+        String reassigned = mockMvc.perform(post("/technician/requests/FF-000081/work-logs").cookie(technician).with(csrf())
+                        .param("version", "4").param("note", note).param("minutes", "35"))
+                .andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+        assertThat(reassigned).contains("Unsent &lt;inspection&gt; draft", "35")
+                .doesNotContain("Private assigned title", "Private assigned description", "Unsent <inspection> draft");
+    }
+
+    @Test
+    void reqTech011CommandEndpointsRejectCsrfCrossRoleAndForbiddenOperations() throws Exception {
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        Cookie requester = login("requester1", VALID_PASSWORD, "/requester");
+        Cookie manager = login("manager1", VALID_PASSWORD, "/manager");
+        for (String action : new String[]{"start", "work-logs"}) {
+            String route = "/technician/requests/FF-000081/" + action;
+            mockMvc.perform(post(route).cookie(technician).param("version", "0"))
+                    .andExpect(status().isForbidden());
+            for (Cookie otherRole : new Cookie[]{requester, manager}) {
+                mockMvc.perform(post(route).cookie(otherRole).with(csrf()).param("version", "0"))
+                        .andExpect(status().isForbidden());
+            }
+        }
+        for (String forbidden : new String[]{"assign", "reassign", "priority", "edit", "cancel", "close", "reopen", "status"}) {
+            mockMvc.perform(post("/technician/requests/FF-000081/" + forbidden).cookie(technician).with(csrf())
+                            .param("status", "CLOSED").param("version", "0"))
+                    .andExpect(status().isNotFound());
+        }
+        org.mockito.Mockito.verifyNoInteractions(commandService);
+    }
+
+    private void seedTechnicianCommandRequest(String state, long version) {
+        UUID categoryId = UUID.fromString("30000000-0000-0000-0000-000000000082");
+        OffsetDateTime now = OffsetDateTime.parse("2026-10-18T08:00:00Z");
+        jdbc.update("INSERT INTO facilityflow.category (id, name) VALUES (?, 'Electrical')", categoryId);
+        jdbc.update("""
+                INSERT INTO facilityflow.maintenance_request
+                    (id, display_id, assigned_technician_id, category_id, status, manager_priority,
+                     reported_urgency, assigned_at, title, description, location, version, created_at, updated_at)
+                VALUES (?, 'FF-000081', ?, ?, ?, 'HIGH', 'NORMAL', ?,
+                        'Private assigned title', 'Private assigned description', 'Block A', ?, ?, ?)
+                """, UUID.fromString("30000000-0000-0000-0000-000000000081"), TECHNICIAN_ID,
+                categoryId, state, now, version, now, now);
     }
 
     @Test

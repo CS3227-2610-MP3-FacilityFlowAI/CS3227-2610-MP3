@@ -2,7 +2,8 @@
 
 Status: authentication foundation and Technician assigned-work reads implemented
 in source; teammate and hosted-release verification remain pending. Technician
-work recording/completion and the AI browser interface are not yet available.
+start-work and Work Log recording are implemented in source; completion and the
+AI browser interface remain pending.
 
 This guide must be updated continuously to match the deployed product exactly.
 It will document how Requesters, Technicians, and Facilities Managers access,
@@ -59,8 +60,27 @@ time and zone. Requests currently assigned to somebody else are unavailable.
 Invalid filters show field errors while preserving submitted values. Unavailable
 or reassigned details use the same safe message. If assigned work cannot be
 loaded, use the retry/reset link; an operational failure is not shown as an empty
-queue. Starting work, adding Work Logs, completion, change password and Work Plan
-controls are outside this read-only increment.
+queue.
+
+## Starting work and recording progress
+
+Open an assigned Request in **Assigned** state and select **Start work**. A
+successful command changes it to **In progress**. In that state, enter **Work
+performed** and **Time spent in whole minutes**, then select **Add Work Log**.
+Notes require 1–1,000 Unicode characters after trimming; internal whitespace is
+preserved. Time must be a whole number from 1 to 1,440 minutes. Saved logs retain
+their original author and local date/time and cannot be edited or deleted.
+
+A successful submission opens the persisted Request detail. While submitting,
+the button is disabled when JavaScript is available; the server also rejects
+repeated submissions using the original Request version. If work changes before
+you submit, the command fails safely and shows current assigned details when
+still accessible. Review them before explicitly submitting again. If reassigned,
+the Request becomes unavailable; your unsaved draft remains visible for copying.
+Invalid values and operational failures preserve entered text and show safe
+errors. No command is automatically replayed. A Technician cannot assign work,
+change priority, edit the original Request, cancel, close, reopen or set a status.
+Completion, change password and Work Plan controls remain outside this increment.
 
 ## AI features
 

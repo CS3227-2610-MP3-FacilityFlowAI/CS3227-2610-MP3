@@ -1,0 +1,59 @@
+{
+  "candidate": "d8819ac9624a615e966a0564a41122f8542d689a0cf2654c06354052913c546c",
+  "command": "./gradlew.bat --offline --no-daemon --console=plain test --tests sg.edu.nus.facilityflow.technician.TechnicianCommandServiceTest --tests sg.edu.nus.facilityflow.technician.JdbcTechnicianCommandRepositoryTest --tests sg.edu.nus.facilityflow.web.TechnicianCommandControllerTest --tests sg.edu.nus.facilityflow.web.SecurityIntegrationTest",
+  "outcome": "BUILD FAILED in1m26s;56tests54passed2test-SQLfailures",
+  "totals": {
+    "tests": 56,
+    "failures": 2,
+    "errors": 0,
+    "skipped": 0
+  },
+  "suites": [
+    {
+      "name": "sg.edu.nus.facilityflow.technician.JdbcTechnicianCommandRepositoryTest",
+      "tests": "15",
+      "failures": "2",
+      "errors": "0",
+      "skipped": "0",
+      "time": "20.915"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.technician.TechnicianCommandServiceTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "2.387"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.web.SecurityIntegrationTest",
+      "tests": "26",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "16.09"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.web.TechnicianCommandControllerTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.118"
+    }
+  ],
+  "failures": [
+    {
+      "class": "sg.edu.nus.facilityflow.technician.JdbcTechnicianCommandRepositoryTest",
+      "case": "REQ-TECH-004/TECH-A01/SH-006: start atomically advances state and writes one safe audit event",
+      "message": "org.springframework.jdbc.BadSqlGrammarException: PreparedStatementCallback; bad SQL grammar [SELECT jsonb_object_length(details) FROM facilityflow.audit_event WHERE action = 'TECHNICIAN_WORK_STARTED' AND target_id = ?]",
+      "cause": "Caused by: org.postgresql.util.PSQLException: ERROR: function jsonb_object_length(jsonb) does not exist"
+    },
+    {
+      "class": "sg.edu.nus.facilityflow.technician.JdbcTechnicianCommandRepositoryTest",
+      "case": "REQ-TECH-005/006/TECH-A03/SH-006: a Work Log is append-only with database ID/time and safe audit",
+      "message": "org.springframework.jdbc.BadSqlGrammarException: PreparedStatementCallback; bad SQL grammar [SELECT jsonb_object_length(details) FROM facilityflow.audit_event WHERE action = 'TECHNICIAN_WORK_LOGGED' AND target_id = ?]",
+      "cause": "Caused by: org.postgresql.util.PSQLException: ERROR: function jsonb_object_length(jsonb) does not exist"
+    }
+  ]
+}

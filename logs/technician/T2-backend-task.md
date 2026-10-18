@@ -1,0 +1,8 @@
+# Technician T2 backend task
+
+- Role/model: Developer; gpt-6.1-sol / medium.
+- User approval: "Go with the next iteration, once again make sure everything is prepared". T2 only. Baseline57098d9, starting clean tree/index. Read AGENTS.md, your workflow/agents role, workflow/specs minimum-reading sections, ROLE-TECHNICIAN manual and acceptance, PRODUCT-SPEC shared domain/lifecycle, TECHNICAL-SPEC storage/security, and [T2 contract](T2-CONTRACT.md). Contract names exact public interfaces; coordinate before changing. Existing T1 source is dependency, not a permission to edit it. You are not alone in this checkout: preserve others' work, write only owned files, request ownership otherwise. Leaf: no delegation, Git mutation, builds/tests or live DB. Coordinator is sole runner; report and replan after two failed repairs. Record truthful handoff via .agents/skills/facilityflow-handoff/SKILL.md in unique durable path and OS-temp. <=300 word return with paths/IDs/checks/errors/limits. No T3, AI, schema/dependencies/security configuration changes.
+
+- Ownership/deliverable: Own exactly the four new command backend files named in contract and logs/handoffs/2026-10-18-technician-T2-backend.md. No read API edits. Confirm transaction/constructor/API readiness to coordinator promptly; implement atomic locked commands and safe errors per contract.
+- Completion: all corresponding T2 contract cases covered; coordinator freezes and executes scoped/full checks; independent fresh review after failures/security fixes.
+- Evidence: [dispatch](T2-DISPATCH.md); [contract](T2-CONTRACT.md); own handoff above.

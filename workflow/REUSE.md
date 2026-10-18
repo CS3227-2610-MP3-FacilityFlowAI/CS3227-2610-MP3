@@ -107,3 +107,11 @@ authentication test's synthetic read fixtures adapt existing MP3 files, not MP2 
 Exact added/deleted application/resource/test line counts and executed evidence are
 recorded in `logs/technician/T1-REPORT.md`; final project-wide reuse percentages
 remain release work.
+
+Technician T2 (18 October): command service/repository/errors/controller,
+versioned manual forms, pending-submit script, tests and affected guide sections
+are **new** MP3 work based on approved MP3 requirements and existing MP3 seams.
+Shared T1 detail/CSS and authentication-test changes adapt MP3 work; no MP2
+source was consulted or copied. The implementation/evidence inventory and
+measured added/deleted counts are in `logs/technician/T2-REPORT.md`; project-wide
+reuse percentages and teammate review remain release gates.

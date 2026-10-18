@@ -3,7 +3,8 @@
 Status: Shared database schema and explicit initialization supplied; V1 application
 and permissions evidenced by user screenshots. Hosted V2/V3/demo results are
 reported matching by the user; independent hosted verification remains pending.
-Technician assigned-work reads are implemented in source as described below.
+Technician assigned-work reads, start-work and Work Log commands are implemented
+in source as described below.
 Follow [DatabaseCompletion](DatabaseCompletion.md).
 
 Part 2b supplies the private identity/audit/session schema, restricted-role
@@ -45,15 +46,15 @@ latest release rather than the intended design.
 ## Project overview
 
 FacilityFlow AI, CS3227 MP3. Database/authentication foundations and Technician
-assigned-work reads are integrated in source; manual mutation workflows remain
-pending. See README and AGENTS.md.
+assigned-work reads, start-work and Work Log commands are integrated in source;
+completion remains pending. See README and AGENTS.md.
 
 ## Repository structure
 
 src/: application code/tests; workflow/: specs/process; docs/: guides/planning;
 logs/: summaries; .github/: PR-Agent/contribution template. The Gradle build
-packages the application and Technician query/read module; manual mutation
-modules remain pending.
+packages the application and Technician read/command modules; completion and
+other role manual modules remain pending.
 
 ## Architecture
 
@@ -121,6 +122,43 @@ the existing H2 authentication suite uses minimal maintenance read tables and
 synthetic rows for authenticated landing/detail rendering; it does not prove
 PostgreSQL SQL semantics. JUnit 5 tests construct Spring contexts manually where needed because
 the pinned Spring 7 JUnit extension requires JUnit 6.
+
+### Technician work commands (T2)
+
+`TechnicianCommandService` exposes only start-work and append-Work-Log commands.
+It captures the server-side Technician identity and validates display ID,
+nonnegative expected Request version, trimmed note code points and whole minutes.
+`JdbcTechnicianCommandRepository` independently validates its direct inputs and
+uses one READ_COMMITTED, REQUIRES_NEW transaction per command. Account FOR SHARE
+locks protect persisted active/role/exact session-version validation; the scoped
+Request FOR UPDATE lock serializes assignment/state/version checks and writes.
+Every success increments Request.version once, making in-flight Work Plans stale.
+
+Start changes ASSIGNED to IN_PROGRESS; Work Log append requires IN_PROGRESS and
+preserves original author/UTC time. Request mutation, optional Work Log INSERT
+and one safe Audit Event commit together, including rollback when audit fails.
+Audit details contain only allowlisted status/version or minutes/version, never
+free-text notes. Existing runtime grants forbid history/audit UPDATE and DELETE.
+No migration or additional dependency is introduced.
+
+`TechnicianCommandController` handles POST `/{displayId}/start` and
+`/{displayId}/work-logs` under `/technician/requests`, with existing role/CSRF
+protection. Success uses a fixed same-origin 303 detail redirect. Validation,
+conflict, inaccessible-object and operational failures map to safe 400/409/404/503;
+only the assigned query service can reload fresh details after a failure.
+Submitted drafts remain escaped and visible even if the Request is unavailable
+or no longer accepts a log. Forms use persisted versions; conflicts need explicit
+review/resubmission. External JavaScript blocks duplicate pending submissions
+and restores buttons on page return without weakening CSP.
+
+See the [T2 contract](../logs/technician/T2-CONTRACT.md) and
+[T2 report](../logs/technician/T2-REPORT.md) for ownership, cases and execution.
+PostgreSQL command tests use a class-scoped disposable server with isolated
+per-test data and the restricted runtime role. Authenticated MVC tests use a
+command-service double plus real assigned-query/Thymeleaf rendering; those H2
+checks prove web behavior, while PostgreSQL tests prove transaction semantics.
+The standalone JavaScript event check models pending-submit/page-return behavior;
+it does not replace supported-browser visual/keyboard acceptance.
 
 ### Slice ownership
 

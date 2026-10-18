@@ -1,0 +1,343 @@
+{
+  "candidate": "60bd42eeccf00d0a85cbeb3772ad2efe0ea10ff11fc7e28eeb5dd6b4e1f6e0b2",
+  "command": "./gradlew.bat --offline --no-daemon --console=plain check bootJar",
+  "outcome": "BUILD SUCCESSFUL in6m23s; test, jacocoTestReport, check and bootJar completed",
+  "recordedAtUtc": "2026-10-18T09:12:42.530544+00:00",
+  "totals": {
+    "tests": 585,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "classes": 41,
+  "suites": [
+    {
+      "name": "sg.edu.nus.facilityflow.ai.AiAccessGuardTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.007"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.AiFailureDiagnosticsTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.225"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.AiFeatureContractTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.025"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.AiInvocationCoordinatorTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.006"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.AiReadinessDeadlineTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "2.507"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.config.AiConfigurationSecurityRegressionTest",
+      "tests": "169",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.346"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.config.AiConfigurationValidatorTest",
+      "tests": "70",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.124"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.config.AiProviderLifecycleConfigurationTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.154"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.config.AiSettingsConfigurationContextTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.063"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.AiFeatureCatalogTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.005"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.AssistantReviewRegressionTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.19"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.ProviderArchitectureTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.391"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.ProviderDiagnosticsTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.066"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.ProviderEnvelopeDecoderTest",
+      "tests": "74",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.26"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.SocLlmHttpsProviderAdapterTest",
+      "tests": "24",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.338"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.SocLlmProviderCoreAdversarialTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.016"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.SocLlmProviderCoreTest",
+      "tests": "35",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.116"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.SocLlmProviderRuntimeFactoryTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.007"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.SocLlmSmartReportAssistantTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.032"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.SocLlmTriageAssistantTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.018"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.SocLlmWorkPlanAssistantTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.036"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.WorkPlanSafetyPolicyTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.005"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.technician.WorkPlanAuthorizationBoundaryTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.002"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.database.DatabaseMigrationTest",
+      "tests": "21",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "13.588"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.FacilityFlowApplicationTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "4.557"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.identity.DatabaseInitializerTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "128.146"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.identity.IdentityAuthorizationTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.003"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.manager.JdbcManagerTriageRepositoryTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.916"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.manager.ManagerTriageServiceTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.014"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.manager.TriageCandidateRankerTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.005"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.operations.DatabaseConnectionCheckTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.029"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.requester.JdbcRequesterSmartReportRepositoryTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.058"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.requester.RequesterSmartReportServiceTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.013"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.technician.JdbcTechnicianCommandRepositoryTest",
+      "tests": "15",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "22.441"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.technician.JdbcTechnicianQueryRepositoryTest",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "148.538"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.technician.TechnicianCommandServiceTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.11"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.technician.TechnicianQueryServiceTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.008"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.technician.TechnicianWorkPlanServiceTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.023"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.web.SecurityIntegrationTest",
+      "tests": "26",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "12.7"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.web.TechnicianCommandControllerTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.167"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.web.TechnicianQueueControllerTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.028"
+    }
+  ]
+}
