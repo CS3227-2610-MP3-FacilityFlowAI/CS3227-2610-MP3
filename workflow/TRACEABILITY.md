@@ -74,6 +74,15 @@ review evidence.
 
 ## Update rule
 
+Technician T0 (18 October 2026) adds [implementation contracts](technician/CONTRACTS.md),
+[requirement-to-test planning](technician/ACCEPTANCE-MAP.md) and
+[T1 task packets](../logs/technician/T1-backend-task.md) under the scoped
+Technician development workflow. This is design/evidence only: no application
+implementation, test execution or requirement verification is claimed. Manual
+REQ-TECH-001-011 and T1 implementation remain pending; existing AI evidence and
+human-review statuses above are unchanged. The [T0 report](../logs/technician/T0-REPORT.md)
+records actual agent work and configuration/document checks.
+
 Part 3 storage prerequisites: `V2__maintenance_records.sql`,
 `V3__skills_ai_storage.sql`, `identity/DatabaseInitializer.java`,
 `DatabaseMigrationTest` and `identity/DatabaseInitializerTest`. V2 supports
