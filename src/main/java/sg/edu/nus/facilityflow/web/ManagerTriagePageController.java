@@ -48,6 +48,7 @@ public final class ManagerTriagePageController {
             HttpServletResponse response) {
         noStore(response);
         String safeDisplayId = requireDisplayId(displayId);
+        ModelAndView page = baseView(principal, safeDisplayId);
         CompletionStage<ManagerTriageResponse> suggestion;
         try {
             suggestion = service.request(safeDisplayId);
@@ -55,23 +56,22 @@ public final class ManagerTriagePageController {
             throw denied;
         } catch (RuntimeException unavailable) {
             return CompletableFuture.completedFuture(
-                    baseView(principal, safeDisplayId).addObject("assistantError", SAFE_UNAVAILABLE));
+                    page.addObject("assistantError", SAFE_UNAVAILABLE));
         }
-        return suggestion.handle((result, failure) -> renderResult(principal, safeDisplayId, result, failure));
+        return suggestion.handle((result, failure) -> renderResult(page, result, failure));
     }
 
     private static ModelAndView renderResult(
-            CurrentAccountPrincipal principal,
-            String displayId,
+            ModelAndView page,
             ManagerTriageResponse response,
             Throwable failure) {
-        ModelAndView page = baseView(principal, displayId);
         if (failure != null || response == null) {
             return page.addObject("assistantError", SAFE_UNAVAILABLE);
         }
         if (response instanceof ManagerTriageResponse.Success success) {
             return page.addObject("suggestion", success.result())
-                    .addObject("ranking", success.ranking());
+                    .addObject("ranking", success.ranking())
+                    .addObject("review", success.review());
         }
         ManagerTriageResponse.Failure failed = (ManagerTriageResponse.Failure) response;
         return page.addObject("assistantError", failed.message());

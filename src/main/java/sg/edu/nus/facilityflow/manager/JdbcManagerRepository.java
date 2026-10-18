@@ -8,7 +8,12 @@ import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.access.AccessDeniedException;
@@ -17,6 +22,7 @@ import sg.edu.nus.facilityflow.identity.CurrentAccount;
 
 @Repository
 public class JdbcManagerRepository implements ManagerRepository {
+    private static final ObjectMapper JSON = JsonMapper.builder().build();
     private final NamedParameterJdbcTemplate jdbc;
 
     public JdbcManagerRepository(NamedParameterJdbcTemplate jdbc) {
@@ -36,6 +42,11 @@ public class JdbcManagerRepository implements ManagerRepository {
         if (count == null || count != 1L) {
             throw new AccessDeniedException("The requested operation is not available");
         }
+    }
+
+    @Override
+    public void lockManagerMutation() {
+        jdbc.queryForObject("SELECT pg_advisory_xact_lock(322726100025)", Map.of(), Object.class);
     }
 
     @Override
@@ -162,6 +173,101 @@ public class JdbcManagerRepository implements ManagerRepository {
     }
 
     @Override
+    public Optional<ManagerViews.RequestDetail> request(String displayId) {
+        var rows = jdbc.query("""
+                SELECT r.id, r.display_id, r.title, r.description, r.location,
+                       r.category_id, c.name AS category, r.reported_urgency,
+                       r.manager_priority, r.status,
+                       owner.display_name || ' (' || owner.username || ')' AS requester,
+                       r.assigned_technician_id,
+                       CASE WHEN tech.id IS NULL THEN NULL
+                            ELSE tech.display_name || ' (' || tech.username || ')' END AS technician,
+                       r.resolution_summary, r.version, r.created_at, r.updated_at
+                  FROM facilityflow.maintenance_request r
+                  JOIN facilityflow.category c ON c.id = r.category_id
+                  JOIN facilityflow.user_account owner ON owner.id = r.requester_id
+                  LEFT JOIN facilityflow.user_account tech ON tech.id = r.assigned_technician_id
+                 WHERE r.display_id = :displayId
+                """, Map.of("displayId", displayId), (row, number) -> new ManagerViews.RequestDetail(
+                row.getObject("id", UUID.class), row.getString("display_id"),
+                row.getString("title"), row.getString("description"), row.getString("location"),
+                row.getObject("category_id", UUID.class), row.getString("category"),
+                row.getString("reported_urgency"), row.getString("manager_priority"),
+                row.getString("status"), row.getString("requester"),
+                row.getObject("assigned_technician_id", UUID.class), row.getString("technician"),
+                row.getString("resolution_summary"), row.getLong("version"),
+                instant(row, "created_at"), instant(row, "updated_at"),
+                categories(true), technicians(true), requesterUpdates(row.getObject("id", UUID.class)),
+                workLogs(row.getObject("id", UUID.class)), completions(row.getObject("id", UUID.class)),
+                requestAudit(row.getObject("id", UUID.class))));
+        return rows.stream().findFirst();
+    }
+
+    private List<ManagerViews.HistoryEntry> requesterUpdates(UUID requestId) {
+        return jdbc.query("""
+                SELECT author.display_name || ' (' || author.username || ')' AS author,
+                       u.note, u.created_at
+                  FROM facilityflow.requester_update u
+                  JOIN facilityflow.user_account author ON author.id = u.author_id
+                 WHERE u.request_id = :requestId
+                 ORDER BY u.created_at, u.id
+                """, Map.of("requestId", requestId), (row, number) -> new ManagerViews.HistoryEntry(
+                row.getString("author"), row.getString("note"), instant(row, "created_at")));
+    }
+
+    private List<ManagerViews.WorkLogEntry> workLogs(UUID requestId) {
+        return jdbc.query("""
+                SELECT author.display_name || ' (' || author.username || ')' AS author,
+                       log.note, log.minutes, log.created_at
+                  FROM facilityflow.work_log log
+                  JOIN facilityflow.user_account author ON author.id = log.author_id
+                 WHERE log.request_id = :requestId
+                 ORDER BY log.created_at, log.id
+                """, Map.of("requestId", requestId), (row, number) -> new ManagerViews.WorkLogEntry(
+                row.getString("author"), row.getString("note"), row.getInt("minutes"),
+                instant(row, "created_at")));
+    }
+
+    private List<ManagerViews.CompletionEntry> completions(UUID requestId) {
+        return jdbc.query("""
+                SELECT technician.display_name || ' (' || technician.username || ')' AS technician,
+                       history.resolution_summary, history.completed_at
+                  FROM facilityflow.request_completion_history history
+                  JOIN facilityflow.user_account technician ON technician.id = history.technician_id
+                 WHERE history.request_id = :requestId
+                 ORDER BY history.completed_at, history.id
+                """, Map.of("requestId", requestId), (row, number) -> new ManagerViews.CompletionEntry(
+                row.getString("technician"), row.getString("resolution_summary"),
+                instant(row, "completed_at")));
+    }
+
+    private List<ManagerViews.AuditEntry> requestAudit(UUID requestId) {
+        return jdbc.query("""
+                SELECT actor.display_name || ' (' || actor.username || ')' AS actor,
+                       event.action, event.details::text AS details, event.occurred_at
+                  FROM facilityflow.audit_event event
+                  JOIN facilityflow.user_account actor ON actor.id = event.actor_id
+                 WHERE event.target_type = 'REQUEST' AND event.target_id = :requestId
+                 ORDER BY event.occurred_at, event.id
+                """, Map.of("requestId", requestId), (row, number) -> new ManagerViews.AuditEntry(
+                row.getString("actor"), row.getString("action"), row.getString("details"),
+                instant(row, "occurred_at")));
+    }
+
+    @Override
+    public Optional<LockedRequest> lockRequest(String displayId) {
+        return jdbc.query("""
+                SELECT id, display_id, status, version, assigned_technician_id
+                  FROM facilityflow.maintenance_request
+                 WHERE display_id = :displayId
+                 FOR UPDATE
+                """, Map.of("displayId", displayId), (row, number) -> new LockedRequest(
+                row.getObject("id", UUID.class), row.getString("display_id"), row.getString("status"),
+                row.getLong("version"), row.getObject("assigned_technician_id", UUID.class)))
+                .stream().findFirst();
+    }
+
+    @Override
     public List<ManagerViews.AuditRow> audit(ManagerAuditFilters filters) {
         var sql = new StringBuilder("""
                 SELECT event.occurred_at, actor.username AS actor, event.action, event.target_type,
@@ -213,6 +319,79 @@ public class JdbcManagerRepository implements ManagerRepository {
                 """, Map.of("id", categoryId), result -> result.next() && result.getBoolean("active")));
     }
 
+    @Override
+    public boolean activeTechnician(UUID technicianId) {
+        return lockedActiveAccount(technicianId, "TECHNICIAN");
+    }
+
+    @Override
+    public String triageSnapshotFingerprint() {
+        // Lock the complete freshness set after the Manager mutation advisory lock.
+        jdbc.query("SELECT id FROM facilityflow.category WHERE active ORDER BY id FOR SHARE",
+                Map.of(), (row, number) -> row.getObject("id", UUID.class));
+        jdbc.query("SELECT id FROM facilityflow.skill_tag WHERE active ORDER BY id FOR SHARE",
+                Map.of(), (row, number) -> row.getObject("id", UUID.class));
+        jdbc.query("SELECT id FROM facilityflow.user_account WHERE role = 'TECHNICIAN' ORDER BY id FOR SHARE",
+                Map.of(), (row, number) -> row.getObject("id", UUID.class));
+        jdbc.query("SELECT request.id FROM facilityflow.maintenance_request request "
+                        + "WHERE request.status IN ('ASSIGNED','IN_PROGRESS') ORDER BY request.id FOR SHARE",
+                Map.of(), (row, number) -> row.getObject("id", UUID.class));
+        jdbc.query("SELECT ts.technician_id, ts.skill_tag_id FROM facilityflow.technician_skill ts "
+                        + "JOIN facilityflow.skill_tag skill ON skill.id = ts.skill_tag_id "
+                        + "WHERE skill.active ORDER BY ts.technician_id, ts.skill_tag_id",
+                Map.of(), (row, number) -> row.getObject("technician_id", UUID.class));
+
+        List<ManagerTriageRepository.CatalogueSnapshot> categories = catalogueSnapshots("category");
+        List<ManagerTriageRepository.CatalogueSnapshot> skills = catalogueSnapshots("skill_tag");
+        List<TechnicianCandidate> technicians = jdbc.query("""
+                SELECT account.id, account.username, account.active, count(DISTINCT request.id) AS workload
+                  FROM facilityflow.user_account account
+                  LEFT JOIN facilityflow.maintenance_request request
+                    ON request.assigned_technician_id = account.id
+                   AND request.status IN ('ASSIGNED', 'IN_PROGRESS')
+                 WHERE account.role = 'TECHNICIAN'
+                 GROUP BY account.id, account.username, account.active
+                """, Map.of(), (row, number) -> {
+                    UUID id = row.getObject("id", UUID.class);
+                    Set<String> technicianSkills = Set.copyOf(jdbc.query("""
+                            SELECT skill.name FROM facilityflow.technician_skill ts
+                            JOIN facilityflow.skill_tag skill ON skill.id = ts.skill_tag_id
+                            WHERE ts.technician_id = :id AND skill.active
+                            ORDER BY lower(skill.name), skill.id
+                            """, Map.of("id", id), (skillRow, skillNumber) -> skillRow.getString("name")));
+                    return new TechnicianCandidate(id, row.getString("username"), row.getBoolean("active"),
+                            technicianSkills, row.getInt("workload"));
+                });
+        return TriageSnapshotFingerprint.create(categories, skills, technicians);
+    }
+
+    private List<ManagerTriageRepository.CatalogueSnapshot> catalogueSnapshots(String table) {
+        return jdbc.query("SELECT id, name, version FROM facilityflow." + table
+                        + " WHERE active ORDER BY lower(name), id", Map.of(),
+                (row, number) -> new ManagerTriageRepository.CatalogueSnapshot(
+                        row.getObject("id", UUID.class), row.getString("name"), row.getLong("version")));
+    }
+
+    @Override
+    public boolean activeSkills(Set<String> skillNames) {
+        if (skillNames.isEmpty()) return true;
+        List<String> matches = jdbc.query("SELECT name FROM facilityflow.skill_tag "
+                        + "WHERE active AND name IN (:names) FOR SHARE",
+                new MapSqlParameterSource("names", skillNames), (row, number) -> row.getString("name"));
+        return Set.copyOf(matches).equals(skillNames);
+    }
+
+    @Override
+    public boolean technicianHasSkills(UUID technicianId, Set<String> requiredSkills) {
+        if (requiredSkills.isEmpty()) return true;
+        Set<String> actual = Set.copyOf(jdbc.query("""
+                SELECT skill.name FROM facilityflow.technician_skill ts
+                JOIN facilityflow.skill_tag skill ON skill.id = ts.skill_tag_id
+                WHERE ts.technician_id = :technician AND skill.active
+                """, Map.of("technician", technicianId), (row, number) -> row.getString("name")));
+        return actual.containsAll(requiredSkills);
+    }
+
     private boolean lockedActiveAccount(UUID id, String role) {
         return Boolean.TRUE.equals(jdbc.query("""
                 SELECT active FROM facilityflow.user_account
@@ -246,6 +425,114 @@ public class JdbcManagerRepository implements ManagerRepository {
                 VALUES (:actor, 'REQUEST_RECORDED_ON_BEHALF', 'REQUEST', :request,
                         jsonb_build_object('requesterId', :requester))
                 """, Map.of("actor", actorId, "request", requestId, "requester", requesterId));
+    }
+
+    @Override
+    public int assign(LockedRequest request, UUID technicianId, String priority) {
+        return jdbc.update("""
+                UPDATE facilityflow.maintenance_request
+                   SET status = 'ASSIGNED', assigned_technician_id = :technician,
+                       assigned_at = CURRENT_TIMESTAMP, manager_priority = :priority,
+                       version = version + 1, updated_at = CURRENT_TIMESTAMP
+                 WHERE id = :id AND version = :version
+                """, Map.of("id", request.id(), "version", request.version(),
+                "technician", technicianId, "priority", priority));
+    }
+
+    @Override
+    public int assignTriage(LockedRequest request, UUID categoryId, UUID technicianId, String priority) {
+        return jdbc.update("""
+                UPDATE facilityflow.maintenance_request
+                   SET category_id = :category, status = 'ASSIGNED',
+                       assigned_technician_id = :technician, assigned_at = CURRENT_TIMESTAMP,
+                       manager_priority = :priority, version = version + 1,
+                       updated_at = CURRENT_TIMESTAMP
+                 WHERE id = :id AND version = :version
+                """, Map.of("id", request.id(), "version", request.version(), "category", categoryId,
+                "technician", technicianId, "priority", priority));
+    }
+
+    @Override
+    public int reassign(LockedRequest request, UUID technicianId) {
+        return assignmentUpdate(request, technicianId, false);
+    }
+
+    @Override
+    public int cancel(LockedRequest request) {
+        return simpleStatusUpdate(request, "CANCELLED", false);
+    }
+
+    @Override
+    public int close(LockedRequest request) {
+        return simpleStatusUpdate(request, "CLOSED", false);
+    }
+
+    @Override
+    public int returnCompleted(LockedRequest request, UUID technicianId) {
+        return assignmentUpdate(request, technicianId, true);
+    }
+
+    @Override
+    public int reopen(LockedRequest request, UUID technicianId) {
+        return assignmentUpdate(request, technicianId, true);
+    }
+
+    private int assignmentUpdate(LockedRequest request, UUID technicianId, boolean clearCompletion) {
+        String completion = clearCompletion
+                ? ", resolution_summary = NULL, completed_by = NULL, completed_at = NULL" : "";
+        return jdbc.update("""
+                UPDATE facilityflow.maintenance_request
+                   SET status = 'ASSIGNED', assigned_technician_id = :technician,
+                       assigned_at = CURRENT_TIMESTAMP, version = version + 1,
+                       updated_at = CURRENT_TIMESTAMP
+                """ + completion + " WHERE id = :id AND version = :version",
+                Map.of("id", request.id(), "version", request.version(), "technician", technicianId));
+    }
+
+    private int simpleStatusUpdate(LockedRequest request, String status, boolean clearCompletion) {
+        String completion = clearCompletion
+                ? ", resolution_summary = NULL, completed_by = NULL, completed_at = NULL" : "";
+        return jdbc.update("UPDATE facilityflow.maintenance_request SET status = :status, "
+                        + "version = version + 1, updated_at = CURRENT_TIMESTAMP" + completion
+                        + " WHERE id = :id AND version = :version",
+                Map.of("id", request.id(), "version", request.version(), "status", status));
+    }
+
+    @Override
+    public int correct(LockedRequest request, UUID categoryId, ManagerRequestCommands.Correction command) {
+        var parameters = new MapSqlParameterSource()
+                .addValue("id", request.id()).addValue("version", request.version())
+                .addValue("title", command.title().strip())
+                .addValue("description", command.description().strip())
+                .addValue("location", command.location().strip())
+                .addValue("category", categoryId)
+                .addValue("urgency", command.reportedUrgency())
+                .addValue("priority", command.managerPriority() == null || command.managerPriority().isBlank()
+                        ? null : command.managerPriority());
+        return jdbc.update("""
+                UPDATE facilityflow.maintenance_request
+                   SET title = :title, description = :description, location = :location,
+                       category_id = :category, reported_urgency = :urgency,
+                       manager_priority = :priority, version = version + 1,
+                       updated_at = CURRENT_TIMESTAMP
+                 WHERE id = :id AND version = :version
+                """, parameters);
+    }
+
+    @Override
+    public void auditRequestAction(UUID actorId, UUID requestId, String action, Map<String, ?> details) {
+        try {
+            jdbc.update("""
+                    INSERT INTO facilityflow.audit_event
+                        (actor_id, action, target_type, target_id, details)
+                    VALUES (:actor, :action, 'REQUEST', :request, CAST(:details AS jsonb))
+                    """, new MapSqlParameterSource()
+                    .addValue("actor", actorId).addValue("action", action)
+                    .addValue("request", requestId)
+                    .addValue("details", JSON.writeValueAsString(details)));
+        } catch (JacksonException exception) {
+            throw new IllegalArgumentException("Audit details could not be encoded", exception);
+        }
     }
 
     private static void equalsFilter(StringBuilder sql, MapSqlParameterSource parameters,

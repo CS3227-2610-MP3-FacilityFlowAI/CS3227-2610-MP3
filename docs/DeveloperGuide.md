@@ -87,7 +87,7 @@ remain pending application integration; migrations alone do not implement those 
 The accepted entities, relationships, transaction boundaries, invariants and
 concurrency approach are defined in `../workflow/specs/TECHNICAL-SPEC.md`.
 
-## Facilities Manager first slice
+## Facilities Manager workflow
 
 `ManagerViews` is the small web-facing use-case interface. `ManagerService`
 opens the transaction, rejects non-Managers and asks `ManagerRepository` to
@@ -95,7 +95,7 @@ recheck the persisted active Manager before reading or writing.
 `JdbcManagerRepository` owns parameterized PostgreSQL access; controllers issue
 no SQL.
 
-REQ-MGR-001–003/010–011 currently provide the operational counts, deterministic
+REQ-MGR-001–003/010–011 provide the operational counts, deterministic
 all-request queue, literal combined filters, active Technician workloads,
 read-only audit filters and Manager recording on behalf of an active Requester.
 The create transaction locks/rechecks the Manager, Requester and Category,
@@ -106,16 +106,33 @@ are excluded from choices and rejected again inside the transaction.
 The audit projection left-joins Request targets. Non-Request events retain a
 null Request display ID; they are never mapped to a sentinel value. Request,
 actor, action and inclusive Singapore date filters are combined with AND and
-return at most 200 newest events. Manager lifecycle actions, details, account and
-catalogue administration, browser verification and hosted application
-verification remain pending.
+return at most 200 newest events.
+
+REQ-MGR-004–012 are implemented as named `ManagerService` operations. Each write
+locks and re-reads the Request, compares the submitted optimistic version,
+validates the allowed source state and active Technician/category, updates the
+Request and appends its Audit Event in one transaction. Returning or reopening
+clears only the current completion projection; immutable completion attempts and
+Work Logs remain available on the Manager detail page. Injected audit failures
+are covered by rollback tests.
+
+`ManagerAdminService` and `JdbcManagerAdminRepository` implement REQ-MGR-013–019.
+Deactivation and password reset invalidate the target's existing sessions by
+advancing `session_version`; eligible role changes retain the session so the
+persisted-account filter applies the new role on the next request. Self,
+last-active-Manager and active-assignment guards are deterministic. Category removal locks the catalogue item, requires a
+different active replacement, migrates Requests with per-Request audit evidence
+and deactivates the source atomically. Active Technician-skill selections can be
+replaced while links to inactive historical tags are retained.
 
 `ManagerTriagePageController` adds a server-rendered, no-store review surface on
 `/manager/requests/{displayId}/triage-assistant`. It calls the merged gateway's
-`ManagerTriageService`, renders safe failure/retry guidance, requires explicit
-category/priority decisions, leaves suggested skill tags unselected, and shows
-the deterministic Technician order without exposing internal Account IDs. The
-page performs no mutation; ordinary assignment and persistence remain separate.
+`ManagerTriageService`, renders safe failure/retry guidance, requires human
+review, leaves suggested skill tags unselected, and shows the deterministic
+Technician order. A successful OPEN-request review carries only the fresh
+Request version and active catalogue/Technician options; the final POST uses
+`ManagerService.saveTriage`, which repeats ordinary assignment locks and
+validation before any mutation. AI code remains non-mutating.
 
 ## Role model
 

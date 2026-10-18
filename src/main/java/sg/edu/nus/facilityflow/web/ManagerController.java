@@ -7,12 +7,15 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.transaction.TransactionException;
 import sg.edu.nus.facilityflow.identity.CurrentAccountPrincipal;
 import sg.edu.nus.facilityflow.manager.ManagerAuditFilters;
 import sg.edu.nus.facilityflow.manager.ManagerRequestDraft;
+import sg.edu.nus.facilityflow.manager.ManagerRequestCommands;
 import sg.edu.nus.facilityflow.manager.ManagerRequestFilters;
 import sg.edu.nus.facilityflow.manager.ManagerValidationException;
 import sg.edu.nus.facilityflow.manager.ManagerViews;
@@ -40,6 +43,77 @@ public class ManagerController {
         model.addAttribute("filters", filters);
         model.addAttribute("page", manager.requests(filters));
         return "manager/requests";
+    }
+
+    @GetMapping("/requests/{displayId}")
+    String request(@AuthenticationPrincipal CurrentAccountPrincipal principal,
+            @PathVariable String displayId, Model model) {
+        return requestPage(principal, displayId, java.util.Map.of(), null, null, model);
+    }
+
+    @PostMapping("/requests/{displayId}/assign")
+    String assign(@AuthenticationPrincipal CurrentAccountPrincipal principal,
+            @PathVariable String displayId, @ModelAttribute ManagerRequestCommands.Assignment command,
+            Model model, RedirectAttributes redirect) {
+        return action(principal, displayId, command, "assign", "Request assigned.", model, redirect,
+                () -> manager.assign(displayId, command));
+    }
+
+    @PostMapping("/requests/{displayId}/reassign")
+    String reassign(@AuthenticationPrincipal CurrentAccountPrincipal principal,
+            @PathVariable String displayId, @ModelAttribute ManagerRequestCommands.Reassignment command,
+            Model model, RedirectAttributes redirect) {
+        return action(principal, displayId, command, "reassign", "Request reassigned.", model, redirect,
+                () -> manager.reassign(displayId, command));
+    }
+
+    @PostMapping("/requests/{displayId}/cancel")
+    String cancel(@AuthenticationPrincipal CurrentAccountPrincipal principal,
+            @PathVariable String displayId, @ModelAttribute ManagerRequestCommands.Cancellation command,
+            Model model, RedirectAttributes redirect) {
+        return action(principal, displayId, command, "cancel", "Request cancelled.", model, redirect,
+                () -> manager.cancel(displayId, command));
+    }
+
+    @PostMapping("/requests/{displayId}/close")
+    String close(@AuthenticationPrincipal CurrentAccountPrincipal principal,
+            @PathVariable String displayId, @RequestParam String version,
+            Model model, RedirectAttributes redirect) {
+        return action(principal, displayId, version, "close", "Completed work accepted and request closed.",
+                model, redirect, () -> manager.close(displayId, version));
+    }
+
+    @PostMapping("/requests/{displayId}/return")
+    String returnCompleted(@AuthenticationPrincipal CurrentAccountPrincipal principal,
+            @PathVariable String displayId, @ModelAttribute ManagerRequestCommands.ReturnCompleted command,
+            Model model, RedirectAttributes redirect) {
+        return action(principal, displayId, command, "return", "Request returned to assigned work.",
+                model, redirect, () -> manager.returnCompleted(displayId, command));
+    }
+
+    @PostMapping("/requests/{displayId}/reopen")
+    String reopen(@AuthenticationPrincipal CurrentAccountPrincipal principal,
+            @PathVariable String displayId, @ModelAttribute ManagerRequestCommands.Reopen command,
+            Model model, RedirectAttributes redirect) {
+        return action(principal, displayId, command, "reopen", "Request reopened and assigned.",
+                model, redirect, () -> manager.reopen(displayId, command));
+    }
+
+    @PostMapping("/requests/{displayId}/correct")
+    String correct(@AuthenticationPrincipal CurrentAccountPrincipal principal,
+            @PathVariable String displayId, @ModelAttribute ManagerRequestCommands.Correction command,
+            Model model, RedirectAttributes redirect) {
+        return action(principal, displayId, command, "correct", "Request details corrected.",
+                model, redirect, () -> manager.correct(displayId, command));
+    }
+
+    @PostMapping("/requests/{displayId}/triage-decision")
+    String saveTriage(@AuthenticationPrincipal CurrentAccountPrincipal principal,
+            @PathVariable String displayId, @ModelAttribute ManagerRequestCommands.TriageDecision command,
+            Model model, RedirectAttributes redirect) {
+        return action(principal, displayId, command, "triage",
+                "Reviewed triage choices saved and request assigned.", model, redirect,
+                () -> manager.saveTriage(displayId, command));
     }
 
     @GetMapping("/audit")
@@ -86,6 +160,32 @@ public class ManagerController {
         model.addAttribute("errors", java.util.Map.copyOf(visibleErrors));
         model.addAttribute("options", options);
         return "manager/create";
+    }
+
+    private String action(CurrentAccountPrincipal principal, String displayId, Object form,
+            String failedAction, String notice, Model model, RedirectAttributes redirect,
+            Runnable operation) {
+        try {
+            operation.run();
+            redirect.addFlashAttribute("notice", notice);
+            return "redirect:/manager/requests/" + displayId;
+        } catch (ManagerValidationException exception) {
+            return requestPage(principal, displayId, exception.errors(), form, failedAction, model);
+        } catch (DataAccessException | TransactionException exception) {
+            return requestPage(principal, displayId, java.util.Map.of("save",
+                    "The action could not be saved. Your input has been retained; refresh if the request changed, then try again."),
+                    form, failedAction, model);
+        }
+    }
+
+    private String requestPage(CurrentAccountPrincipal principal, String displayId,
+            java.util.Map<String, String> errors, Object form, String failedAction, Model model) {
+        identity(model, principal);
+        model.addAttribute("request", manager.request(displayId));
+        model.addAttribute("errors", errors);
+        model.addAttribute("form", form);
+        model.addAttribute("failedAction", failedAction);
+        return "manager/detail";
     }
 
     private static void identity(Model model, CurrentAccountPrincipal principal) {
