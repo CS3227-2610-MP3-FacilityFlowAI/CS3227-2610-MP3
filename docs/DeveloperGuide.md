@@ -43,8 +43,10 @@ latest release rather than the intended design.
 
 ## Project overview
 
-FacilityFlow AI, CS3227 MP3. Database and authentication foundations integrated;
-role business workflows remain pending. See README and AGENTS.md.
+FacilityFlow AI, CS3227 MP3. Database and authentication foundations are
+integrated. The first Manager overview/queue/audit/on-behalf-create slice is
+implemented locally together with the non-mutating Triage Assistant review
+surface; remaining role workflows are pending. See README and AGENTS.md.
 
 ## Repository structure
 
@@ -84,6 +86,53 @@ remain pending application integration; migrations alone do not implement those 
 
 The accepted entities, relationships, transaction boundaries, invariants and
 concurrency approach are defined in `../workflow/specs/TECHNICAL-SPEC.md`.
+
+## Facilities Manager workflow
+
+`ManagerViews` is the small web-facing use-case interface. `ManagerService`
+opens the transaction, rejects non-Managers and asks `ManagerRepository` to
+recheck the persisted active Manager before reading or writing.
+`JdbcManagerRepository` owns parameterized PostgreSQL access; controllers issue
+no SQL.
+
+REQ-MGR-001–003/010–011 provide the operational counts, deterministic
+all-request queue, literal combined filters, active Technician workloads,
+read-only audit filters and Manager recording on behalf of an active Requester.
+The create transaction locks/rechecks the Manager, Requester and Category,
+inserts an OPEN Request with distinct owner/Recording Actor, and appends one
+`REQUEST_RECORDED_ON_BEHALF` event. Failure rolls back both. Inactive Requesters
+are excluded from choices and rejected again inside the transaction.
+
+The audit projection left-joins Request targets. Non-Request events retain a
+null Request display ID; they are never mapped to a sentinel value. Request,
+actor, action and inclusive Singapore date filters are combined with AND and
+return at most 200 newest events.
+
+REQ-MGR-004–012 are implemented as named `ManagerService` operations. Each write
+locks and re-reads the Request, compares the submitted optimistic version,
+validates the allowed source state and active Technician/category, updates the
+Request and appends its Audit Event in one transaction. Returning or reopening
+clears only the current completion projection; immutable completion attempts and
+Work Logs remain available on the Manager detail page. Injected audit failures
+are covered by rollback tests.
+
+`ManagerAdminService` and `JdbcManagerAdminRepository` implement REQ-MGR-013–019.
+Deactivation and password reset invalidate the target's existing sessions by
+advancing `session_version`; eligible role changes retain the session so the
+persisted-account filter applies the new role on the next request. Self,
+last-active-Manager and active-assignment guards are deterministic. Category removal locks the catalogue item, requires a
+different active replacement, migrates Requests with per-Request audit evidence
+and deactivates the source atomically. Active Technician-skill selections can be
+replaced while links to inactive historical tags are retained.
+
+`ManagerTriagePageController` adds a server-rendered, no-store review surface on
+`/manager/requests/{displayId}/triage-assistant`. It calls the merged gateway's
+`ManagerTriageService`, renders safe failure/retry guidance, requires human
+review, leaves suggested skill tags unselected, and shows the deterministic
+Technician order. A successful OPEN-request review carries only the fresh
+Request version and active catalogue/Technician options; the final POST uses
+`ManagerService.saveTriage`, which repeats ordinary assignment locks and
+validation before any mutation. AI code remains non-mutating.
 
 ## Role model
 
@@ -126,10 +175,10 @@ admission/lease coordination, telemetry, bounded retry, a single end-to-end
 Technician deadline, strict typed Work Plan/Smart Report/Triage provider
 contracts, deterministic Manager candidate ranking and server-side output
 disclosure checks. The provider core remains advisory and mutation-free. Only
-the Technician Work Plan currently has a role-facing service/controller seam;
-Requester Smart Report and Manager Triage orchestration remain pending their
-role-owner and teammate approval evidence. Compressed responses remain deferred
-by the authoritative integration specification.
+the Manager slice currently adds a role-facing review page over its service/API;
+Requester Smart Report and Technician Work Plan remain API/service seams until
+their owners add workflow UI. Compressed responses remain deferred by the
+authoritative integration specification.
 
 `AI_ENABLED` defaults to `false`. When enabled, the application binds all
 deployment values as raw strings and resolves them to disabled, unavailable or
@@ -146,7 +195,9 @@ commit a populated file. AI requires `AI_ENABLED=true`, a real
 `SOCLAAS_BASE_URL`, `AI_TIMEOUT_SECONDS`, `AI_MAX_OUTPUT_TOKENS`,
 `AI_MAX_IN_FLIGHT`, `AI_RATE_PER_MINUTE` and `AI_RATE_PER_HOUR`. Invalid,
 placeholder or over-limit values make AI unavailable. No local test calls a live
-SoCLaaS provider or validates a hosted model.
+SoCLaaS provider. A manual 17 October 2026 smoke check verified model discovery
+and one minimal completion using the developer's external secret environment;
+no credential or raw response was recorded in the repository.
 
 ## AI security
 
@@ -172,9 +223,10 @@ authorization-before-context seam required by AI-SEC-001 and is verified to
 construct no protected context and make no model call after denial. Configuration
 validation and redaction are implemented and locally verified; typed schemas,
 runtime limits, transport/readiness, retry, telemetry and provider disclosure
-checks are covered by focused tests. Requester/Manager role orchestration, the
-approved Work Plan multilingual safety corpus, hosted-provider smoke testing
-and final Security Reviewer/teammate verification remain pending. See
+checks are covered by focused tests. Manager role orchestration and its review
+surface are integrated locally; the approved Work Plan multilingual safety
+corpus, hosted application verification and final Security Reviewer/teammate
+verification remain pending. See
 AI-SECURITY-SPEC.md and ../workflow/SECURITY.md.
 
 ## SDD workflow
@@ -213,7 +265,12 @@ Team-managed deployment must be independent of AI coding/build-host environments
 The approved direction uses GitHub Actions and Vercel Preview/Production;
 humans approve promotion of a smoke-tested Production candidate without a
 rebuild. Secrets use GitHub/deployment-platform mechanisms. Provisioning,
-workflows, backups and rollback remain unimplemented.
+workflows, backups and rollback remain unimplemented. The new pull-request/master
+CI workflow validates the Gradle wrapper, runs `clean check bootJar`, executes
+dependency-free `src/test/js/*.test.cjs` checks when present, and uploads test,
+coverage and JAR artifacts. This is CI evidence only: Preview deployment,
+candidate smoke testing, human promotion, rollback and environment separation
+remain unimplemented until the Vercel spike confirms the approved flow.
 
 ## MP2 reuse
 
