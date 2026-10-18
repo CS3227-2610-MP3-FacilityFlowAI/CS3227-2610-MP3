@@ -85,13 +85,18 @@ hashed account initialization; see [DatabaseCompletion](docs/DatabaseCompletion.
 V1 is evidenced on Supabase; the user reports matching hosted upgrade/demo
 initialization results. No independent hosted query was performed.
 Authentication from master is integrated with the private schema and existing
-seeded accounts. Role business features, AI and deployment remain pending. See the [Developer Guide](docs/DeveloperGuide.md)
+seeded accounts. Role business features remain in separate branches. CI/CD and
+the Vercel container/promotion workflow are defined but remain disabled until
+the team supplies separated platform configuration and records hosted evidence.
+See the [Developer Guide](docs/DeveloperGuide.md)
 for local build/run commands and [Requester plan](workflow/REQUESTER-PLAN.md)
 for the implementation sequence.
 
 | Additional path | Purpose |
 | --- | --- |
 | `.github/workflows/pr-agent.yml` | Existing PR-Agent automation |
+| `.github/workflows/ci-cd.yml` | Test, scan, container, Preview and protected Production pipeline |
+| `.github/workflows/rollback.yml` | Human-approved known-good Production rollback |
 | `.github/pull_request_template.md` | Requirements/security/evidence checklist |
 | `workflow/agents/` | Bounded development-agent roles |
 | `workflow/templates/` | Requirement, handoff, security-test and log templates |

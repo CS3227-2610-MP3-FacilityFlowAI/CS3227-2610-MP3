@@ -132,6 +132,17 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    void nfrOps001HealthIsPublicAndDisclosesOnlyReadiness() throws Exception {
+        mockMvc.perform(get("/health"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.*").isArray())
+                .andExpect(jsonPath("$.*").value(org.hamcrest.Matchers.hasSize(1)));
+    }
+
+    @Test
     void nfrSec001StateChangingRequestsRequireCsrf() throws Exception {
         Cookie requester = login("requester1", VALID_PASSWORD, "/requester");
 

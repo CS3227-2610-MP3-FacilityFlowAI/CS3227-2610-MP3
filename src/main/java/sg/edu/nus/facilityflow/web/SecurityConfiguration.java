@@ -35,7 +35,7 @@ public class SecurityConfiguration {
             PersistentAccountVerificationFilter accountVerificationFilter) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/login", "/error", "/css/**").permitAll()
+                        .requestMatchers("/health", "/login", "/error", "/css/**").permitAll()
                         .requestMatchers("/requester/**").hasRole("REQUESTER")
                         .requestMatchers("/technician/**").hasRole("TECHNICIAN")
                         .requestMatchers("/manager/**").hasRole("FACILITIES_MANAGER")

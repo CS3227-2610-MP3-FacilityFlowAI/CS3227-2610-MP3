@@ -1,6 +1,8 @@
 spring:
   application:
     name: facilityflow-ai
+  lifecycle:
+    timeout-per-shutdown-phase: 25s
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
@@ -32,6 +34,9 @@ spring:
       initialize-schema: never
       table-name: facilityflow.spring_session
 server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+  shutdown: graceful
   servlet:
     session:
       cookie:
