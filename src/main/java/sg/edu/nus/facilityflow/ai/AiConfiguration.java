@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.beans.factory.annotation.Value;
 
-@Configuration
+@Configuration("requesterAiTransportConfiguration")
 public class AiConfiguration {
     @Bean
     @ConditionalOnMissingBean(AiTransport.class)

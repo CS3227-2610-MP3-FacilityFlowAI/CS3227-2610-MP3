@@ -3,8 +3,10 @@ package sg.edu.nus.facilityflow.ai;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 import sg.edu.nus.facilityflow.identity.AccountRole;
+import sg.edu.nus.facilityflow.identity.CurrentAccountSnapshot;
 import sg.edu.nus.facilityflow.identity.IdentityAuthorization;
 
 /**
@@ -28,6 +30,19 @@ public class AiAccessGuard {
         return modelCall.apply(authorizedContextFactory.get());
     }
 
+    /** Uses the role/session snapshot captured before asynchronous Requester work began. */
+    public <C, R> R forRequester(
+            CurrentAccountSnapshot accountSnapshot,
+            UUID requesterOwnerId,
+            Supplier<C> authorizedContextFactory,
+            Function<C, R> modelCall) {
+        if (accountSnapshot.role() != AccountRole.REQUESTER
+                || !accountSnapshot.id().equals(requesterOwnerId)) {
+            throw new AccessDeniedException("The requested operation is not available");
+        }
+        return modelCall.apply(authorizedContextFactory.get());
+    }
+
     public <C, R> R forTechnician(
             UUID assignedTechnicianId,
             Supplier<C> authorizedContextFactory,
@@ -36,10 +51,34 @@ public class AiAccessGuard {
         return modelCall.apply(authorizedContextFactory.get());
     }
 
+    /** Uses the role/session snapshot captured before an asynchronous operation began. */
+    public <C, R> R forTechnician(
+            CurrentAccountSnapshot accountSnapshot,
+            UUID assignedTechnicianId,
+            Supplier<C> authorizedContextFactory,
+            Function<C, R> modelCall) {
+        if (accountSnapshot.role() != AccountRole.TECHNICIAN
+                || !accountSnapshot.id().equals(assignedTechnicianId)) {
+            throw new AccessDeniedException("The requested operation is not available");
+        }
+        return modelCall.apply(authorizedContextFactory.get());
+    }
+
     public <C, R> R forManager(
             Supplier<C> authorizedContextFactory,
             Function<C, R> modelCall) {
         authorization.requireRole(AccountRole.FACILITIES_MANAGER);
+        return modelCall.apply(authorizedContextFactory.get());
+    }
+
+    /** Uses the role/session snapshot captured before asynchronous Manager work began. */
+    public <C, R> R forManager(
+            CurrentAccountSnapshot accountSnapshot,
+            Supplier<C> authorizedContextFactory,
+            Function<C, R> modelCall) {
+        if (accountSnapshot.role() != AccountRole.FACILITIES_MANAGER) {
+            throw new AccessDeniedException("The requested operation is not available");
+        }
         return modelCall.apply(authorizedContextFactory.get());
     }
 }

@@ -154,6 +154,7 @@ planned estimates as actual reuse percentages.
 | Initial MP3 scaffolding from the 6 October 2026 setup session | Current user request and existing MP3 guidance; no MP2 files consulted | New scaffolds and documentation additions listed in logs/2026-10-06-repository-scaffolding.md | New | Initial process/placeholders | File inventory in session report; no MP2 copied lines identified | Establish requested workflow | AI-assisted with Codex; human review pending |
 | Authentication/authorization behavior | MP2 `specs/components/authentication-authorization.md`, verified source commit above | `src/main/java/sg/edu/nus/facilityflow/identity`, `src/main/java/sg/edu/nus/facilityflow/web`, `src/main/java/sg/edu/nus/facilityflow/ai/AiAccessGuard.java`, and related tests | Concept only | 0 copied code lines; 1,149 new source/resource/test lines | Replace JavaFX/in-memory sessions with Spring Security, JDBC sessions, PostgreSQL/Flyway contracts and authorization-before-AI; reuse named scenarios and invariants only | AI-assisted implementation; `git diff`/line count and test log dated 13 October 2026; teammate review pending |
 | Gradle wrapper bootstrap | MP2 `gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.jar`, `gradle-wrapper.properties`, verified source commit above | Same MP3 paths | Unchanged | 349 text lines and one binary JAR unchanged | Preserve checksum-pinned Gradle 9.1.0 wrapper; dependency/build definitions in `build.gradle` and `settings.gradle` are new | File hashes/diff available on review branch; teammate review pending |
+| SoCLaaS gateway, provider adapters, feature contracts and AI tests | No MP2 implementation source; MP3 `workflow/specs/INTEGRATION-SPEC.md` and `AI-SECURITY-SPEC.md` | `src/main/java/sg/edu/nus/facilityflow/ai`, role AI seams and gateway tests | New | Provider configuration, HTTPS identity transport, readiness, admission, telemetry, retry, strict typed contracts, disclosure policy and Technician orchestration are new MP3 code; no MP2 lines copied | Implement the approved MP3 SoCLaaS boundary with server-side authorization, limits and safe fallback | AI-assisted implementation; review range `e784d48..HEAD`; focused/full test logs dated 16–17 October 2026; teammate/Security Reviewer verification pending |
 
 Detailed provenance of pre-existing documents and future concept-only reuse:
 TBD after checking MP2. Preserve existing content until comparison supports
@@ -165,3 +166,8 @@ applied migrations are unchanged. See the dated review-fix log.
 
 Additional 16 October initializer review fixes (profile guard, bounded lock wait,
 regressions and guide updates) are new MP3 work; no MP2 source copied.
+
+18 October Requester/master integration: merge resolutions and compatibility
+updates are new MP3 integration work. Requester migration moved from V5 to V6
+without SQL changes; master V5 preserved. No additional MP2 source copied;
+existing per-slice reuse provenance above remains authoritative.

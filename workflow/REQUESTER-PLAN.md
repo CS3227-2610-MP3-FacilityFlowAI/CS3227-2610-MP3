@@ -47,7 +47,7 @@ they are not evidence available when it was first prepared.
 - **16 October Requester step 3:** Step 2 committed as `9ff8a5b` at the user's
   request. Owned OPEN edit/cancel and non-terminal Requester Updates are now
   implemented with Request version/state locks and atomic audit, using the
-  existing V1–V5 schema. Cancellation has an explicit reason/confirmation and
+  existing V1-V6 schema. Cancellation has an explicit reason/confirmation and
   defaults to keeping the report. Forms retain input and reject stale/repeated
   commands. See `logs/2026-10-16-requester-step-3-mutations.md` for verification.
   Next is dashboard counts/recent requests and list search/filters (section 6).
@@ -55,7 +55,7 @@ they are not evidence available when it was first prepared.
 - **16 October Requester step 2:** Step 1 committed as `74949cd` at the user's
   request. Create, own-list and detail are implemented on `feat/requester-workflow`,
   with server validation, owner-scoped history, transactional audit and durable
-  duplicate-submission rejection. V5 is required before web startup; runtime
+  duplicate-submission rejection. V6 is required before web startup; runtime
   schema readiness is now checked read-only. About/shared navigation is supplied.
   See `logs/2026-10-16-requester-step-2-manual-slice.md` for executed checks and
   remaining limits. The next user-facing step is eligible edits, cancellation

@@ -112,9 +112,9 @@ COMPLETED/CLOSED/CANCELLED/RETURNED/REOPENED` variants enumerated in the reposit
 public transition reasons use `details.reason`. Other role services must use
 this shared history contract or update the projection with matching tests.
 
-Apply **V5** using the existing explicit migration profile before web startup.
+Apply **V5 and V6** using the existing explicit migration profile before web startup.
 It adds an append-only submission table and read-only `schema_version` view.
-`SchemaReadinessCheck` requires successful versions 1–5; missing/failed/future
+`SchemaReadinessCheck` requires successful versions 1-6; missing/failed/future
 versions stop startup with safe guidance. Runtime still cannot read or write the
 full Flyway history or perform DDL. Flyway checksum validation remains part of
 the explicit migration process; startup checks version compatibility only.
@@ -217,6 +217,36 @@ configuration, initial limits, retention and typed results are defined in
 `../workflow/specs/INTEGRATION-SPEC.md` and
 `../workflow/specs/AI-SECURITY-SPEC.md`.
 
+### Shared gateway from master
+
+The shared gateway now includes startup-safe configuration, HTTPS identity-only
+transport, generation-aware readiness recovery, bounded decoding,
+admission/lease coordination, telemetry, bounded retry, a single end-to-end
+Technician deadline, strict typed Work Plan/Smart Report/Triage provider
+contracts, deterministic Manager candidate ranking and server-side output
+disclosure checks. The provider core remains advisory and mutation-free. Technician Work Plan, Requester Smart Report and Manager Triage now have
+role-facing service/controller seams; owner/teammate release approval remains
+pending. The Requester review UI continues to use its separate
+`/requester/requests/assistant` flow documented below. Compressed responses remain deferred
+by the authoritative integration specification.
+
+`AI_ENABLED` defaults to `false`. When enabled, the application binds all
+deployment values as raw strings and resolves them to disabled, unavailable or
+validated settings without exposing the API key or allowing malformed values to
+prevent the manual application from starting. The configured base must resolve
+to the official HTTPS SoCLaaS `/v1` base. Timeout, output, concurrency and rate
+settings may tighten but not exceed 30 seconds, 800 output tokens, five
+concurrent in-flight calls application-wide, five Account calls per minute and
+30 per hour.
+
+Copy `.env.example` into the developer's approved local secret mechanism; never
+commit a populated file. AI requires `AI_ENABLED=true`, a real
+`SOCLAAS_API_KEY`, and a configured `SOCLAAS_MODEL`. The remaining variables are
+`SOCLAAS_BASE_URL`, `AI_TIMEOUT_SECONDS`, `AI_MAX_OUTPUT_TOKENS`,
+`AI_MAX_IN_FLIGHT`, `AI_RATE_PER_MINUTE` and `AI_RATE_PER_HOUR`. Invalid,
+placeholder or over-limit values make AI unavailable. No local test calls a live
+SoCLaaS provider or validates a hosted model.
+
 ## Identity operations (Requester step 1)
 
 REQ-SH-002/004/006/014: `/account/password` accepts POST with CSRF for any
@@ -249,10 +279,32 @@ Spring reference: [form login success processing](https://docs.spring.io/spring-
 
 ## AI security
 
-Prompts/context/output are untrusted. `AiAccessGuard` supplies the initial shared
-authorization seam. The Smart Report service now rechecks persisted Account,
-ownership, OPEN state and expected version before context collection and again
-after inference. Technician/Manager assistant endpoints remain pending. See
+
+Gateway failures include a stable `code` and readable `message`, for example:
+
+```json
+{"code":"AI_INVALID_OUTPUT","message":"The AI response had an invalid format or failed output validation."}
+```
+
+Inspect the server console for `SoCLaaS gateway` entries. Failure entries name
+the feature and code; provider diagnostics additionally identify the stage and
+safe reason, for example `stage=READINESS reason=MODEL_NOT_FOUND`,
+`stage=READINESS reason=INVALID_ENVELOPE`,
+`stage=COMPLETION reason=HTTP_UNAUTHORIZED`, or
+`stage=WORK_PLAN_OUTPUT reason=INVALID_OUTPUT`. Authentication/access rejection
+maps to `AI_CONFIGURATION_ERROR`; invalid format or output validation maps to
+`AI_INVALID_OUTPUT`; timeouts map to `AI_TIMEOUT`. For `AI_UNAVAILABLE`,
+check the startup disabled/configuration log and readiness diagnostics.
+Logs omit credentials, raw prompts/responses, context and exception messages.
+
+Prompts/context/output are untrusted. `AiAccessGuard` implements the
+authorization-before-context seam required by AI-SEC-001 and is verified to
+construct no protected context and make no model call after denial. Configuration
+validation and redaction are implemented and locally verified; typed schemas,
+runtime limits, transport/readiness, retry, telemetry and provider disclosure
+checks are covered by focused tests. Requester/Manager role orchestration, the
+approved Work Plan multilingual safety corpus, hosted-provider smoke testing
+and final Security Reviewer/teammate verification remain pending. See
 AI-SECURITY-SPEC.md and ../workflow/SECURITY.md.
 
 ### Smart Report service (Requester step 5)
@@ -440,3 +492,24 @@ tests, and documentation separately and acknowledge every source before merge.
 
 Team: ../AGENTS.md. AI evidence: ../logs/. Reused material: reuse ledger.
 Other source/dependency acknowledgements: TBD.
+
+## Migration ordering after the 18 October master merge
+
+Master's `V5__ai_gateway_coordination.sql` stays V5. The Requester submission and
+read-only schema-version migration moves to `V6__request_submission_and_readiness.sql`
+without SQL content changes. Web readiness requires successful versions 1-6.
+No hosted migration was executed during this merge. The user is unsure whether
+the older Requester V5 was applied to shared Supabase; check privately before any
+upgrade using the read-only query:
+
+```sql
+SELECT version, script, success
+FROM facilityflow.flyway_schema_history
+WHERE version IS NOT NULL ORDER BY installed_rank;
+```
+
+If V5 names `V5__request_submission_and_readiness.sql`, stop and coordinate a
+migration-history reconciliation with the persistence owner. Do not run Flyway
+repair, baseline, clean, or alter applied history to bypass validation. The merged
+source sequence must not be applied blindly to that database. Disposable local
+test databases use the merged sequence and do not establish hosted compatibility.

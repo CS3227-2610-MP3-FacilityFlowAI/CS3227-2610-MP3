@@ -23,7 +23,7 @@ public class SchemaReadinessCheck implements ApplicationRunner {
         try {
             var versions = jdbc.query("SELECT version, success FROM facilityflow.schema_version",
                     (row, index) -> row.getBoolean("success") ? row.getString("version") : "failed");
-            if (versions.size() != 5 || !Set.copyOf(versions).equals(Set.of("1", "2", "3", "4", "5"))) {
+            if (versions.size() != 6 || !Set.copyOf(versions).equals(Set.of("1", "2", "3", "4", "5", "6"))) {
                 throw new IllegalStateException("Database schema is not supported. Run the approved migration process before startup.");
             }
         } catch (DataAccessException exception) {
