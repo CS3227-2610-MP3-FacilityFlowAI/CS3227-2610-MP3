@@ -32,6 +32,7 @@ jobs:
       name: production
       url: ${{ inputs.deployment_url }}
     env:
+      DEPLOYMENT_URL: ${{ inputs.deployment_url }}
       VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -39,7 +40,7 @@ jobs:
       - name: Validate target URL
         shell: bash
         run: |
-          if [[ ! "${{ inputs.deployment_url }}" =~ ^https://[A-Za-z0-9.-]+\.vercel\.app$ ]]; then
+          if [[ ! "$DEPLOYMENT_URL" =~ ^https://[A-Za-z0-9.-]+\.vercel\.app$ ]]; then
             echo "Enter a Vercel deployment URL." >&2
             exit 1
           fi
@@ -52,11 +53,11 @@ jobs:
       - name: Roll back to the known-good deployment
         run: >-
           npx --yes vercel@${VERCEL_CLI_VERSION} rollback
-          "${{ inputs.deployment_url }}"
+          "$DEPLOYMENT_URL"
           --non-interactive --token="$VERCEL_TOKEN"
 
       - name: Record rollback evidence
         run: |
           echo "### Production rollback" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Target: ${{ inputs.deployment_url }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Requested by: \`${{ github.actor }}\`" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "- Target: $DEPLOYMENT_URL" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "- Requested by: \`$GITHUB_ACTOR\`" >> "$GITHUB_STEP_SUMMARY"

@@ -259,6 +259,9 @@ jobs:
 
   promote-production:
     name: Human-approved Production promotion
+    concurrency:
+      group: production-promotion
+      cancel-in-progress: false
     needs:
       - production-candidate
     if: >-
