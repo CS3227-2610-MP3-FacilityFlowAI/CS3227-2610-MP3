@@ -237,8 +237,16 @@ public final class ManagerTriageService {
             if (!repository.isStillEligible(context, manager, result)) {
                 return ManagerTriageResponse.failure(TriageFailureCode.DISCARDED_ACCESS_CHANGED);
             }
+            var review = new ManagerTriageResponse.ReviewContext(
+                    context.eligibility().requestVersion(), context.assistantContext().status(),
+                    TriageSnapshotFingerprint.create(context.activeCategories(), context.activeSkills(),
+                            context.candidates()),
+                    context.activeCategories().stream()
+                            .map(value -> new ManagerTriageResponse.ReviewOption(value.id(), value.name())).toList(),
+                    context.candidates().stream().filter(TechnicianCandidate::active)
+                            .map(value -> new ManagerTriageResponse.ReviewOption(value.accountId(), value.username())).toList());
             return new ManagerTriageResponse.Success(result,
-                    ranker.rank(result, context.candidates()));
+                    ranker.rank(result, context.candidates()), review);
         } catch (RuntimeException staleOrRankingFailure) {
             return ManagerTriageResponse.failure(TriageFailureCode.AI_UNAVAILABLE);
         }

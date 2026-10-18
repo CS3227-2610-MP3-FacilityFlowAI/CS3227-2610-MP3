@@ -15,4 +15,3 @@
   sg.edu.nus.facilityflow.ai.provider.ProviderEnvelopeDecoderTest --tests
   sg.edu.nus.facilityflow.ai.provider.SocLlmHttpsProviderAdapterTest --tests
   sg.edu.nus.facilityflow.ai.provider.SocLlmWorkPlanAssistantTest` passed locally.
-

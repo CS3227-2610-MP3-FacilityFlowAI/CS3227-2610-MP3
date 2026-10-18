@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${'Triage ' + displayId + ' · FacilityFlow AI'}">Triage Assistant · FacilityFlow AI</title>
+    <link rel="stylesheet" th:href="@{/css/manager.css}">
+</head>
+<body>
+<header class="site-header">
+    <div class="identity"><strong th:text="${displayName}">Manager</strong><span th:text="${username}">username</span></div>
+    <nav aria-label="Manager navigation">
+        <a th:href="@{/manager/overview}">Overview</a>
+        <a th:href="@{/manager/requests}">Requests</a>
+        <a th:href="@{/manager/accounts}">Accounts</a>
+        <a th:href="@{/manager/categories}">Categories</a>
+        <a th:href="@{/manager/skills}">Skills</a>
+        <a th:href="@{/manager/audit}">Audit</a>
+    </nav>
+    <form method="post" th:action="@{/logout}"><button class="button button-quiet" type="submit">Sign out</button></form>
+</header>
+
+<main class="page-shell">
+    <a class="back-link" th:href="@{/manager/requests}">Back to all requests</a>
+    <div class="title-row">
+        <div>
+            <h1>Triage Assistant</h1>
+            <p class="request-reference">Request <strong th:text="${displayId}">FF-000001</strong></p>
+        </div>
+        <span class="advisory-label">Advisory only</span>
+    </div>
+
+    <section class="intro-panel" aria-labelledby="assistant-purpose">
+        <h2 id="assistant-purpose">Get a second opinion before assigning work</h2>
+        <p>The assistant can suggest a category, priority and relevant skills. FacilityFlow ranks matching active Technicians deterministically. Nothing is saved or assigned unless you complete the ordinary Manager action yourself.</p>
+        <form method="post" th:action="@{/manager/requests/{id}/triage-assistant(id=${displayId})}">
+            <button class="button button-primary" type="submit" th:text="${suggestion != null or assistantError != null ? 'Generate a fresh suggestion' : 'Generate triage suggestion'}">Generate triage suggestion</button>
+        </form>
+    </section>
+
+    <div class="alert alert-error" role="alert" th:if="${assistantError}" th:text="${assistantError}">
+        The assistant is unavailable. Continue with manual triage or try again.
+    </div>
+
+    <div th:if="${suggestion}" class="results" aria-live="polite">
+        <div class="alert alert-success" role="status">
+            Suggestion ready. Review every field below; no request data has been changed.
+        </div>
+
+        <section aria-labelledby="review-heading">
+            <div class="section-heading">
+                <div><h2 id="review-heading">Review the recommendation</h2><p>Edit or reject any suggestion before using it in the normal workflow.</p></div>
+            </div>
+
+            <div class="review-grid">
+                <fieldset class="review-field">
+                    <legend>Category</legend>
+                    <p>Assistant suggestion: <strong th:text="${suggestion.suggestedCategory}">HVAC</strong></p>
+                    <label for="category-review">Your final category</label>
+                    <select id="category-review" name="categoryId" form="triage-save" required>
+                        <option th:each="option : ${review.categories}" th:value="${option.id}" th:text="${option.label}" th:selected="${#strings.equalsIgnoreCase(option.label, suggestion.suggestedCategory)}"></option>
+                    </select>
+                </fieldset>
+
+                <fieldset class="review-field">
+                    <legend>Manager priority</legend>
+                    <p>Assistant suggestion: <strong th:text="${suggestion.suggestedPriority}">High</strong></p>
+                    <label for="priority-review">Your final priority</label>
+                    <select id="priority-review" name="managerPriority" form="triage-save" required>
+                        <option th:each="value : ${ {'LOW','MEDIUM','HIGH','CRITICAL'} }" th:value="${value}" th:text="${value}" th:selected="${#strings.equalsIgnoreCase(suggestion.suggestedPriority, value)}">HIGH</option>
+                    </select>
+                </fieldset>
+            </div>
+        </section>
+
+        <section aria-labelledby="skills-heading">
+            <div class="section-heading">
+                <div><h2 id="skills-heading">Review suggested skills</h2><p>Skills begin unselected so acceptance is always deliberate.</p></div>
+            </div>
+            <div class="skill-columns">
+                <fieldset>
+                    <legend>Required skills</legend>
+                    <p class="empty-copy" th:if="${#lists.isEmpty(suggestion.requiredSkillTags)}">No required skills suggested.</p>
+                    <label class="check-row" th:each="skill : ${suggestion.requiredSkillTags}">
+                        <input type="checkbox" name="acceptedRequiredSkills" form="triage-save" th:value="${skill}">
+                        <span th:text="${skill}">Electrical</span>
+                    </label>
+                </fieldset>
+                <fieldset>
+                    <legend>Optional skills</legend>
+                    <p class="empty-copy" th:if="${#lists.isEmpty(suggestion.optionalSkillTags)}">No optional skills suggested.</p>
+                    <label class="check-row" th:each="skill : ${suggestion.optionalSkillTags}">
+                        <input type="checkbox" name="acceptedOptionalSkills" form="triage-save" th:value="${skill}">
+                        <span th:text="${skill}">Working at height</span>
+                    </label>
+                </fieldset>
+            </div>
+        </section>
+
+        <section class="explanation" aria-labelledby="reasoning-heading">
+            <h2 id="reasoning-heading">Why the assistant suggested this</h2>
+            <p th:text="${suggestion.rationale}">Rationale</p>
+            <div th:if="${!#lists.isEmpty(suggestion.clarificationQuestions)}">
+                <h3>Questions to clarify</h3>
+                <ul><li th:each="question : ${suggestion.clarificationQuestions}" th:text="${question}">Question</li></ul>
+            </div>
+        </section>
+
+        <section aria-labelledby="candidate-heading">
+            <div class="section-heading">
+                <div><h2 id="candidate-heading">Suggested Technician order</h2><p>This order comes from accepted skill coverage and current workload—not from the LLM.</p></div>
+                <span class="deterministic-label">Deterministic ranking</span>
+            </div>
+            <div class="alert alert-neutral" th:if="${!ranking.hasCandidate()}" th:text="${ranking.explanation}">
+                No active Technician matches every required skill.
+            </div>
+            <div class="table-wrap" th:if="${ranking.hasCandidate()}">
+                <table>
+                    <thead><tr><th scope="col">Rank</th><th scope="col">Technician</th><th scope="col">Current workload</th><th scope="col">Active skills</th></tr></thead>
+                    <tbody>
+                    <tr th:each="candidate, position : ${ranking.rankedCandidates}">
+                        <td th:text="${position.count}">1</td>
+                        <td th:text="${candidate.username}">technician</td>
+                        <td th:text="${candidate.workload}">0</td>
+                        <td><span th:each="skill, item : ${candidate.skillTags}" th:text="${skill + (item.last ? '' : ', ')}">Electrical</span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <div class="next-step" th:if="${review != null and review.status == 'OPEN'}">
+            <strong>Human approval remains required.</strong>
+            <p>Choose the final Technician. Submitting uses the ordinary locked assignment operation, rechecks the request, category and Technician, and records the decision in the audit history.</p>
+            <form id="triage-save" method="post" th:action="@{/manager/requests/{id}/triage-decision(id=${displayId})}">
+                <input type="hidden" name="version" th:value="${review.requestVersion}">
+                <input type="hidden" name="snapshotFingerprint" th:value="${review.snapshotFingerprint}">
+                <label for="final-technician">Final active Technician</label>
+                <select id="final-technician" name="technicianId" required>
+                    <option value="">Choose a Technician</option>
+                    <option th:each="option : ${review.technicians}" th:value="${option.id}" th:text="${option.label}"></option>
+                </select>
+                <button class="button button-primary" type="submit">Approve triage and assign</button>
+            </form>
+        </div>
+        <div class="next-step" th:unless="${review != null and review.status == 'OPEN'}">
+            <strong>Review complete; nothing has changed yet.</strong>
+            <p>This request is already active. Use the ordinary correction or reassignment controls on its detail page so current state is rechecked before saving.</p>
+            <a class="button button-secondary" th:href="@{/manager/requests/{id}(id=${displayId})}">Open request controls</a>
+        </div>
+    </div>
+</main>
+</body>
+</html>
