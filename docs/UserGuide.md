@@ -1,9 +1,11 @@
 # User Guide
 
-Status: authentication foundation and Technician assigned-work reads implemented
-in source; teammate and hosted-release verification remain pending. Technician
-start-work, Work Logs, completion and Work Plan browser controls are implemented
-in source; local T4 verification is recorded in logs/technician/T4-REPORT.md.
+Status: authentication, shared password/navigation screens, Technician assigned
+work, start-work, Work Logs, completion and advisory Work Plan controls, and the
+Facilities Manager request lifecycle, administration and Triage Assistant
+workflow are implemented locally. Teammate, real-browser and hosted application
+review remain pending. Local Technician evidence is in logs/technician/T1-REPORT.md
+through T5-REPORT.md; Manager evidence is in the Manager session logs.
 
 This guide must be updated continuously to match the deployed product exactly.
 It will document how Requesters, Technicians, and Facilities Managers access,
@@ -12,8 +14,10 @@ test, and use every released feature, including AI fallbacks and limitations.
 ## Introduction
 
 The application supports secure sign-in/sign-out and separate role workspaces.
-The Technician workspace lists assigned work; Requester and Manager manual
-workspaces remain placeholders.
+The Technician workspace lists assigned work and provides progress, completion
+and advisory Work Plan controls. The Manager workspace links to request,
+administration and audit workflows. The Requester manual workspace remains a
+placeholder.
 
 ## Accessing the deployed application
 
@@ -27,7 +31,7 @@ the Account directly to its role workspace.
 Requester, Technician and Facilities Manager are the only roles. Each Account
 can open only its own role workspace. Directly entering another role's URL is
 denied. Own-password change is available through the authenticated header.
-Account provisioning screens remain outside this Technician increment.
+Facilities Managers can provision and administer other Accounts.
 
 ## Features
 
@@ -81,6 +85,7 @@ the Request becomes unavailable; your unsaved draft remains visible for copying.
 Invalid values and operational failures preserve entered text and show safe
 errors. No command is automatically replayed. A Technician cannot assign work,
 change priority, edit the original Request, cancel, close, reopen or set a status.
+
 ## Completing work for Manager review
 
 An **In progress** Request needs at least one saved Work Log before completion.
@@ -117,10 +122,69 @@ changes while generating advice, the plan is discarded. Refresh the request
 before requesting another plan. Leaving the page, submitting a manual form or
 discarding advice clears it; plans are not saved. JavaScript is needed for the
 Work Plan panel; the manual forms remain available without it.
+## Facilities Manager: overview and request queue
+
+From the Manager workspace, open **Operational overview** for counts by status,
+counts by assigned Manager priority, and each active Technician's workload.
+Workload counts ASSIGNED plus IN_PROGRESS requests.
+
+Open **All requests** to view the shared queue. Search by display ID, title,
+location, Requester or Technician. Search treats punctuation literally and can
+be combined with status, category, priority, Technician and inclusive
+Asia/Singapore creation-date filters. **Reset filters** clears the complete
+filter set. OPEN requests appear first by reported urgency and age; active work
+then appears by Manager priority and age; completed/terminal work follows by
+latest update.
+
+### Facilities Manager: record a request on behalf
+
+Open **Record a request on behalf** and select an active Requester plus the
+request fields. Inactive Requesters are deliberately absent. On success, the
+selected Requester owns the OPEN request and the signed-in Manager is recorded
+as its Recording Actor. The Request and Audit Event save together.
+
+Field errors retain the submitted values. A temporary storage or audit failure
+also retains the form and permits a retry without a partial Request. The submit
+button prevents a second pending browser submission when JavaScript is available;
+server-side validation and transactions remain authoritative.
+
+### Facilities Manager: audit viewer
+
+The read-only **Audit viewer** filters events by Request display ID, actor,
+action text and inclusive Asia/Singapore dates. A non-Request event displays no
+Request ID rather than inventing one. The current page is limited to the newest
+200 matching events.
+
+### Facilities Manager: request lifecycle
+
+Select a Request ID or **Review and manage** in the queue. The detail page shows
+Requester updates, Work Logs, completion attempts and audit history. Depending
+on the current state, a Manager can assign, reassign with a reason, cancel with
+a reason, accept COMPLETED work and close it, return COMPLETED work to an active
+Technician, or reopen CLOSED work. Correction controls update request facts
+without replacing ownership or historical evidence.
+
+Every form carries the Request version shown when the page loaded. If another
+user changes the Request first, FacilityFlow rejects the stale action and asks
+the Manager to refresh. State, assignment and audit changes commit together.
+
+### Facilities Manager: administration
+
+Use **Accounts** to create Accounts, reactivate or deactivate another Account,
+change another Account's role, and reset another Account's password. Managers
+cannot use these controls on themselves. A Technician with ASSIGNED or
+IN_PROGRESS work must have that work reassigned or cancelled first, and at least
+one active Manager must remain.
+
+Use **Categories** to create or rename categories. Removing a category requires
+a different active replacement; FacilityFlow migrates existing Requests and
+the catalogue change atomically. Use **Skills** to create, rename or deactivate
+skill tags and update each active Technician's skills. Deactivated tags disappear
+from future selection but remain in historical records.
 
 ## AI features
 
-Three bounded SoC LLM assistants are planned:
+Three bounded SoC LLM assistants are defined:
 
 - Requesters may ask the Smart Report Assistant for an editable structured
   draft, category and urgency suggestions, and missing-information questions.
@@ -131,13 +195,32 @@ Three bounded SoC LLM assistants are planned:
   ranks eligible Technicians using deterministic rules.
 
 No assistant performs a business action. Users review suggestions and use the
-ordinary workflow. Exact steps and screenshots will be added only after the
-features are implemented and verified.
+ordinary workflow.
+
+### Facilities Manager: Triage Assistant
+
+In **All requests**, choose **Ask Triage Assistant** for any Request that is not
+CANCELLED or CLOSED. Select **Generate triage suggestion**. The page displays an
+editable category, an editable Manager priority, required and optional skill
+suggestions, clarification questions, rationale and a deterministic Technician
+order. Skill choices begin unselected. The Manager reviews or edits the final
+category and priority and selects the final Technician.
+
+The assistant itself never saves or assigns. For an OPEN Request, **Approve
+triage and assign** submits the reviewed values through the ordinary locked,
+authorized assignment operation. Active Requests continue through the ordinary
+correction/reassignment controls. If AI is disabled, limited, times out, returns invalid output or the
+Request/catalogue changes while it is running, the page shows safe retry/manual
+guidance and leaves the Request unchanged.
 
 ## Limitations
 
 AI drafts/recommends only; users perform authorized actions. Confirmed
 released resource limits and failure behavior: TBD.
+
+The Manager slice has local automated evidence only; no hosted application or
+real-browser release claim is made yet. Teammate review remains required before
+merge.
 
 ## Troubleshooting
 
