@@ -2,8 +2,8 @@
 
 Status: authentication foundation and Technician assigned-work reads implemented
 in source; teammate and hosted-release verification remain pending. Technician
-start-work, Work Logs and completion are implemented in source; the AI browser
-interface remains pending.
+start-work, Work Logs, completion and Work Plan browser controls are implemented
+in source; local T4 verification is recorded in logs/technician/T4-REPORT.md.
 
 This guide must be updated continuously to match the deployed product exactly.
 It will document how Requesters, Technicians, and Facilities Managers access,
@@ -95,7 +95,26 @@ errors, including when the Request is no longer assigned to you; keep a copy
 before leaving the page. Successful completion shows the persisted resolution
 and time, with no start/log/completion controls. Prior completion history remains
 stored if a Manager later returns/reopens work and it is completed again.
-Change password and Work Plan controls remain outside this increment.
+Change password remains outside this increment.
+
+### Work Plan suggestions
+
+On an Assigned or In Progress request, choose **Request Work Plan** for read-only
+AI suggestions. Review safety precautions and stop/escalation conditions first.
+The plan also suggests diagnostic steps, tools, questions and evidence to collect,
+with a rationale. These suggestions require your judgment; they are not an
+approved procedure. Requesting or discarding advice changes no maintenance record.
+Starting work, adding a Work Log and completing work still require your explicit
+manual submissions.
+
+The assistant uses the request details and up to ten latest Requester Updates.
+It does not receive Work Logs or account/request identifiers. If AI is unavailable,
+limited, times out or rejects unsafe output, continue with the manual controls;
+your unsaved notes and resolution remain available. If access or request state
+changes while generating advice, the plan is discarded. Refresh the request
+before requesting another plan. Leaving the page, submitting a manual form or
+discarding advice clears it; plans are not saved. JavaScript is needed for the
+Work Plan panel; the manual forms remain available without it.
 
 ## AI features
 

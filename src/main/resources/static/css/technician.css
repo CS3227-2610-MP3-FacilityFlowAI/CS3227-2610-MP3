@@ -32,6 +32,18 @@ textarea { font: inherit; width: min(100%, 42rem); }
 #work-log-minutes { max-width: 12rem; }
 form[data-command-form] { display: grid; gap: .65rem; max-width: 44rem; }
 .command-panel { border-top: 1px solid #aaa; margin-top: 1.25rem; padding-top: .5rem; }
+.work-plan-panel { max-width: 54rem; }
+.work-plan-safety {
+    background: #fff4e5;
+    border: 2px solid #8a3b00;
+    border-left-width: .45rem;
+    margin: 1rem 0;
+    padding: .25rem 1rem;
+}
+.work-plan-safety h3 { color: #672b00; }
+.work-plan-result { border-top: 1px solid #aaa; margin-top: 1rem; padding-top: .5rem; }
+#work-plan-status { min-height: 1.5em; }
+#work-plan-result li, #work-plan-rationale { overflow-wrap: anywhere; }
 .command-errors { margin: 1rem 0; }
 .field-error { color: #8b1111; font-weight: 650; margin: -.35rem 0 .25rem; }
 .refresh-guidance { border-left: .3rem solid #075db5; padding: .5rem .75rem; }

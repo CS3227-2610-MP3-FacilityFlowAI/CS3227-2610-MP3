@@ -3,7 +3,7 @@
 Status: Shared database schema and explicit initialization supplied; V1 application
 and permissions evidenced by user screenshots. Hosted V2/V3/demo results are
 reported matching by the user; independent hosted verification remains pending.
-Technician assigned-work reads, start/log and completion commands are implemented
+Technician assigned-work reads, start/log/completion commands and Work Plan browser controls are implemented
 in source as described below.
 Follow [DatabaseCompletion](DatabaseCompletion.md).
 
@@ -159,6 +159,33 @@ command-service double plus real assigned-query/Thymeleaf rendering; those H2
 checks prove web behavior, while PostgreSQL tests prove transaction semantics.
 The standalone JavaScript event check models pending-submit/page-return behavior;
 it does not replace supported-browser visual/keyboard acceptance.
+
+### Technician Work Plan browser integration (T4)
+
+The existing POST `/technician/requests/{displayId}/work-plan` returns either
+`{plan: ...}` or `{code, message}` with `Cache-Control: no-store`. The detail page
+shows its separate CSRF-protected form only for ASSIGNED/IN_PROGRESS. External
+`technician-work-plan.js` validates the entire seven-field result before rendering
+plain text, prioritizes safety/stop guidance and maps safe errors to manual
+fallback. It neither fills nor disables manual forms. Abort/generation checks
+discard late results on manual submission and page lifecycle changes. No plan is
+stored in browser persistence or server session.
+
+`TechnicianWorkPlanRepository` requires a captured `CurrentAccountSnapshot` for
+both context loading and final eligibility checks. The JDBC implementation
+requires an active persisted TECHNICIAN and exact nonnegative session version
+before loading assigned context, in a short read-only repeatable-read snapshot.
+No transaction spans provider execution. Final checks require the same account,
+session, assignment, original status and Request version; changed access discards
+the whole result and cannot produce successful telemetry. Existing provider
+allowlisting, schema/safety/disclosure rejection, admission and deadline behavior
+remain in force. No new business mutation or migration is involved.
+
+T4 evidence separates actual MVC/security/Thymeleaf tests (service double),
+asynchronous orchestration tests, real isolated PostgreSQL repository tests and
+actual-script deterministic DOM/fetch tests. Existing provider adversarial tests
+cover stored injection and unsafe advice; no live provider was used. See
+`logs/technician/T4-REPORT.md` for executed results and remaining human/browser gates.
 
 ### Technician completion (T3)
 

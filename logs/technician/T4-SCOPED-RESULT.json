@@ -1,0 +1,54 @@
+{
+  "candidate": "09e9a58476d87814e8da69448248257b1ac80f02c602dc9032eb64fdcae3d8e8",
+  "command": ".\\gradlew.bat --offline --no-daemon --console=plain test --tests sg.edu.nus.facilityflow.web.SecurityIntegrationTest --tests sg.edu.nus.facilityflow.ai.technician.* --tests sg.edu.nus.facilityflow.ai.provider.*WorkPlan*Test --tests sg.edu.nus.facilityflow.ai.AiReadinessDeadlineTest",
+  "outcome": "PASS",
+  "totals": {
+    "tests": 52,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "classes": 5,
+  "suites": [
+    {
+      "name": "sg.edu.nus.facilityflow.ai.AiReadinessDeadlineTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "2.947"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.SocLlmWorkPlanAssistantTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.962"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.provider.WorkPlanSafetyPolicyTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.005"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.ai.technician.WorkPlanAuthorizationBoundaryTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.003"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.web.SecurityIntegrationTest",
+      "tests": "35",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "16.611"
+    }
+  ]
+}

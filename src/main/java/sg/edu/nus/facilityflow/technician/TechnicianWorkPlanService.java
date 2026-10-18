@@ -169,7 +169,7 @@ public final class TechnicianWorkPlanService {
                         return finish(permit.get(), invocation,
                                 WorkPlanResponse.failure(WorkPlanFailureCode.AI_UNAVAILABLE));
                     }
-                    OptionalContext loaded = load(displayId, technician.id());
+                    OptionalContext loaded = load(displayId, technician);
                     if (!clock.instant().isBefore(deadline)) {
                         return finish(permit.get(), invocation,
                                 WorkPlanResponse.failure(WorkPlanFailureCode.AI_TIMEOUT));
@@ -248,9 +248,9 @@ public final class TechnicianWorkPlanService {
         };
     }
 
-    private OptionalContext load(String displayId, UUID technicianId) {
+    private OptionalContext load(String displayId, CurrentAccountSnapshot technician) {
         try {
-            return repository.loadEligible(displayId, technicianId)
+            return repository.loadEligible(displayId, technician)
                     .map(context -> new OptionalContext(context, null))
                     .orElseGet(() -> new OptionalContext(null, WorkPlanFailureCode.AI_UNAVAILABLE));
         } catch (RuntimeException failure) {

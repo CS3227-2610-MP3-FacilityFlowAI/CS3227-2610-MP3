@@ -1,0 +1,18 @@
+- Source agent: coordinator.
+- Destination agent: T4 tests, gpt-6-luna / high.
+- Task/goal: execute [task packet](../technician/T4-tests-task.md).
+- Approved requirement IDs: REQ-TECH-012–017, TECH-AI01–04; linked AI-SEC rules.
+- Approved specification revision/evidence: role baseline and gateway candidate status as recorded in ROLE-TECHNICIAN; user authorized this T4 implementation, not specification changes.
+- Authorized scope/permissions: exact packet ownership, leaf author only; no Git/build/live database/provider or delegation.
+- Relevant input artifacts/provenance: [contract](../technician/T4-CONTRACT.md), baseline 1640606, current source paths in packet.
+- Assumptions: existing provider safety/decoder reused; no new schema.
+- Unresolved questions: none blocking dispatch; report material conflicts.
+- Files changed: packet/contract preparation only before dispatch.
+- Commands/tools: git status, targeted source/spec reads.
+- Verification performed/results/evidence: clean starting tree; T4 checks pending.
+- Security considerations/unresolved risks: strict persisted identity and freshness, no advice mutations, manual fallback; human gateway review remains pending.
+- Suggestions accepted/rejected: fixed bounded integration; no gateway rewrite.
+- Human approval required and reason: teammate review before merge; no merge authorized.
+- Human reviewer/outcome/evidence: pending.
+- Next authorized action: assigned T4 authoring then return handoff; suggested skills facilityflow-handoff, cs3227-unit-test.
+- Status: ready for assigned task.

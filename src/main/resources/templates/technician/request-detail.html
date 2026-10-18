@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" th:href="@{/css/technician.css}">
     <script defer th:src="@{/js/technician-commands.js}"></script>
+    <script defer th:src="@{/js/technician-work-plan.js}"></script>
     <title th:text="${title} + ' · FacilityFlow AI'">Request details · FacilityFlow AI</title>
 </head>
 <body>
@@ -59,6 +60,31 @@
                 <p th:if="${commandFieldErrors != null and commandFieldErrors.containsKey('version')}" class="field-error" role="alert" th:text="${commandFieldErrors.get('version')}">Refresh this request before submitting.</p>
                 <button type="submit">Start work</button>
             </form>
+        </section>
+        <section th:if="${detail.request.status.name() == 'ASSIGNED' or detail.request.status.name() == 'IN_PROGRESS'}"
+                 id="work-plan-panel" class="command-panel work-plan-panel" aria-labelledby="work-plan-heading">
+            <h2 id="work-plan-heading">AI Work Plan suggestions</h2>
+            <p>These suggestions are read-only advice. Use your training and professional judgment; they are not an approved procedure or safety certification. You choose which steps, if any, to follow.</p>
+            <div class="work-plan-safety" aria-label="Safety guidance">
+                <h3>Safety precautions</h3>
+                <ul id="work-plan-safetyPrecautions"></ul>
+                <h3>Stop or escalate when</h3>
+                <ul id="work-plan-stopOrEscalateWhen"></ul>
+            </div>
+            <form id="work-plan-form" method="post" th:action="@{/technician/requests/{id}/work-plan(id=${detail.request.displayId})}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button id="work-plan-request" type="submit">Request Work Plan</button>
+                <button id="work-plan-discard" type="button" hidden>Discard suggestions</button>
+            </form>
+            <p id="work-plan-status" role="status" aria-live="polite" aria-atomic="true"></p>
+            <div id="work-plan-result" class="work-plan-result" hidden>
+                <h3>Diagnostic steps</h3><ol id="work-plan-diagnosticSteps"></ol>
+                <h3>Suggested tools</h3><ul id="work-plan-suggestedTools"></ul>
+                <h3>Questions for the requester</h3><ul id="work-plan-requesterQuestions"></ul>
+                <h3>Evidence checklist</h3><ul id="work-plan-evidenceChecklist"></ul>
+                <h3>Rationale</h3><p id="work-plan-rationale"></p>
+            </div>
+            <noscript><p>Work Plan suggestions need JavaScript. The manual Technician workflow above remains available.</p></noscript>
         </section>
         <section th:if="${detail.request.status.name() == 'IN_PROGRESS'}" aria-labelledby="work-log-heading" class="command-panel">
             <h2 id="work-log-heading">Add a Work Log</h2>

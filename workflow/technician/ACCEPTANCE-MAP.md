@@ -73,3 +73,22 @@ coverage is needed. At T4 also run `./gradlew.bat test --tests
 "sg.edu.nus.facilityflow.ai.provider.*WorkPlan*Test"`. Coordinator runs the
 integrated `./gradlew.bat check` on a frozen candidate. Commands are proposed,
 not execution evidence.
+
+
+## T4 implemented test allocation
+
+The T0 proposed T4 controller-test filenames above are superseded by this actual
+allocation: `SecurityIntegrationTest` checks real authentication/CSRF/routes,
+no-store JSON serialization and Thymeleaf state-gated Work Plan/manual controls
+using a Work Plan service double. `TechnicianWorkPlanServiceTest` independently
+checks captured snapshot and asynchronous discard/terminal telemetry semantics;
+`JdbcTechnicianWorkPlanRepositoryTest` uses isolated PostgreSQL and persisted
+account/session/request/category data, latest-ten selection and unchanged business
+records. `src/test/js/technician-work-plan.test.cjs` runs the actual script with
+deterministic DOM/fetch/lifecycle fixtures for whole-result rendering, schema
+rejection, fixed error guidance, CSRF, duplicate suppression and manual fallback.
+Existing provider Work Plan/safety/disclosure tests retain stored-injection,
+unsafe-safety and prompt-exclusion evidence. These tests do not establish live
+provider or complete browser/accessibility acceptance. Executed results and
+independent review status are recorded in `logs/technician/T4-REPORT.md`; T4 local execution and independent review passed; complete browser/hosted
+acceptance remains pending.

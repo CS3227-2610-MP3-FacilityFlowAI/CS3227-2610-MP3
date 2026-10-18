@@ -1,0 +1,106 @@
+{
+  "candidate": "09e9a58476d87814e8da69448248257b1ac80f02c602dc9032eb64fdcae3d8e8",
+  "scope": "exact changed implementation/test/guide/evidence paths; no configuration/migration/dependency changes",
+  "sourceInputs": 11,
+  "localMarkdownLinksChecked": 123,
+  "whitespace": "PASS git diff --check",
+  "changes": [
+    {
+      "path": "docs/DeveloperGuide.md",
+      "added": 28,
+      "deleted": 1,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "docs/UserGuide.md",
+      "added": 22,
+      "deleted": 3,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/ai/technician/WorkPlanContext.java",
+      "added": 4,
+      "deleted": 2,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/JdbcTechnicianWorkPlanRepository.java",
+      "added": 55,
+      "deleted": 9,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianWorkPlanRepository.java",
+      "added": 3,
+      "deleted": 8,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianWorkPlanService.java",
+      "added": 3,
+      "deleted": 3,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/main/resources/static/css/technician.css",
+      "added": 12,
+      "deleted": 0,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/main/resources/static/js/technician-work-plan.js",
+      "added": 192,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/main/resources/templates/technician/request-detail.html",
+      "added": 26,
+      "deleted": 0,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/technician/JdbcTechnicianWorkPlanRepositoryTest.java",
+      "added": 162,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/technician/TechnicianWorkPlanServiceTest.java",
+      "added": 27,
+      "deleted": 15,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/web/SecurityIntegrationTest.java",
+      "added": 100,
+      "deleted": 0,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/test/js/technician-work-plan.test.cjs",
+      "added": 176,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "workflow/REUSE.md",
+      "added": 9,
+      "deleted": 0,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "workflow/TRACEABILITY.md",
+      "added": 1,
+      "deleted": 1,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "workflow/technician/ACCEPTANCE-MAP.md",
+      "added": 19,
+      "deleted": 0,
+      "origin": "existing MP3 adapted"
+    }
+  ],
+  "checks": "source hashes match candidate; changed source inventory exact; only T4 evidence and five owned documentation paths additional"
+}

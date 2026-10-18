@@ -46,12 +46,14 @@ public record WorkPlanContext(
 
     /** Selects the latest ten by descending time/id, then sends them oldest-first. */
     public List<RequesterUpdate> selectedRequesterUpdates() {
+        // Canonical UUID text follows PostgreSQL's unsigned byte order, unlike UUID.compareTo.
+        Comparator<RequesterUpdate> byId = Comparator.comparing(update -> update.id().toString());
         return requesterUpdates.stream()
                 .sorted(Comparator.comparing(RequesterUpdate::createdAt).reversed()
-                        .thenComparing(RequesterUpdate::id, Comparator.reverseOrder()))
+                        .thenComparing(byId.reversed()))
                 .limit(10)
                 .sorted(Comparator.comparing(RequesterUpdate::createdAt)
-                        .thenComparing(RequesterUpdate::id))
+                        .thenComparing(byId))
                 .toList();
     }
 

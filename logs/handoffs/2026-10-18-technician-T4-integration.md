@@ -1,0 +1,18 @@
+- Source agent: T4 coordinator.
+- Destination agent: user / next approved iteration coordinator.
+- Task/goal: locally verified T4 Work Plan browser integration.
+- Approved requirement IDs: REQ-TECH-012–017, TECH-AI01–04; linked shared/AI controls.
+- Approved specification revision/evidence: [contract](../technician/T4-CONTRACT.md), recorded role baseline/gateway human-review status; user explicitly authorized T4, baseline 1640606.
+- Authorized scope/permissions: T4 exact local implementation/evidence commit only. No push, merge, deployment, live provider/database or T5.
+- Relevant input artifacts/provenance: [report](../technician/T4-REPORT.md), [candidate](../technician/T4-CANDIDATE.json), [result](../technician/T4-RESULT.json), [review](2026-10-18-technician-T4-review.md), task/return handoffs.
+- Assumptions: existing provider safety and strict schema reused; no human safety certification inferred.
+- Unresolved questions: none blocking T4 local commit. Existing human/browser/hosted gates remain.
+- Files changed: 11 source/test inputs, five scoped guides/mappings/reuse files and T4 evidence/handoffs; exact inventory and changes in mechanical result.
+- Commands/tools: existing offline Gradle wrapper; node actual-script tests; candidate/hash/patch/link/scope/whitespace checks; exact Git staging/commit.
+- Verification performed/results/evidence: 13 preflight service/PostgreSQL cases; 52 scoped MVC/provider/readiness cases; both script fixtures; full 620 tests/45 suites with zero failures/errors/skips; check, JaCoCo and executable bootJar passed. Independent source PASS, final verdict in reviewer handoff. Source/test hashes unchanged.
+- Security considerations/unresolved risks: persisted initial account/session before context, exact final freshness/category, canonical latest-ten UUID order; read-only advice/manual fallback; no live provider/browser acceptance claimed.
+- Suggestions accepted/rejected: targeted UUID tie-order fix before preflight; no post-review findings or corrections. No scope/configuration changes beyond documented targeted ownership addition.
+- Human approval required and reason: teammate review before non-trivial merge; gateway/corpus and hosted/browser gates remain. T5 needs preview and separate explicit approval.
+- Human reviewer/outcome/evidence: pending; independent development-agent review is not teammate approval.
+- Next authorized action: deliver T4 local commit/report to user; do not start T5 without approval. Suggested skill facilityflow-handoff for next transition.
+- Status: verified locally; exact commit identified by Git history containing T4-REPORT.md.

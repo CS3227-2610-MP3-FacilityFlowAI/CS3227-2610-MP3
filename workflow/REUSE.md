@@ -121,3 +121,12 @@ existing MP3 completion-history storage and test fixture. Added completion tests
 and scoped guide/traceability sections are new MP3 work; no MP2 source was
 consulted or copied. Exact implementation line changes and verification evidence
 are in `logs/technician/T3-REPORT.md`; release-wide reuse totals remain pending.
+
+
+Technician T4: new Work Plan browser script and PostgreSQL/script regressions,
+with adapted existing MP3 detail/CSS, Work Plan service/repository and MVC/service
+tests. Existing MP3 typed provider, safety policy, prompt allowlisting, admission,
+telemetry and endpoint are reused; no MP2 source was consulted or copied. Scoped
+guides/traceability and process evidence are new MP3 documentation. Measured line
+changes and executed verification are in `logs/technician/T4-REPORT.md`; human
+review and project-wide reuse totals remain pending.

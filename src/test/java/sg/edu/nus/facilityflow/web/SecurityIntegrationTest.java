@@ -44,6 +44,8 @@ class SecurityIntegrationTest {
 
     private sg.edu.nus.facilityflow.technician.TechnicianCommandService commandService;
 
+    private sg.edu.nus.facilityflow.technician.TechnicianWorkPlanService workPlanService;
+
     // MVC uses a command double: PostgreSQL command atomicity/locking is tested
     // separately. This context verifies real routing, security and Thymeleaf.
     @org.springframework.boot.test.context.TestConfiguration(proxyBeanMethods = false)
@@ -52,6 +54,14 @@ class SecurityIntegrationTest {
         @org.springframework.context.annotation.Primary
         sg.edu.nus.facilityflow.technician.TechnicianCommandService technicianMvcCommands() {
             return org.mockito.Mockito.mock(sg.edu.nus.facilityflow.technician.TechnicianCommandService.class);
+        }
+
+        // Service/provider semantics have separate PostgreSQL and asynchronous tests.
+        // This double exercises the real HTTP security, serialization and page integration.
+        @org.springframework.context.annotation.Bean
+        @org.springframework.context.annotation.Primary
+        sg.edu.nus.facilityflow.technician.TechnicianWorkPlanService technicianMvcWorkPlans() {
+            return org.mockito.Mockito.mock(sg.edu.nus.facilityflow.technician.TechnicianWorkPlanService.class);
         }
     }
 
@@ -83,6 +93,7 @@ class SecurityIntegrationTest {
                 .build();
         jdbc = context.getBean(JdbcTemplate.class);
         commandService = context.getBean(sg.edu.nus.facilityflow.technician.TechnicianCommandService.class);
+        workPlanService = context.getBean(sg.edu.nus.facilityflow.technician.TechnicianWorkPlanService.class);
         // This identity-only H2 fixture needs an empty read workspace for the
         // Technician landing route. PostgreSQL behavior has its own isolated tests.
         jdbc.execute("""
@@ -121,6 +132,11 @@ class SecurityIntegrationTest {
     @BeforeEach
     void seedAccounts() {
         org.mockito.Mockito.reset(commandService);
+        org.mockito.Mockito.reset(workPlanService);
+        org.mockito.Mockito.when(workPlanService.request(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(java.util.concurrent.CompletableFuture.completedFuture(
+                        sg.edu.nus.facilityflow.ai.technician.WorkPlanResponse.failure(
+                                sg.edu.nus.facilityflow.ai.technician.WorkPlanFailureCode.AI_UNAVAILABLE)));
         jdbc.update("DELETE FROM facilityflow.spring_session_attributes");
         jdbc.update("DELETE FROM facilityflow.spring_session");
         jdbc.update("DELETE FROM facilityflow.requester_update");
@@ -562,6 +578,90 @@ class SecurityIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("AI_UNAVAILABLE"))
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("unavailable")));
+    }
+
+    @Test
+    void reqTech012016WorkPlanPanelIsEligibleReadOnlyAndKeepsManualForms() throws Exception {
+        seedTechnicianCommandRequest("ASSIGNED", 4);
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        for (String state : new String[]{"ASSIGNED", "IN_PROGRESS"}) {
+            jdbc.update("UPDATE facilityflow.maintenance_request SET status = ? WHERE display_id = 'FF-000081'", state);
+            String html = mockMvc.perform(get("/technician/requests/FF-000081").cookie(technician))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            assertThat(html).contains("id=\"work-plan-panel\"", "id=\"work-plan-form\"",
+                    "id=\"work-plan-result\"", "id=\"work-plan-discard\"", "_csrf",
+                    "/technician/requests/FF-000081/work-plan", "/js/technician-work-plan.js",
+                    "work-plan-safetyPrecautions", "work-plan-stopOrEscalateWhen", "<noscript>");
+            assertThat(html.indexOf("work-plan-safetyPrecautions"))
+                    .isLessThan(html.indexOf("work-plan-diagnosticSteps"));
+            assertThat(html.indexOf("work-plan-stopOrEscalateWhen"))
+                    .isLessThan(html.indexOf("work-plan-diagnosticSteps"));
+            assertThat(html).doesNotContain("onclick=", "<style>");
+            assertThat(html).contains(state.equals("ASSIGNED") ? "/FF-000081/start" : "/FF-000081/work-logs");
+        }
+        jdbc.update("UPDATE facilityflow.maintenance_request SET status = 'COMPLETED' WHERE display_id = 'FF-000081'");
+        String completed = mockMvc.perform(get("/technician/requests/FF-000081").cookie(technician))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(completed).doesNotContain("id=\"work-plan-panel\"", "id=\"work-plan-form\"");
+        org.mockito.Mockito.verifyNoInteractions(workPlanService, commandService);
+    }
+
+    @Test
+    void aiSec029WorkPlanRequiresPostCsrfAndTechnicianBeforeService() throws Exception {
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        mockMvc.perform(post("/technician/requests/FF-000081/work-plan").cookie(technician))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/technician/requests/FF-000081/work-plan").cookie(technician))
+                .andExpect(status().isMethodNotAllowed());
+        Cookie requester = login("requester1", VALID_PASSWORD, "/requester");
+        mockMvc.perform(post("/technician/requests/FF-000081/work-plan").cookie(requester).with(csrf()))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/technician/requests/FF-000081/work-plan").with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        mockMvc.perform(get("/js/technician-work-plan.js").cookie(technician))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Security-Policy", org.hamcrest.Matchers.containsString("default-src 'self'")));
+        org.mockito.Mockito.verifyNoInteractions(workPlanService, commandService);
+    }
+
+    @Test
+    void reqTech014017WorkPlanJsonIsWholeTypedNoStoreAndNeverCallsCommands() throws Exception {
+        var plan = new sg.edu.nus.facilityflow.ai.technician.WorkPlanResult(
+                java.util.List.of("Inspect from a safe distance."),
+                java.util.List.of("Keep clear of energized equipment."),
+                java.util.List.of("Inspection light"), java.util.List.of("When did the fault begin?"),
+                java.util.List.of("Record visible symptoms."),
+                java.util.List.of("Stop and contact the supervisor if isolation cannot be confirmed."),
+                "These are suggestions for an initial assessment.");
+        org.mockito.Mockito.when(workPlanService.request("FF-000081"))
+                .thenReturn(java.util.concurrent.CompletableFuture.completedFuture(
+                        new sg.edu.nus.facilityflow.ai.technician.WorkPlanResponse.Success(plan)));
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        MvcResult result = mockMvc.perform(post("/technician/requests/FF-000081/work-plan")
+                        .cookie(technician).with(csrf()))
+                .andExpect(request().asyncStarted()).andReturn();
+        mockMvc.perform(asyncDispatch(result)).andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CACHE_CONTROL, org.hamcrest.Matchers.containsString("no-store")))
+                .andExpect(jsonPath("$.plan.safetyPrecautions[0]").value("Keep clear of energized equipment."))
+                .andExpect(jsonPath("$.plan.stopOrEscalateWhen[0]").value(plan.stopOrEscalateWhen().getFirst()))
+                .andExpect(jsonPath("$.plan.rationale").value(plan.rationale()))
+                .andExpect(jsonPath("$.code").doesNotExist());
+        for (var code : sg.edu.nus.facilityflow.ai.technician.WorkPlanFailureCode.values()) {
+            org.mockito.Mockito.when(workPlanService.request("FF-000081"))
+                    .thenReturn(java.util.concurrent.CompletableFuture.completedFuture(
+                            sg.edu.nus.facilityflow.ai.technician.WorkPlanResponse.failure(code)));
+            MvcResult failure = mockMvc.perform(post("/technician/requests/FF-000081/work-plan")
+                            .cookie(technician).with(csrf()))
+                    .andExpect(request().asyncStarted()).andReturn();
+            mockMvc.perform(asyncDispatch(failure)).andExpect(status().isOk())
+                    .andExpect(header().string(HttpHeaders.CACHE_CONTROL, org.hamcrest.Matchers.containsString("no-store")))
+                    .andExpect(jsonPath("$.code").value(code.name()))
+                    .andExpect(jsonPath("$.message").isNotEmpty())
+                    .andExpect(jsonPath("$.plan").doesNotExist());
+        }
+        org.mockito.Mockito.verifyNoInteractions(commandService);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM facilityflow.work_log", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM facilityflow.maintenance_request", Integer.class)).isZero();
     }
 
     @Test
