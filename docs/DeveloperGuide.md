@@ -354,3 +354,50 @@ tests, and documentation separately and acknowledge every source before merge.
 
 Team: ../AGENTS.md. AI evidence: ../logs/. Reused material: reuse ledger.
 Other source/dependency acknowledgements: TBD.
+
+
+## T5 shared identity and screens
+
+T5 was paused after authorship and resumed by explicit user instruction. Scoped
+automated checks passed; final integrated results and independent verdict are
+recorded in `logs/technician/T5-REPORT.md`. Historical pause records remain as
+history. Full browser/keyboard/viewport/accessibility acceptance is blocked by
+the disabled local-browser Work setting; hosted and human gates remain pending.
+
+`PasswordChangeService` captures the authenticated snapshot and validates raw
+Unicode code-point bounds and exact confirmation. `JdbcPasswordChangeRepository`
+revalidates direct inputs, locks the account FOR UPDATE in READ_COMMITTED
+REQUIRES_NEW, checks persisted active/same role/exact nonnegative session version
+before reading the latest stored hash, and verifies/replaces it with the existing
+maintained encoder. Account version/UTC time and one safe ACCOUNT_PASSWORD_CHANGED
+event commit together; failures roll back. Session_version is retained, preserving
+the current and other sessions. Manager reset/deactivation invalidation is separate.
+
+Protected GET/POST `/account/password` and GET `/about` use the shared authenticated
+header, fixed role routes, no-store and CSRF. Password success is fixed303
+`/account/password?changed`;400/403/503 responses expose fixed field/general errors
+with password inputs cleared. No password/hash goes into models, flash/session,
+audit or diagnostic causes. Shared focus/skip/required/error labels and wrapping
+target accessibility; ordinary business drafts keep their failure behavior.
+
+Preflight's real session-byte regression exposed Spring's default failed-login
+exception retaining attempted credentials in JDBC session storage. SecurityConfiguration
+now uses a fixed context-relative `/login?error` redirect, clears any existing
+authentication-exception attribute and stores no new exception. Generic error,
+CSRF and destination behavior remain. This demonstrated NFR-SEC-002 correction
+is covered by real-stack and existing-session MVC regressions and independent review.
+
+Generic `form-submission.js` is public at that exact asset path for login, acts
+only on data-pending-form, reads no field values and restores every form on
+pageshow. Manual command handlers remain separate. Work Plan invalidation clears
+obsolete status, disables AI immediately on manual submission, and preserves
+whole-result plain-text/safety/failure/late-response boundaries.
+
+Evidence separates service units, restricted-role isolated PostgreSQL repository
+tests, standalone controller tests, real Thymeleaf/security MVC (password-service
+double) and `PasswordChangeSecurityIntegrationTest` using actual PBKDF2→Argon2,
+PostgreSQL account/audit, filters and JDBC sessions. The latter verifies both
+existing sessions, next-login credentials, credential-free serialization after
+failed login and audit-fault rollback. Script tests execute actual scripts in
+deterministic DOM fixtures. These do not substitute for the pending browser
+checklist. No migration, dependency, live-provider or hosted database was used.

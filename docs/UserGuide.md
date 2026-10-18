@@ -26,7 +26,8 @@ the Account directly to its role workspace.
 
 Requester, Technician and Facilities Manager are the only roles. Each Account
 can open only its own role workspace. Directly entering another role's URL is
-denied. Account provisioning and password-change screens are not yet available.
+denied. Own-password change is available through the authenticated header.
+Account provisioning screens remain outside this Technician increment.
 
 ## Features
 
@@ -95,7 +96,8 @@ errors, including when the Request is no longer assigned to you; keep a copy
 before leaving the page. Successful completion shows the persisted resolution
 and time, with no start/log/completion controls. Prior completion history remains
 stored if a Manager later returns/reopens work and it is completed again.
-Change password remains outside this increment.
+Own-password change is implemented in T5; local automated evidence and remaining
+browser/release gates are described below.
 
 ### Work Plan suggestions
 
@@ -144,3 +146,37 @@ password and inactive Account. Retry the supplied credentials or contact a
 Facilities Manager; the message does not reveal whether an Account exists. If
 the session is no longer valid, sign in again. Deployment/support details remain
 TBD.
+
+
+## Shared pages and password change (T5)
+
+T5 was paused after implementation and then resumed. Password/session/audit,
+shared-page rendering/security and client script checks now have passing local
+automated evidence. Browser/keyboard/accessibility and hosted release acceptance
+remain pending; see `logs/technician/T5-REPORT.md` for exact executed results.
+
+The authenticated header identifies your display name, username and role. Use
+My workspace to return to your role, Change password for your own account,
+About for application/workflow information, and Sign out to end the session.
+Navigation never grants access to another role's records. A skip link and visible
+keyboard focus support navigation through the shared pages and Technician forms.
+Existing Technician dates show local date, time and zone (Asia/Singapore).
+
+To change your own password, enter your current password, a new password of
+8–24 Unicode code points, and the same new password again. Spaces count and are
+preserved; there is no composition requirement. The change is for your signed-in
+account only. A successful change keeps you signed in and shows a confirmation.
+Errors identify the relevant field; password inputs clear after a server error
+and must be re-entered. Ordinary unsaved Work Log and resolution input retains
+its existing failure handling. Password changes require no AI service.
+
+Pending-submit feedback applies to login, password change and logout; returning
+through browser history restores form submission. Manual start/log/completion
+and Work Plan controls keep separate pending handling. The Work Plan clears
+obsolete pending text when invalidated and requires refresh after a manual
+submission; advice still cannot perform a business action.
+
+Browser keyboard/responsive/accessibility acceptance is pending because local
+browser use is disabled in Work settings. Final integrated result, independent
+review and local commit status are recorded in `logs/technician/T5-REPORT.md`.
+No hosted or live-provider verification is implied.

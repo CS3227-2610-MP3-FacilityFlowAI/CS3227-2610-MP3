@@ -3,18 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/technician.css}">
     <title th:text="${title} + ' · FacilityFlow AI'">FacilityFlow AI</title>
 </head>
 <body>
-<header>
-    <strong th:text="${displayName}">Display name</strong>
-    <span th:text="${username}">username</span>
-    <span th:text="${role}">ROLE</span>
-    <form method="post" th:action="@{/logout}">
-        <button type="submit">Sign out</button>
-    </form>
-</header>
-<main>
+<div th:replace="~{fragments/authenticated-header :: header(${username}, ${displayName}, ${role})}"></div>
+<main id="main-content">
     <h1 th:text="${title}">Workspace</h1>
     <p>The authenticated foundation is ready for this role's workflow.</p>
 </main>

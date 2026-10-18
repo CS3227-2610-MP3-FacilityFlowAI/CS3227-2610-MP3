@@ -1,0 +1,30 @@
+{
+  "candidate": "2fb74ef65cfe240d2cea029ec95793d0c167ac540a77a7de5d0d09736b8cd1ec",
+  "command": ".\\gradlew.bat --offline --no-daemon --console=plain test --tests JdbcPasswordChangeRepositoryTest.updatesPasswordAndAppendsOneSafeAuditForEachRole --tests PasswordChangeServiceTest",
+  "outcome": "PASS",
+  "totals": {
+    "tests": 8,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "classes": 2,
+  "suites": [
+    {
+      "name": "sg.edu.nus.facilityflow.identity.JdbcPasswordChangeRepositoryTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "3.92"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.identity.PasswordChangeServiceTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.022"
+    }
+  ]
+}

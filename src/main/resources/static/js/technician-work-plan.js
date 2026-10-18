@@ -48,6 +48,7 @@
         controller = null;
         pending = false;
         requestButton.disabled = refreshRequired;
+        status.textContent = "Work Plan request stopped. Continue with the manual Technician workflow.";
     }
 
     function validText(value, maxLength) {
@@ -172,7 +173,9 @@
         if (event.target === form) return;
         invalidate();
         refreshRequired = true;
+        requestButton.disabled = true;
         clearAdvice();
+        status.textContent = "Refreshing request state. Work Plan suggestions were cleared.";
     }, true);
 
     window.addEventListener("pagehide", () => {

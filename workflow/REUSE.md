@@ -130,3 +130,17 @@ telemetry and endpoint are reused; no MP2 source was consulted or copied. Scoped
 guides/traceability and process evidence are new MP3 documentation. Measured line
 changes and executed verification are in `logs/technician/T4-REPORT.md`; human
 review and project-wide reuse totals remain pending.
+
+
+Technician T5: new own-password identity classes, shared controller/header/
+password/About views, generic pending script and tests; adapted existing MP3
+login/dashboard/Technician pages, Work Plan lifecycle, security and integration
+fixtures. Real-stack password/session/audit tests are new MP3 work. The demonstrated
+credential-bearing login exception is corrected within the existing security
+configuration. Shared guide/mapping/process evidence is new MP3 documentation.
+Existing MP3 schema, encoder, account/session filter and provider/manual modules
+are reused; no MP2 source consulted/copied. User paused after authorship and then
+resumed; scoped automated checks passed. Final measured source/guide changes,
+integrated results, independent review and local commit are in
+`logs/technician/T5-REPORT.md`. Browser/human/hosted gates and release-wide reuse
+totals remain pending.

@@ -89,6 +89,15 @@ async function submit(form) { return form.handlers.submit({preventDefault() {}})
     assert.equal(success.elements.get("work-plan-rationale").textContent, plan().rationale);
     assert.equal(success.elements.get("work-plan-discard").hidden, false);
 
+    let retryCount = 0;
+    const retry = fixture(async () => { retryCount++; return response({plan: plan()}); });
+    await submit(retry.form);
+    retry.elements.get("work-plan-discard").handlers.click();
+    assert.equal(retry.elements.get("work-plan-result").hidden, true, "discard removes rendered advice");
+    assert.equal(retry.elements.get("work-plan-discard").hidden, true);
+    await submit(retry.form);
+    assert.equal(retryCount, 2, "discard leaves a fresh request available");
+
     const malformed = fixture(async () => response({plan: {...plan(), unexpected: "partial data"}}));
     await submit(malformed.form);
     assert.equal(malformed.elements.get("work-plan-result").hidden, true, "malformed plans are rejected atomically");
@@ -150,6 +159,13 @@ async function submit(form) { return form.handlers.submit({preventDefault() {}})
     manual.fields = {note: "Unsubmitted technician draft", minutes: "25"};
     pending.documentHandlers.submit({target: manual});
     assert.equal(signal.aborted, true, "manual submission invalidates pending advice");
+    assert.equal(pending.elements.get("work-plan-request").disabled, true,
+        "manual submission immediately disables AI until the refreshed page is loaded");
+    const manualInvalidationStatus = pending.elements.get("work-plan-status").textContent;
+    assert.ok(!manualInvalidationStatus.includes("Requesting Work Plan suggestions"),
+        "obsolete pending status is cleared when manual submission invalidates it");
+    assert.ok(manualInvalidationStatus.includes("Refreshing") && manualInvalidationStatus.includes("cleared"),
+        "manual invalidation communicates that advice was cleared and request state is refreshing");
     release(response({plan: plan()}));
     await first;
     assert.equal(pending.elements.get("work-plan-result").hidden, true, "late response after manual submit is discarded");
@@ -169,6 +185,19 @@ async function submit(form) { return form.handlers.submit({preventDefault() {}})
         await inFlight;
         assert.equal(lifecycle.elements.get("work-plan-result").hidden, true, `${lifecycleEvent} suppresses late advice`);
     }
+    let restore;
+    let restoredSignal;
+    const bfcache = fixture(async (_url, options) => {
+        restoredSignal = options.signal;
+        return new Promise((resolve) => { restore = resolve; });
+    });
+    const restoring = submit(bfcache.form);
+    await Promise.resolve();
+    bfcache.windowHandlers.pageshow();
+    assert.equal(restoredSignal.aborted, true, "pageshow aborts a request restored from the back-forward cache");
+    restore(response({plan: plan()}));
+    await restoring;
+    assert.equal(bfcache.elements.get("work-plan-result").hidden, true);
     console.log("PASS: actual Work Plan script validates atomic output, posts CSRF only, fails safely, and suppresses stale advice");
 })().catch((error) => {
     console.error(error);

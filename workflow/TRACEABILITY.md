@@ -40,7 +40,8 @@ review evidence.
 | REQ-SH-008 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | Technician assigned queue/search/filters/reset and distinct empty states | T1 query/PostgreSQL/rendering tests retained in full T2 check | Technician locally verified; other-role/browser acceptance pending |
 | REQ-SH-009 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | UTC storage and Singapore Technician history timestamps | T1/T2 PostgreSQL/history and escaped MVC local-time checks | Technician display locally verified; inclusive-date filters/other-role acceptance pending |
 | REQ-SH-010 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | Technician required versioned start/log/completion forms, field errors, retained drafts, pending JS and safe PRG | controller/authenticated MVC including changed state/reassignment plus JS event model; [T2 report](../logs/technician/T2-REPORT.md), 614-test full check passed; completion drafts in [T3 report](../logs/technician/T3-REPORT.md) | Technician manual forms locally verified; browser/other-role forms pending |
-| REQ-SH-011–012 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | pending | product acceptance pending | approved |
+| REQ-SH-011 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | pending destructive-action acceptance outside this shared-screen increment | product acceptance pending | approved |
+| REQ-SH-012 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | T5 shared authenticated role navigation/header, password and About pages | Authored shared-page controller/security/Thymeleaf tests and browser checklist; [T5 report](../logs/technician/T5-REPORT.md) | scoped local automated checks passed; final verdict/result in T5 report; browser/hosted/human gates pending |
 | REQ-SH-013 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | Technician assigned-only Requester Update/Work Log reads with retained authorship | T1 history/reassignment tests retained in full T2 check | Technician locally verified; Requester/Manager history acceptance pending |
 | REQ-SH-014 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | V1 storage plus Technician locked REQUIRES_NEW command transaction, state/version/log/audit atomicity | real PostgreSQL isolation/outer rollback, stale/concurrent writes and start/log/completion audit-fault and completion-history-fault rollback; [T2 report](../logs/technician/T2-REPORT.md), 614-test full check passed; [T3 report](../logs/technician/T3-REPORT.md) | Technician manual writes locally verified; other business operations and teammate/release review pending |
 | REQ-SH-015 | [Product shared requirements](specs/PRODUCT-SPEC.md#shared-functional-requirements) | DatabaseInitializer explicit demo mode | DatabaseInitializerTest seed/rollback/idempotence; Part 3 log | locally verified; hosted pending |
@@ -150,3 +151,25 @@ waits, with regression tests in DatabaseInitializerTest. Completion metadata
 retention after reopening is asserted under REQ-MGR-007/008. Fresh review identified a legacy exception; the user confirmed preserving it.
 V4 now retains existing unknown times until reassignment, with an actual V3-to-V4
 legacy-data upgrade regression. Hosted application remains unverified.
+
+
+## T5 resumed local verification
+
+Own-password service/JDBC transaction, shared controller/header/password/About
+pages, pending forms and accessibility/lifecycle polish address scoped
+REQ-SH-002/004/006/009/010/012/014/018, NFR-SEC-001/002, NFR-A11Y-001/002,
+NFR-REL-001 and NFR-DOC-001. User paused after authorship and explicitly resumed.
+Historical pause/dispatch records remain history, not current execution status.
+Service/real PostgreSQL/controller/security/script checks now passed locally.
+PasswordChangeSecurityIntegrationTest covers actual encoder, JDBC sessions,
+next-login password replacement and audit rollback. SecurityConfiguration's
+credential-free failed-login redirect fixes observed session exception leakage;
+session-byte and existing-session regressions cover it. Final integrated totals,
+independent correction verification and local commit identity are recorded in
+[T5 report](../logs/technician/T5-REPORT.md).
+
+Browser/keyboard/viewport/contrast acceptance is blocked by disabled local
+browser use in Work settings and remains pending; automated fixtures do not
+verify it. Existing human role-owner/teammate/gateway/corpus/hosted-release gates
+remain open. Earlier rows retain their scoped historical evidence, not blanket
+release acceptance or completion of other roles' account-change use cases.

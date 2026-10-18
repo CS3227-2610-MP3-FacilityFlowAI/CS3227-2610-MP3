@@ -92,3 +92,30 @@ unsafe-safety and prompt-exclusion evidence. These tests do not establish live
 provider or complete browser/accessibility acceptance. Executed results and
 independent review status are recorded in `logs/technician/T4-REPORT.md`; T4 local execution and independent review passed; complete browser/hosted
 acceptance remains pending.
+
+
+## T5 executed automated acceptance allocation
+
+PasswordChangeServiceTest covers Unicode bounds/raw values, captured identity
+and safe errors. JdbcPasswordChangeRepositoryTest/PasswordChangeFixtures use
+restricted-role isolated PostgreSQL for persisted active/role/session checks,
+latest-hash serialized concurrency, account version/UTC audit, session retention
+and audit rollback. SharedPagesControllerTest verifies fixed303/status/model;
+SecurityIntegrationTest renders actual Thymeleaf with security/session filters,
+role navigation, CSRF and no secret echo using a password-service double.
+PasswordChangeSecurityIntegrationTest adds actual maintained encoder
+PBKDF2→Argon2, PostgreSQL account/audit and real JDBC-session integration, both
+existing sessions, next login, credential-free serialization and rollback.
+The generic login failure handler no longer persists credential-bearing failure
+exceptions; original reproducer plus existing-session MVC regression passed.
+Actual pending/Work Plan/manual command scripts passed deterministic DOM tests.
+
+After user resume, preflight46 cases/three suites and scoped52 cases/seven suites
+passed, plus initial8 service/repository smoke cases; no failures/errors/skips in
+those final passing runs. Preflight harness repairs and the demonstrated login
+secret fix have direct original/corrected XML and independent review evidence.
+Final full regression/build and closing verdict are in `logs/technician/T5-REPORT.md`.
+T5-BROWSER-ACCEPTANCE.md remains pending because browser use is disabled in Work
+settings. No Chrome version, keyboard/viewport/contrast, live-provider/hosted or
+human acceptance is inferred from automated tests. Historical user pause ended
+on “Resume”; full role-owner/teammate/gateway/release gates remain separate.

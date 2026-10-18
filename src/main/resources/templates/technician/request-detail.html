@@ -9,13 +9,8 @@
     <title th:text="${title} + ' · FacilityFlow AI'">Request details · FacilityFlow AI</title>
 </head>
 <body>
-<header>
-    <div><strong th:text="${displayName}">Display name</strong>
-        <span th:text="${username}">username</span>
-        <span th:text="${role}">TECHNICIAN</span></div>
-    <form method="post" th:action="@{/logout}"><button type="submit">Sign out</button></form>
-</header>
-<main>
+<div th:replace="~{fragments/authenticated-header :: header(${username}, ${displayName}, ${role})}"></div>
+<main id="main-content">
     <p><a th:href="@{/technician/requests}">Back to assigned requests</a></p>
     <p th:if="${pageError}" class="error" role="alert" th:text="${pageError}">Request details are unavailable.</p>
     <section th:if="${commandErrors != null and !commandErrors.isEmpty()}" class="error command-errors" role="alert" aria-labelledby="command-errors-title">

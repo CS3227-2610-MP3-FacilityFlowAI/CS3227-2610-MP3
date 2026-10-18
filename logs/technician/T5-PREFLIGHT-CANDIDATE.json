@@ -1,0 +1,105 @@
+{
+  "baseline": "c15d26e",
+  "kind": "T5 frozen source/test inputs UTF8/LF",
+  "files": [
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/identity/JdbcPasswordChangeRepository.java",
+      "sha256": "93ed0dad6e747acddc97f328f5617db3460bc333c3fcd86f861ad6c56502b53f"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/identity/PasswordChangeException.java",
+      "sha256": "54cb53217c774056e9cba277aa91015f078c7bd0d37568b2ff7d8235dd89ca5a"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/identity/PasswordChangeRepository.java",
+      "sha256": "b91f1a9dfa32a22f36590edfa83e7f82050e1c47d276b277eac0e6a12f9d2915"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/identity/PasswordChangeService.java",
+      "sha256": "1525752157d6783bdbf123e17fb8378295a208d451a1dcc51f7ef1778f4a996a"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/web/SecurityConfiguration.java",
+      "sha256": "213c4fe0539cb80ea80c777a1c8d3d11e6cdaf3d2112a888e3b2d4ef520858e7"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/web/SharedPagesController.java",
+      "sha256": "8660b911a8157d401373b5b5543c16868e49a5a2217aa120ace16e164dd2a99f"
+    },
+    {
+      "path": "src/main/resources/static/css/technician.css",
+      "sha256": "0e6d6fdd0d4091417caa302367ac7d2b6c277e68c51ecdc9217533be9bb16efa"
+    },
+    {
+      "path": "src/main/resources/static/js/form-submission.js",
+      "sha256": "7c8761d7f74214d878679222f5e6357103da86f76e09715e29a72d424d1490ae"
+    },
+    {
+      "path": "src/main/resources/static/js/technician-work-plan.js",
+      "sha256": "eb66aa93455f12558c1e908389364632f7f81571d607b1cb4ad074710696e25b"
+    },
+    {
+      "path": "src/main/resources/templates/about.html",
+      "sha256": "92b71437dca67e21c4d0bf1844a6c5a4b45ffafb4a31d9dc07717c5eb79fec21"
+    },
+    {
+      "path": "src/main/resources/templates/account/change-password.html",
+      "sha256": "62c9ef683d87eac08997d7a30ba417c75bb8e975c0cbcb7e2786c3df2601736f"
+    },
+    {
+      "path": "src/main/resources/templates/dashboard.html",
+      "sha256": "99a7eaabb58f506e4bea6a72861acd4b7bd3cb03d78afc5d9bca0402346e0b14"
+    },
+    {
+      "path": "src/main/resources/templates/fragments/authenticated-header.html",
+      "sha256": "fad2520cc69c78041e4c1ed6e0de4860c7ad1eafb3326f0eb024d924b4c6dad6"
+    },
+    {
+      "path": "src/main/resources/templates/login.html",
+      "sha256": "a251933ee670d46e688c2d0ba069fafff0ab39a1268914ab300b7d51b9485f1e"
+    },
+    {
+      "path": "src/main/resources/templates/technician/queue.html",
+      "sha256": "8b8323502b4e0b3efd0efe42de3517cc54230ca34f4ff29aa7d09322be77f15e"
+    },
+    {
+      "path": "src/main/resources/templates/technician/request-detail.html",
+      "sha256": "0b619cd637ea0a94866cadb9e53aeed6420f7457746ce8d474b7d8c8b6f21f47"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/identity/JdbcPasswordChangeRepositoryTest.java",
+      "sha256": "3aac025179231c979582d05b68f56ef90b278752c241cbdfdd13cf188fa4f703"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/identity/PasswordChangeFixtures.java",
+      "sha256": "88ce87c7959ea3d35fe1ea1d4a5f0d82f7039fb33965bb2a19078e4783270e61"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/identity/PasswordChangeSecurityIntegrationTest.java",
+      "sha256": "1fd4ee61f11676f1ad02a28896a5c33cdee85013f16b3a74b08a46ca4c2ab68b"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/identity/PasswordChangeServiceTest.java",
+      "sha256": "4e9c220d1e19497d5d3df24b8eed2db4b615c45d7232884c273773adcdfbff45"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/web/SecurityIntegrationTest.java",
+      "sha256": "d37a1734f3e54156c9a474f421c5f7a1b80f5c426860bf0e950f25a094ec90d7"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/web/SharedPagesControllerTest.java",
+      "sha256": "e27b19224c04df8fcd75893c53d4223d42e4589fee6039894584b6bce665feb0"
+    },
+    {
+      "path": "src/test/js/form-submission.test.cjs",
+      "sha256": "e2efad7231f4c94be750da772992ff86ff2ad150956b5de32b2b7a8da6e1112c"
+    },
+    {
+      "path": "src/test/js/technician-work-plan.test.cjs",
+      "sha256": "792d614456de3d4d62487d81522a46df855edafc642c2aeef79b55a1268f00cb"
+    }
+  ],
+  "sha256": "beb65dbf79d1aca95bab40322ad2d0d14cbe765441a64f861db06b64dbf802a5",
+  "patch": "build/T5-PREFLIGHT-CANDIDATE.patch",
+  "patchSha256": "14bc2a3b47f68f4a03880aa8fdcff573b05711df1d16d34a3d244d306ed14e16"
+}

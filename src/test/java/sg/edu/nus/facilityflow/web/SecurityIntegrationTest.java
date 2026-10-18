@@ -46,6 +46,8 @@ class SecurityIntegrationTest {
 
     private sg.edu.nus.facilityflow.technician.TechnicianWorkPlanService workPlanService;
 
+    private sg.edu.nus.facilityflow.identity.PasswordChangeService passwordChanges;
+
     // MVC uses a command double: PostgreSQL command atomicity/locking is tested
     // separately. This context verifies real routing, security and Thymeleaf.
     @org.springframework.boot.test.context.TestConfiguration(proxyBeanMethods = false)
@@ -62,6 +64,12 @@ class SecurityIntegrationTest {
         @org.springframework.context.annotation.Primary
         sg.edu.nus.facilityflow.technician.TechnicianWorkPlanService technicianMvcWorkPlans() {
             return org.mockito.Mockito.mock(sg.edu.nus.facilityflow.technician.TechnicianWorkPlanService.class);
+        }
+
+        @org.springframework.context.annotation.Bean
+        @org.springframework.context.annotation.Primary
+        sg.edu.nus.facilityflow.identity.PasswordChangeService passwordMvcChanges() {
+            return org.mockito.Mockito.mock(sg.edu.nus.facilityflow.identity.PasswordChangeService.class);
         }
     }
 
@@ -94,6 +102,7 @@ class SecurityIntegrationTest {
         jdbc = context.getBean(JdbcTemplate.class);
         commandService = context.getBean(sg.edu.nus.facilityflow.technician.TechnicianCommandService.class);
         workPlanService = context.getBean(sg.edu.nus.facilityflow.technician.TechnicianWorkPlanService.class);
+        passwordChanges = context.getBean(sg.edu.nus.facilityflow.identity.PasswordChangeService.class);
         // This identity-only H2 fixture needs an empty read workspace for the
         // Technician landing route. PostgreSQL behavior has its own isolated tests.
         jdbc.execute("""
@@ -133,6 +142,7 @@ class SecurityIntegrationTest {
     void seedAccounts() {
         org.mockito.Mockito.reset(commandService);
         org.mockito.Mockito.reset(workPlanService);
+        org.mockito.Mockito.reset(passwordChanges);
         org.mockito.Mockito.when(workPlanService.request(org.mockito.ArgumentMatchers.anyString()))
                 .thenReturn(java.util.concurrent.CompletableFuture.completedFuture(
                         sg.edu.nus.facilityflow.ai.technician.WorkPlanResponse.failure(
@@ -677,6 +687,87 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    void reqSh012SharedNavigationShowsOnlyCurrentRoleWorkspace() throws Exception {
+        String[][] roles = {{"requester1", "/requester"}, {"technician1", "/technician"}, {"manager1", "/manager"}};
+        for (String[] role : roles) {
+            Cookie session = login(role[0], VALID_PASSWORD, role[1]);
+            for (String page : new String[]{role[1], "/account/password", "/about"}) {
+                String html = mockMvc.perform(get(page).cookie(session)).andExpect(status().isOk())
+                        .andReturn().getResponse().getContentAsString();
+                assertThat(html).contains("href=\"" + role[1] + "\"", "href=\"/account/password\"",
+                        "href=\"/about\"", "action=\"/logout\"", role[0], "_csrf", "<nav", "id=\"main-content\"");
+                for (String[] other : roles) {
+                    if (!role[1].equals(other[1])) assertThat(html).doesNotContain("href=\"" + other[1] + "\"");
+                }
+            }
+        }
+        org.mockito.Mockito.verifyNoInteractions(passwordChanges);
+    }
+
+    @Test
+    void nfrSec001PasswordPostRequiresAuthenticationAndCsrfWhileLoginScriptIsPublic() throws Exception {
+        mockMvc.perform(get("/js/form-submission.js"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Security-Policy", org.hamcrest.Matchers.containsString("default-src 'self'")));
+        for (String path : new String[]{"/account/password", "/about"}) {
+            mockMvc.perform(get(path)).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
+        }
+        mockMvc.perform(post("/account/password").with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        mockMvc.perform(post("/account/password").cookie(technician)
+                        .param("currentPassword", VALID_PASSWORD).param("newPassword", "synthetic-new-value")
+                        .param("confirmPassword", "synthetic-new-value"))
+                .andExpect(status().isForbidden());
+        org.mockito.Mockito.verifyNoInteractions(passwordChanges);
+    }
+
+    @Test
+    void reqSh004010OwnPasswordUsesFixed303AndRetainsCurrentWebSessionWithoutSecretEcho() throws Exception {
+        // The service double isolates web/session behavior; real PostgreSQL password/audit
+        // and session_version semantics belong to JdbcPasswordChangeRepositoryTest.
+        String newPassword = "synthetic-new-value";
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        mockMvc.perform(post("/account/password").cookie(technician).with(csrf())
+                        .param("currentPassword", VALID_PASSWORD).param("newPassword", newPassword)
+                        .param("confirmPassword", newPassword).param("accountId", MANAGER_ID.toString())
+                        .param("returnTo", "https://invalid.example/"))
+                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/account/password?changed"))
+                .andExpect(header().string(HttpHeaders.CACHE_CONTROL, org.hamcrest.Matchers.containsString("no-store")));
+        org.mockito.Mockito.verify(passwordChanges).changeOwnPassword(VALID_PASSWORD, newPassword, newPassword);
+        String page = mockMvc.perform(get("/account/password?changed").cookie(technician))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(page).contains("name=\"currentPassword\"", "name=\"newPassword\"", "name=\"confirmPassword\"",
+                        "autocomplete=\"current-password\"", "autocomplete=\"new-password\"", "required")
+                .doesNotContain(VALID_PASSWORD, newPassword, "https://invalid.example/");
+        mockMvc.perform(get("/technician").cookie(technician)).andExpect(status().isOk());
+        jdbc.query("SELECT attribute_bytes FROM facilityflow.spring_session_attributes", (rs, row) -> rs.getBytes(1))
+                .forEach(bytes -> assertThat(new String(bytes, StandardCharsets.ISO_8859_1))
+                        .doesNotContain(newPassword, VALID_PASSWORD));
+    }
+
+    @Test
+    void reqSh010PasswordFailureRendersAssociatedErrorsWithoutReturningSubmittedSecrets() throws Exception {
+        String currentPassword = "synthetic-current";
+        String newPassword = "synthetic-next-secret";
+        var problem = new sg.edu.nus.facilityflow.identity.PasswordChangeException(
+                sg.edu.nus.facilityflow.identity.PasswordChangeException.Code.INCORRECT_CURRENT_PASSWORD,
+                java.util.Map.of("currentPassword", "The current password is incorrect."));
+        org.mockito.Mockito.doThrow(problem).when(passwordChanges)
+                .changeOwnPassword(currentPassword, newPassword, newPassword);
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        String html = mockMvc.perform(post("/account/password").cookie(technician).with(csrf())
+                        .param("currentPassword", currentPassword).param("newPassword", newPassword)
+                        .param("confirmPassword", newPassword))
+                .andExpect(status().isBadRequest())
+                .andExpect(header().string(HttpHeaders.CACHE_CONTROL, org.hamcrest.Matchers.containsString("no-store")))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(html).contains("The current password is incorrect.", "aria-invalid=\"true\"", "aria-describedby=")
+                .doesNotContain(currentPassword, newPassword);
+        mockMvc.perform(get("/technician").cookie(technician)).andExpect(status().isOk());
+    }
+
+    @Test
     void reqSh004DeactivationAndSessionVersionChangesRejectExistingSessions() throws Exception {
         Cookie requester = login("requester1", VALID_PASSWORD, "/requester");
         jdbc.update("UPDATE facilityflow.user_account SET active = FALSE WHERE id = ?", REQUESTER_ID);
@@ -744,6 +835,20 @@ class SecurityIntegrationTest {
                     assertThat(serialized).doesNotContain(validPasswordHash);
                     assertThat(serialized).doesNotContain("$argon2id$");
                 });
+    }
+
+    @Test
+    void nfrSec002FailedLoginNeverStoresTheAttemptedCredentialInAnExistingSession() throws Exception {
+        Cookie session = login("requester1", VALID_PASSWORD, "/requester");
+        String attempted = "synthetic-wrong-secret";
+        mockMvc.perform(post("/login").cookie(session).with(csrf())
+                        .param("username", "requester1").param("password", attempted))
+                .andExpect(redirectedUrl("/login?error"));
+        jdbc.query("SELECT attribute_bytes FROM facilityflow.spring_session_attributes", (rs, row) -> rs.getBytes(1))
+                .forEach(bytes -> assertThat(new String(bytes, StandardCharsets.ISO_8859_1))
+                        .doesNotContain(attempted, VALID_PASSWORD, "BadCredentialsException"));
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM facilityflow.spring_session_attributes WHERE attribute_name = ?",
+                Integer.class, org.springframework.security.web.WebAttributes.AUTHENTICATION_EXCEPTION)).isZero();
     }
 
     @Test
