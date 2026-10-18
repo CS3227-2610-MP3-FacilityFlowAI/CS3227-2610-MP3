@@ -17,7 +17,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import sg.edu.nus.facilityflow.identity.AccountRole;
 import sg.edu.nus.facilityflow.identity.CurrentAccountSnapshot;
 
-/** Locked, atomic writes and append-only audit for REQ-TECH-004–006/010 and REQ-SH-002/006/014. */
+/** Locked, atomic writes and append-only audit for REQ-TECH-004–008/010 and REQ-SH-002/006/014. */
 @Repository
 public class JdbcTechnicianCommandRepository implements TechnicianCommandRepository {
     private final NamedParameterJdbcTemplate jdbc;
@@ -79,6 +79,46 @@ public class JdbcTechnicianCommandRepository implements TechnicianCommandReposit
                     """, parameters));
             appendAudit(parameters, "TECHNICIAN_WORK_LOGGED", """
                     jsonb_build_object('minutes', CAST(:minutes AS integer),
+                                       'version', CAST(:expectedVersion AS bigint) + 1)
+                    """);
+        });
+    }
+
+    @Override
+    public void completeWork(CurrentAccountSnapshot actor, String displayId, long expectedVersion,
+            String resolutionSummary) {
+        requireSnapshot(actor);
+        TechnicianCommandService.validateRequest(displayId, expectedVersion);
+        String normalizedResolution = TechnicianCommandService.normalizeResolution(resolutionSummary);
+        execute(() -> {
+            requireCurrentTechnician(actor);
+            LockedRequest request = lockAssignedRequest(actor, displayId);
+            requireStateAndVersion(request, "IN_PROGRESS", expectedVersion);
+            MapSqlParameterSource parameters = commandParameters(actor, request, expectedVersion)
+                    .addValue("resolutionSummary", normalizedResolution);
+            Boolean hasWorkLog = jdbc.queryForObject("""
+                    SELECT EXISTS (SELECT 1 FROM facilityflow.work_log WHERE request_id = :requestId)
+                    """, parameters, Boolean.class);
+            if (!Boolean.TRUE.equals(hasWorkLog)) {
+                throw new TechnicianCommandException(TechnicianCommandException.Code.WORK_LOG_REQUIRED);
+            }
+            // Transaction time also supplies the history default, preserving one completion instant.
+            int updated = jdbc.update("""
+                    UPDATE facilityflow.maintenance_request
+                       SET status = 'COMPLETED', resolution_summary = :resolutionSummary,
+                           completed_by = :actorId, completed_at = CURRENT_TIMESTAMP,
+                           updated_at = CURRENT_TIMESTAMP, version = version + 1
+                     WHERE id = :requestId AND assigned_technician_id = :actorId
+                       AND status = 'IN_PROGRESS' AND version = :expectedVersion
+                    """, parameters);
+            requireUpdated(updated);
+            requireInserted(jdbc.update("""
+                    INSERT INTO facilityflow.request_completion_history
+                           (request_id, technician_id, resolution_summary)
+                    VALUES (:requestId, :actorId, :resolutionSummary)
+                    """, parameters));
+            appendAudit(parameters, "TECHNICIAN_WORK_COMPLETED", """
+                    jsonb_build_object('fromStatus', 'IN_PROGRESS', 'toStatus', 'COMPLETED',
                                        'version', CAST(:expectedVersion AS bigint) + 1)
                     """);
         });

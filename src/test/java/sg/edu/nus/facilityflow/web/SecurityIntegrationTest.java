@@ -341,6 +341,115 @@ class SecurityIntegrationTest {
         org.mockito.Mockito.verifyNoInteractions(commandService);
     }
 
+    @Test
+    void reqTech007CompletionFormIsVersionedRequiredCsrfProtectedAndStateGated() throws Exception {
+        seedTechnicianCommandRequest("IN_PROGRESS", 5);
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        String html = mockMvc.perform(get("/technician/requests/FF-000081").cookie(technician))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(html).contains("/technician/requests/FF-000081/complete", "name=\"resolutionSummary\"", "required", "_csrf", "value=\"5\"")
+                .doesNotContain("maxlength=\"2000\"");
+        jdbc.update("UPDATE facilityflow.maintenance_request SET status = 'ASSIGNED' WHERE display_id = 'FF-000081'");
+        String assigned = mockMvc.perform(get("/technician/requests/FF-000081").cookie(technician))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(assigned).doesNotContain("/technician/requests/FF-000081/complete");
+    }
+
+    @Test
+    void reqTech008CompletionSuccessRedirectsAndCompletedDetailHasNoMutationForms() throws Exception {
+        seedTechnicianCommandRequest("IN_PROGRESS", 5);
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        mockMvc.perform(post("/technician/requests/FF-000081/complete").cookie(technician).with(csrf())
+                        .param("version", "5").param("resolutionSummary", "  Replaced <panel> and verified operation.  "))
+                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/technician/requests/FF-000081"));
+        org.mockito.Mockito.verify(commandService).completeWork("FF-000081", 5, "  Replaced <panel> and verified operation.  ");
+        // Command is doubled for MVC; actual PG tests prove the persisted write.
+        jdbc.update("""
+                UPDATE facilityflow.maintenance_request SET status = 'COMPLETED', version = 6,
+                    resolution_summary = 'Replaced <panel> and verified operation.',
+                    completed_at = TIMESTAMP WITH TIME ZONE '2026-10-18 11:00:00Z'
+                WHERE display_id = 'FF-000081'
+                """);
+        String html = mockMvc.perform(get("/technician/requests/FF-000081").cookie(technician))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(html).contains("COMPLETED", "Replaced &lt;panel&gt; and verified operation.", "19:00", "Assigned")
+                .doesNotContain("Replaced <panel>", "/technician/requests/FF-000081/start", "/technician/requests/FF-000081/work-logs", "/technician/requests/FF-000081/complete");
+    }
+
+    @Test
+    void reqTech007MissingLogAndInvalidResolutionRenderActionablePreservedErrors() throws Exception {
+        seedTechnicianCommandRequest("IN_PROGRESS", 5);
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        org.mockito.Mockito.doThrow(new sg.edu.nus.facilityflow.technician.TechnicianCommandException(
+                sg.edu.nus.facilityflow.technician.TechnicianCommandException.Code.WORK_LOG_REQUIRED))
+                .when(commandService).completeWork("FF-000081", 5, "Resolution <unsaved> summary");
+        String missingLog = mockMvc.perform(post("/technician/requests/FF-000081/complete").cookie(technician).with(csrf())
+                        .param("version", "5").param("resolutionSummary", "Resolution <unsaved> summary"))
+                .andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
+        assertThat(missingLog).contains("Work Log", "Resolution &lt;unsaved&gt; summary")
+                .doesNotContain("Resolution <unsaved>");
+        org.mockito.Mockito.doThrow(new sg.edu.nus.facilityflow.technician.TechnicianCommandException(
+                sg.edu.nus.facilityflow.technician.TechnicianCommandException.Code.INVALID_INPUT))
+                .when(commandService).completeWork("FF-000081", 5, "<bad>");
+        String invalid = mockMvc.perform(post("/technician/requests/FF-000081/complete").cookie(technician).with(csrf())
+                        .param("version", "5").param("resolutionSummary", "<bad>"))
+                .andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
+        assertThat(invalid).contains("&lt;bad&gt;", "aria-invalid=\"true\"").doesNotContain("><bad></textarea>");
+    }
+
+    @Test
+    void reqTech010CompletionConflictAndReassignmentPreserveOnlyOwnedDraft() throws Exception {
+        seedTechnicianCommandRequest("ASSIGNED", 6);
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        org.mockito.Mockito.doThrow(new sg.edu.nus.facilityflow.technician.TechnicianCommandException(
+                sg.edu.nus.facilityflow.technician.TechnicianCommandException.Code.CONFLICT))
+                .when(commandService).completeWork("FF-000081", 5, "Unsaved <resolution> text");
+        String conflict = mockMvc.perform(post("/technician/requests/FF-000081/complete").cookie(technician).with(csrf())
+                        .param("version", "5").param("resolutionSummary", "Unsaved <resolution> text"))
+                .andExpect(status().isConflict()).andReturn().getResponse().getContentAsString();
+        assertThat(conflict).contains("Unsaved &lt;resolution&gt; text")
+                .doesNotContain("/technician/requests/FF-000081/complete", "Unsaved <resolution>");
+        jdbc.update("UPDATE facilityflow.maintenance_request SET assigned_technician_id = ? WHERE display_id = 'FF-000081'", MANAGER_ID);
+        String reassigned = mockMvc.perform(post("/technician/requests/FF-000081/complete").cookie(technician).with(csrf())
+                        .param("version", "5").param("resolutionSummary", "Unsaved <resolution> text"))
+                .andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+        assertThat(reassigned).contains("Unsaved &lt;resolution&gt; text")
+                .doesNotContain("Private assigned title", "Private assigned description", "name=\"version\"");
+        org.mockito.Mockito.verify(commandService, org.mockito.Mockito.times(2)).completeWork("FF-000081", 5, "Unsaved <resolution> text");
+    }
+
+    @Test
+    void reqSh010CompletionOperationalFailurePreservesDraftAndMalformedVersionDoesNotSubmit() throws Exception {
+        seedTechnicianCommandRequest("IN_PROGRESS", 5);
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        org.mockito.Mockito.doThrow(new sg.edu.nus.facilityflow.technician.TechnicianCommandException(
+                sg.edu.nus.facilityflow.technician.TechnicianCommandException.Code.UNAVAILABLE))
+                .when(commandService).completeWork("FF-000081", 5, "Unsaved <resolution> text");
+        String unavailable = mockMvc.perform(post("/technician/requests/FF-000081/complete").cookie(technician).with(csrf())
+                        .param("version", "5").param("resolutionSummary", "Unsaved <resolution> text"))
+                .andExpect(status().isServiceUnavailable()).andReturn().getResponse().getContentAsString();
+        assertThat(unavailable).contains("Unsaved &lt;resolution&gt; text").doesNotContain("SQLException", "jdbc:");
+        org.mockito.Mockito.reset(commandService);
+        mockMvc.perform(post("/technician/requests/FF-000081/complete").cookie(technician).with(csrf())
+                        .param("version", "9223372036854775808").param("resolutionSummary", "Unsaved <resolution> text"))
+                .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verifyNoInteractions(commandService);
+    }
+
+    @Test
+    void reqTech011CompletionRequiresCsrfAndTechnicianRole() throws Exception {
+        Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
+        String route = "/technician/requests/FF-000081/complete";
+        mockMvc.perform(post(route).cookie(technician).param("version", "0"))
+                .andExpect(status().isForbidden());
+        for (Cookie cookie : new Cookie[]{login("requester1", VALID_PASSWORD, "/requester"), login("manager1", VALID_PASSWORD, "/manager")}) {
+            mockMvc.perform(post(route).cookie(cookie).with(csrf()).param("version", "0")
+                            .param("resolutionSummary", "Valid completion summary"))
+                    .andExpect(status().isForbidden());
+        }
+        org.mockito.Mockito.verifyNoInteractions(commandService);
+    }
+
     private void seedTechnicianCommandRequest(String state, long version) {
         UUID categoryId = UUID.fromString("30000000-0000-0000-0000-000000000082");
         OffsetDateTime now = OffsetDateTime.parse("2026-10-18T08:00:00Z");

@@ -3,7 +3,7 @@
 Status: Shared database schema and explicit initialization supplied; V1 application
 and permissions evidenced by user screenshots. Hosted V2/V3/demo results are
 reported matching by the user; independent hosted verification remains pending.
-Technician assigned-work reads, start-work and Work Log commands are implemented
+Technician assigned-work reads, start/log and completion commands are implemented
 in source as described below.
 Follow [DatabaseCompletion](DatabaseCompletion.md).
 
@@ -46,15 +46,15 @@ latest release rather than the intended design.
 ## Project overview
 
 FacilityFlow AI, CS3227 MP3. Database/authentication foundations and Technician
-assigned-work reads, start-work and Work Log commands are integrated in source;
-completion remains pending. See README and AGENTS.md.
+assigned-work reads, start/log and completion commands are integrated in source;
+other role manual workflows remain pending. See README and AGENTS.md.
 
 ## Repository structure
 
 src/: application code/tests; workflow/: specs/process; docs/: guides/planning;
 logs/: summaries; .github/: PR-Agent/contribution template. The Gradle build
-packages the application and Technician read/command modules; completion and
-other role manual modules remain pending.
+packages the application and Technician read/command modules; other role manual
+modules remain pending.
 
 ## Architecture
 
@@ -159,6 +159,32 @@ command-service double plus real assigned-query/Thymeleaf rendering; those H2
 checks prove web behavior, while PostgreSQL tests prove transaction semantics.
 The standalone JavaScript event check models pending-submit/page-return behavior;
 it does not replace supported-browser visual/keyboard acceptance.
+
+### Technician completion (T3)
+
+`completeWork` extends the existing command service/repository without a generic
+status setter. The repository reuses persisted account and scoped Request locks,
+then checks IN_PROGRESS, exact expected version and at least one existing Work
+Log (including prior authors). Service and repository enforce a trimmed
+10–2,000-code-point resolution. Missing logs produce WORK_LOG_REQUIRED, safe400;
+existing invalid-input/access/conflict/operational semantics remain.
+
+Completion retains assignment, increments version once, records server author
+and one database completion instant in current metadata and a new immutable
+completion-history row, and appends one safe TECHNICIAN_WORK_COMPLETED audit
+(statuses/version only). Request/history/audit commit together or roll back.
+Prior history remains on later return/recompletion. No auto-close or schema or
+dependency change is introduced.
+
+POST `/technician/requests/{displayId}/complete` uses existing CSRF/role checks,
+versioned form, pending-submit script and fixed303 detail redirect. The controller
+preserves escaped unsaved resolutions even when a fresh scoped read is no longer
+available. COMPLETED shows persisted metadata and no work mutation controls.
+See [T3 contract](../logs/technician/T3-CONTRACT.md) and
+[T3 report](../logs/technician/T3-REPORT.md) for completion tests, fault-injection
+rollback, concurrent completion/reassignment and per-agent evidence. Real
+PostgreSQL proves writes; authenticated H2 MVC uses the existing command double
+and actual query/template path. Browser/release acceptance remains separate.
 
 ### Slice ownership
 

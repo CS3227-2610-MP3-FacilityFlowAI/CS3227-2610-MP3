@@ -115,3 +115,9 @@ Shared T1 detail/CSS and authentication-test changes adapt MP3 work; no MP2
 source was consulted or copied. The implementation/evidence inventory and
 measured added/deleted counts are in `logs/technician/T2-REPORT.md`; project-wide
 reuse percentages and teammate review remain release gates.
+
+Technician T3: completion extends MP3 command/controller/detail code and uses
+existing MP3 completion-history storage and test fixture. Added completion tests
+and scoped guide/traceability sections are new MP3 work; no MP2 source was
+consulted or copied. Exact implementation line changes and verification evidence
+are in `logs/technician/T3-REPORT.md`; release-wide reuse totals remain pending.

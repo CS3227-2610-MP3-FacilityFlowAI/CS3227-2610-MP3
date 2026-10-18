@@ -48,6 +48,10 @@
                         th:text="${#temporals.format(detail.completedAt.atZone(displayZone), 'dd MMM uuuu HH:mm z')}">18 Oct 2026 15:00 +08</time></dd>
             </dl>
         </section>
+        <section th:if="${detail.request.status.name() == 'COMPLETED'}" class="command-panel" aria-labelledby="completed-heading">
+            <h2 id="completed-heading">Work submitted for Manager review</h2>
+            <p>The Technician assignment is retained while the Manager reviews this completion.</p>
+        </section>
         <section th:if="${detail.request.status.name() == 'ASSIGNED'}" aria-labelledby="start-work-heading" class="command-panel">
             <h2 id="start-work-heading">Start work</h2>
             <form method="post" data-command-form th:action="@{/technician/requests/{id}/start(id=${detail.request.displayId})}">
@@ -75,6 +79,20 @@
                 <button type="submit">Add Work Log</button>
             </form>
         </section>
+        <section th:if="${detail.request.status.name() == 'IN_PROGRESS'}" aria-labelledby="completion-heading" class="command-panel">
+            <h2 id="completion-heading">Complete work</h2>
+            <p th:if="${detail.workLogs.isEmpty()}" class="field-guidance">Add a Work Log before completing this request.</p>
+            <form method="post" data-command-form th:action="@{/technician/requests/{id}/complete(id=${detail.request.displayId})}">
+                <input type="hidden" name="version" th:value="${commandRefreshGuidance != null ? detail.version : (submittedVersion != null ? submittedVersion : detail.version)}">
+                <p th:if="${commandFieldErrors != null and commandFieldErrors.containsKey('version')}" class="field-error" role="alert" th:text="${commandFieldErrors.get('version')}">Refresh this request before submitting.</p>
+                <label for="resolution-summary">Resolution Summary <span>(required, 10–2,000 Unicode code points after trimming)</span></label>
+                <textarea id="resolution-summary" name="resolutionSummary" rows="5" required
+                    th:text="${submittedResolution != null ? submittedResolution : ''}"
+                    th:attr="aria-invalid=${commandFieldErrors != null and commandFieldErrors.containsKey('resolutionSummary') ? 'true' : 'false'}, aria-describedby=${commandFieldErrors != null and commandFieldErrors.containsKey('resolutionSummary') ? 'resolution-summary-error' : null}"></textarea>
+                <p th:if="${commandFieldErrors != null and commandFieldErrors.containsKey('resolutionSummary')}" id="resolution-summary-error" class="field-error" role="alert" th:text="${commandFieldErrors.get('resolutionSummary')}">Enter a valid Resolution Summary.</p>
+                <button type="submit">Submit for Manager review</button>
+            </form>
+        </section>
         <th:block th:replace="~{technician/fragments/history :: history(requesterUpdates=${detail.requesterUpdates}, workLogs=${detail.workLogs}, displayZone=${displayZone})}"></th:block>
     </article>
     <section th:if="${submittedWorkLog != null and commandAction == 'log' and (detail == null or detail.request.status.name() != 'IN_PROGRESS')}"
@@ -87,6 +105,12 @@
             <dt>Time spent in whole minutes</dt>
             <dd class="preserved-text" th:text="${submittedWorkLog.minutes}"></dd>
         </dl>
+    </section>
+    <section th:if="${commandAction == 'complete' and (detail == null or detail.request.status.name() != 'IN_PROGRESS')}"
+             class="command-panel preserved-draft" aria-labelledby="preserved-resolution-heading">
+        <h2 id="preserved-resolution-heading">Your unsaved Resolution Summary</h2>
+        <p>This summary was not saved. Keep a copy before leaving this page.</p>
+        <dl><dt>Resolution Summary</dt><dd class="preserved-text" th:text="${submittedResolution}"></dd></dl>
     </section>
 </main>
 </body>

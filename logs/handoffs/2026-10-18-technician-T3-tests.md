@@ -1,0 +1,18 @@
+- Source agent: Personal CS3227 unit-test Tester.
+- Destination agent: T3 coordinator (`/root`).
+- Task/goal: Complete one bounded T3 review/correction batch for the three owned completion test classes.
+- Approved requirement IDs: REQ-TECH-007/008/010/011; TECH-A04/A05/A06; REQ-SH-002/006/007/010/014; NFR-SEC-001.
+- Approved specification revision/evidence: T3-only authorization and baseline `9ba7009`; `logs/technician/T3-CONTRACT.md` and `logs/technician/T3-tests-task.md`.
+- Authorized scope/permissions: Three owned test classes only. Reuse `TechnicianCommandFixtures` unchanged. No implementation/build edits or local test execution; coordinator alone runs checks.
+- Relevant input artifacts/provenance: T3 contract/task; `logs/technician/T3-SCOPED-RESULT.json`; `build/T3-scoped.log`; T2 repository concurrency patterns; current implementation APIs.
+- Assumptions: T2 fixture remains an isolated embedded PostgreSQL seam; the SUT uses `facilityflow_app` with application name `t3-completion-sut` and synthetic seeding uses migrator/admin roles.
+- Unresolved questions: Coordinator must rerun compilation and targeted tests after this batch; all new cases remain unverified at runtime.
+- Files changed: `src/test/java/sg/edu/nus/facilityflow/technician/JdbcTechnicianCompletionRepositoryTest.java`; `src/test/java/sg/edu/nus/facilityflow/web/TechnicianCompletionControllerTest.java` (prior service class unchanged in this correction batch).
+- Commands/tools: Read coordinator's scoped result/log and T2 lock-test pattern; modified only owned tests; statically inspected each requested correction. No build or test command run by this agent.
+- Verification performed/results/evidence: Coordinator's earlier run executed 52 tests: 50 passed and 2 failed. The repository returned-work test submitted version 3 although its synthetic sequence is 1 -> completion 2 -> Manager return 3 -> restart 4; corrected to expected version 4 and asserted final version 5. The controller reload failure test restubbed an already-throwing Mockito mock with `when`; changed both query failure stubs to `doThrow`. Added bounded independent-connection tests for competing same-version completions (one success, one CONFLICT, one version advance/history/audit) and assignment reassignment while completion waits on the PostgreSQL row lock (NOT_AVAILABLE, no completion writes). Both audit-failure and history-insert-failure tests now compare the full Request row snapshot across status, assignment/time, priority, resolution, completer/time, updated time and version. Success asserts history completion time is non-null and equals Request completion time. Added direct repository checks for changed persisted role, negative expected version and invalid summary with no writes. Static review only; corrected cases are pending coordinator execution/review.
+- Security considerations/unresolved risks: Tests use synthetic fixtures and isolated embedded PostgreSQL; no live database or secrets. No new production or fixture changes.
+- Suggestions accepted/rejected: Applied coordinator's requested R1–R5 batch without broadening scope.
+- Human approval required and reason: None; coordinator preflight and review are authorized by the T3 task.
+- Human reviewer/outcome/evidence: Pending fresh verification of corrected hunks and focused new tests.
+- Next authorized action: Coordinator runs compile/scoped checks, reviews the corrected hunks, then performs the final full check.
+- Status: ready for focused verification; prior test result was 50/52 and fixes are not yet verified.

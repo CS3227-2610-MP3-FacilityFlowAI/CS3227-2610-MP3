@@ -21,7 +21,7 @@ import sg.edu.nus.facilityflow.technician.TechnicianQueryException;
 import sg.edu.nus.facilityflow.technician.TechnicianQueryService;
 import sg.edu.nus.facilityflow.technician.TechnicianReadModels.RequestDetail;
 
-/** Explicit Technician start-work and append-only Work Log commands. */
+/** Explicit Technician start-work, Work Log and completion commands. */
 @Controller
 @RequestMapping("/technician/requests")
 public final class TechnicianCommandController {
@@ -57,12 +57,14 @@ public final class TechnicianCommandController {
         } catch (TechnicianCommandException exception) {
             int status = switch (exception.code()) {
                 case INVALID_INPUT -> HttpServletResponse.SC_BAD_REQUEST;
+                case WORK_LOG_REQUIRED -> HttpServletResponse.SC_BAD_REQUEST;
                 case NOT_AVAILABLE -> HttpServletResponse.SC_NOT_FOUND;
                 case CONFLICT -> HttpServletResponse.SC_CONFLICT;
                 case UNAVAILABLE -> HttpServletResponse.SC_SERVICE_UNAVAILABLE;
             };
             List<String> messages = switch (exception.code()) {
                 case INVALID_INPUT -> List.of("Check the version and refresh this assigned request before trying again.");
+                case WORK_LOG_REQUIRED -> List.of("A required work record is missing. Review the request and try again.");
                 case NOT_AVAILABLE -> List.of("The requested work is not available.");
                 case CONFLICT -> List.of("This request changed before the command was saved. Review the current details and try again.");
                 case UNAVAILABLE -> List.of("The command could not be saved right now. Please try again later.");
@@ -98,12 +100,14 @@ public final class TechnicianCommandController {
         } catch (TechnicianCommandException exception) {
             int status = switch (exception.code()) {
                 case INVALID_INPUT -> HttpServletResponse.SC_BAD_REQUEST;
+                case WORK_LOG_REQUIRED -> HttpServletResponse.SC_BAD_REQUEST;
                 case NOT_AVAILABLE -> HttpServletResponse.SC_NOT_FOUND;
                 case CONFLICT -> HttpServletResponse.SC_CONFLICT;
                 case UNAVAILABLE -> HttpServletResponse.SC_SERVICE_UNAVAILABLE;
             };
             List<String> messages = switch (exception.code()) {
                 case INVALID_INPUT -> List.of("Correct the Work Log fields and try again.");
+                case WORK_LOG_REQUIRED -> List.of("A required work record is missing. Review the request and try again.");
                 case NOT_AVAILABLE -> List.of("The requested work is not available.");
                 case CONFLICT -> List.of("This request changed before the Work Log was saved. Review the current details and try again.");
                 case UNAVAILABLE -> List.of("The Work Log could not be saved right now. Please try again later.");
@@ -122,9 +126,65 @@ public final class TechnicianCommandController {
         }
     }
 
+    @PostMapping("/{displayId}/complete")
+    public Object completeWork(
+            @AuthenticationPrincipal CurrentAccountPrincipal principal,
+            @PathVariable String displayId,
+            @RequestParam(name = "version", required = false) String version,
+            @RequestParam(name = "resolutionSummary", required = false) String resolutionSummary,
+            Model model,
+            HttpServletResponse response) {
+        String submittedResolution = resolutionSummary == null ? "" : resolutionSummary;
+        Map<String, String> errors = new LinkedHashMap<>();
+        Long parsedVersion = parseVersion(version, errors);
+        if (!errors.isEmpty()) {
+            return renderFailure(principal, displayId, "complete", version, new SubmittedWorkLog("", ""),
+                    submittedResolution, errors,
+                    List.of("Check the version and refresh this assigned request before trying again."),
+                    HttpServletResponse.SC_BAD_REQUEST, model, response);
+        }
+        try {
+            commands.completeWork(displayId, parsedVersion, submittedResolution);
+            response.setHeader("Cache-Control", "no-store");
+            return redirect(displayId);
+        } catch (TechnicianCommandException exception) {
+            int status = switch (exception.code()) {
+                case INVALID_INPUT -> HttpServletResponse.SC_BAD_REQUEST;
+                case WORK_LOG_REQUIRED -> HttpServletResponse.SC_BAD_REQUEST;
+                case NOT_AVAILABLE -> HttpServletResponse.SC_NOT_FOUND;
+                case CONFLICT -> HttpServletResponse.SC_CONFLICT;
+                case UNAVAILABLE -> HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+            };
+            List<String> messages = switch (exception.code()) {
+                case INVALID_INPUT -> List.of("Correct the Resolution Summary and try again.");
+                case WORK_LOG_REQUIRED -> List.of("Add a Work Log before completion.");
+                case NOT_AVAILABLE -> List.of("The requested work is not available.");
+                case CONFLICT -> List.of("This request changed before completion. Review the current details and try again.");
+                case UNAVAILABLE -> List.of("Completion could not be saved right now. Please try again later.");
+            };
+            if (exception.code() == TechnicianCommandException.Code.INVALID_INPUT) {
+                String trimmed = submittedResolution.strip();
+                int length = trimmed.codePointCount(0, trimmed.length());
+                errors.put("resolutionSummary", length < 10 || length > 2000
+                        ? "Enter a Resolution Summary containing 10 to 2,000 Unicode code points after trimming."
+                        : "Enter a valid Resolution Summary.");
+            }
+            return renderFailure(principal, displayId, "complete", version, new SubmittedWorkLog("", ""),
+                    submittedResolution, errors, messages, status, model, response);
+        }
+    }
+
     private Object renderFailure(CurrentAccountPrincipal principal, String displayId, String action,
                                  String version, SubmittedWorkLog workLog, Map<String, String> fieldErrors,
                                  List<String> messages, int status, Model model, HttpServletResponse response) {
+        return renderFailure(principal, displayId, action, version, workLog, "", fieldErrors,
+                messages, status, model, response);
+    }
+
+    private Object renderFailure(CurrentAccountPrincipal principal, String displayId, String action,
+                                 String version, SubmittedWorkLog workLog, String submittedResolution,
+                                 Map<String, String> fieldErrors, List<String> messages, int status,
+                                 Model model, HttpServletResponse response) {
         response.setStatus(status);
         response.setHeader("Cache-Control", "no-store");
         model.addAttribute("title", "Request details");
@@ -135,6 +195,7 @@ public final class TechnicianCommandController {
         model.addAttribute("commandErrors", List.copyOf(messages));
         model.addAttribute("commandFieldErrors", Map.copyOf(fieldErrors));
         model.addAttribute("submittedWorkLog", workLog);
+        model.addAttribute("submittedResolution", submittedResolution);
         model.addAttribute("submittedVersion", version == null ? "" : version);
         model.addAttribute("commandAction", action);
 

@@ -30,6 +30,14 @@ public class TechnicianCommandService {
         repository.appendWorkLog(actor, displayId, expectedVersion, normalizedNote, minutes);
     }
 
+    /** REQ-TECH-007/008: completion submits assigned work for Manager review. */
+    public void completeWork(String displayId, long expectedVersion, String resolutionSummary) {
+        CurrentAccountSnapshot actor = authorization.requireRoleSnapshot(AccountRole.TECHNICIAN);
+        validateRequest(displayId, expectedVersion);
+        String normalizedResolution = normalizeResolution(resolutionSummary);
+        repository.completeWork(actor, displayId, expectedVersion, normalizedResolution);
+    }
+
     // The persistence seam invokes these checks itself as well; it does not trust service callers.
     static void validateRequest(String displayId, long expectedVersion) {
         if (displayId == null || !displayId.matches("FF-[0-9]{6}") || displayId.equals("FF-000000")) {
@@ -47,6 +55,18 @@ public class TechnicianCommandService {
         String normalized = note.strip();
         int length = normalized.codePointCount(0, normalized.length());
         if (length < 1 || length > 1000) {
+            throw new TechnicianCommandException(TechnicianCommandException.Code.INVALID_INPUT);
+        }
+        return normalized;
+    }
+
+    static String normalizeResolution(String resolutionSummary) {
+        if (resolutionSummary == null) {
+            throw new TechnicianCommandException(TechnicianCommandException.Code.INVALID_INPUT);
+        }
+        String normalized = resolutionSummary.strip();
+        int length = normalized.codePointCount(0, normalized.length());
+        if (length < 10 || length > 2000) {
             throw new TechnicianCommandException(TechnicianCommandException.Code.INVALID_INPUT);
         }
         return normalized;

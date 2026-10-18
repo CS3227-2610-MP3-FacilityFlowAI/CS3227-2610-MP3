@@ -1,0 +1,30 @@
+{
+  "candidate": "acdb9a67839d3b133d50c5e5bf41ce50f59f4502a0cf4878f43d31ee336a8be1",
+  "command": "./gradlew.bat --offline --no-daemon --console=plain test --tests sg.edu.nus.facilityflow.technician.JdbcTechnicianCompletionRepositoryTest --tests sg.edu.nus.facilityflow.web.TechnicianCompletionControllerTest",
+  "outcome": "BUILD SUCCESSFUL;both affected classes passed",
+  "totals": {
+    "tests": 19,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "classes": 2,
+  "suites": [
+    {
+      "name": "sg.edu.nus.facilityflow.technician.JdbcTechnicianCompletionRepositoryTest",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "17.365"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.web.TechnicianCompletionControllerTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "1.891"
+    }
+  ]
+}

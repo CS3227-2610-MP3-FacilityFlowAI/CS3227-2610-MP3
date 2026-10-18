@@ -2,8 +2,8 @@
 
 Status: authentication foundation and Technician assigned-work reads implemented
 in source; teammate and hosted-release verification remain pending. Technician
-start-work and Work Log recording are implemented in source; completion and the
-AI browser interface remain pending.
+start-work, Work Logs and completion are implemented in source; the AI browser
+interface remains pending.
 
 This guide must be updated continuously to match the deployed product exactly.
 It will document how Requesters, Technicians, and Facilities Managers access,
@@ -80,7 +80,22 @@ the Request becomes unavailable; your unsaved draft remains visible for copying.
 Invalid values and operational failures preserve entered text and show safe
 errors. No command is automatically replayed. A Technician cannot assign work,
 change priority, edit the original Request, cancel, close, reopen or set a status.
-Completion, change password and Work Plan controls remain outside this increment.
+## Completing work for Manager review
+
+An **In progress** Request needs at least one saved Work Log before completion.
+Enter a required **Resolution Summary** of 10–2,000 Unicode characters after
+trimming and select **Submit for Manager review**. Completion retains the
+assignment and records your resolution and completion time. The Request becomes
+**Completed**, awaiting Manager review; the Technician cannot close it.
+
+If there is no Work Log, add one before trying completion again. If another
+change makes the submitted version stale, review the current assigned details
+before explicitly submitting again. Unsaved resolution text remains visible on
+errors, including when the Request is no longer assigned to you; keep a copy
+before leaving the page. Successful completion shows the persisted resolution
+and time, with no start/log/completion controls. Prior completion history remains
+stored if a Manager later returns/reopens work and it is completed again.
+Change password and Work Plan controls remain outside this increment.
 
 ## AI features
 
