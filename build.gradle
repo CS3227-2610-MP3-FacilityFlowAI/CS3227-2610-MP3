@@ -25,9 +25,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'tools.jackson.core:jackson-databind'
+    implementation 'tools.jackson.core:jackson-databind:3.1.7'
     implementation 'org.springframework.boot:spring-boot-starter-session-jdbc'
-    implementation 'org.bouncycastle:bcprov-jdk18on:1.82'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.85'
     runtimeOnly 'org.postgresql:postgresql'
     runtimeOnly 'org.flywaydb:flyway-database-postgresql'
 
@@ -40,6 +40,19 @@ dependencies {
     testImplementation 'io.zonky.test:embedded-postgres:2.2.2'
     testImplementation enforcedPlatform('io.zonky.test.postgres:embedded-postgres-binaries-bom:17.7.0')
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+configurations.configureEach {
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == 'org.apache.tomcat.embed') {
+            details.useVersion '11.0.25'
+            details.because 'patched baseline for the deployment artifact vulnerability gate'
+        }
+        if (details.requested.group == 'tools.jackson.core') {
+            details.useVersion '3.1.7'
+            details.because 'patched baseline for the deployment artifact vulnerability gate'
+        }
+    }
 }
 
 tasks.named('test') {

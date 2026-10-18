@@ -10,7 +10,8 @@ Every pull request runs these required checks from `.github/workflows/ci-cd.yml`
 
 1. Gradle wrapper validation, whitespace validation, all tests, JaCoCo and the
    executable Spring Boot JAR build.
-2. GitHub dependency review and a full-history Gitleaks secret scan.
+2. A high/critical packaged-dependency vulnerability gate and a full-history
+   Gitleaks secret scan; both scanners are versioned and checksum-verified.
 3. A build of the same non-root Java 25 container used by Vercel.
 4. When deployment is enabled, an internal-branch Preview deployment followed
    by health, login and authenticated safe-read smoke checks.
