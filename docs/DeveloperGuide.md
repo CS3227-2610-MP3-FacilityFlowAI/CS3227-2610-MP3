@@ -513,3 +513,11 @@ migration-history reconciliation with the persistence owner. Do not run Flyway
 repair, baseline, clean, or alter applied history to bypass validation. The merged
 source sequence must not be applied blindly to that database. Disposable local
 test databases use the merged sequence and do not establish hosted compatibility.
+
+18 October history confirmation: the user's Supabase SQL Editor screenshot shows
+successful versions1-5 with `V5__ai_gateway_coordination.sql`. The earlier V5
+identity uncertainty above is resolved. Following credential correction, the
+validated Flyway migration profile applied Requester V6 to development Supabase
+on 18 October. Read-only postchecks confirmed successful V1-V6 history and app-role
+visibility of `request_submission` and `schema_version`. No repair or reseeding
+was performed. See [verification evidence](../logs/2026-10-18-supabase-history-and-full-reverification.md).
