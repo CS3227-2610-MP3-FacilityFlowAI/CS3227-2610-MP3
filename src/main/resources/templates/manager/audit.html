@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Audit viewer · FacilityFlow AI</title></head>
+<body>
+<header><a th:href="@{/manager}">Manager workspace</a> · <a th:href="@{/manager/requests}">Requests</a> · <a th:href="@{/manager/overview}">Overview</a> · <a th:href="@{/manager/accounts}">Accounts</a> · <a th:href="@{/manager/categories}">Categories</a> · <a th:href="@{/manager/skills}">Skills</a></header>
+<main>
+    <h1>Audit viewer</h1>
+    <form method="get" th:action="@{/manager/audit}">
+        <div><label for="request">Request ID</label><input id="request" name="request" th:value="${filters.request}" maxlength="20"><p role="alert" th:if="${page.errors.request}" th:text="${page.errors.request}"></p></div>
+        <div><label for="actor">Actor</label><input id="actor" name="actor" th:value="${filters.actor}" maxlength="80"><p role="alert" th:if="${page.errors.actor}" th:text="${page.errors.actor}"></p></div>
+        <div><label for="action">Action</label><input id="action" name="action" th:value="${filters.action}" maxlength="100"><p role="alert" th:if="${page.errors.action}" th:text="${page.errors.action}"></p></div>
+        <div><label for="occurredFrom">From</label><input id="occurredFrom" name="occurredFrom" type="date" th:value="${filters.occurredFrom}"><p role="alert" th:if="${page.errors.occurredFrom}" th:text="${page.errors.occurredFrom}"></p></div>
+        <div><label for="occurredTo">To</label><input id="occurredTo" name="occurredTo" type="date" th:value="${filters.occurredTo}"><p role="alert" th:if="${page.errors.occurredTo}" th:text="${page.errors.occurredTo}"></p></div>
+        <button type="submit">Apply filters</button> <a th:href="@{/manager/audit}">Reset filters</a>
+    </form>
+    <p role="alert" th:unless="${#maps.isEmpty(page.errors)}">Check the marked filters and try again.</p>
+    <p th:if="${#maps.isEmpty(page.errors) and !page.hasEvents}">No audit events have been recorded yet.</p>
+    <p th:if="${#maps.isEmpty(page.errors) and page.hasEvents and #lists.isEmpty(page.rows)}">No audit events match these filters. Try changing or resetting them.</p>
+    <table th:unless="${#lists.isEmpty(page.rows)}"><thead><tr><th scope="col">Time</th><th scope="col">Actor</th><th scope="col">Action</th><th scope="col">Target</th><th scope="col">Request</th></tr></thead><tbody><tr th:each="row : ${page.rows}"><td th:text="${row.occurredTime()}">Time</td><td th:text="${row.actor}">Actor</td><td th:text="${row.action}">Action</td><td th:text="${row.targetType}">Target</td><td th:text="${row.requestDisplayId ?: '—'}">—</td></tr></tbody></table>
+</main>
+</body>
+</html>

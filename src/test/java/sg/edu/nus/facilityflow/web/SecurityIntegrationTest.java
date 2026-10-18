@@ -203,6 +203,34 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    void reqMgr024TriageReviewPageIsManagerOnlyCsrfProtectedAndNonCacheable() throws Exception {
+        Cookie requester = login("requester1", VALID_PASSWORD, "/requester");
+        mockMvc.perform(get("/manager/requests/FF-000051/triage-assistant").cookie(requester))
+                .andExpect(status().isForbidden());
+
+        Cookie manager = login("manager1", VALID_PASSWORD, "/manager");
+        mockMvc.perform(get("/manager/requests/FF-000051/triage-assistant").cookie(manager))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Advisory only")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "Nothing is saved or assigned")));
+
+        mockMvc.perform(post("/manager/requests/FF-000051/triage-assistant").cookie(manager))
+                .andExpect(status().isForbidden());
+
+        MvcResult review = mockMvc.perform(post("/manager/requests/FF-000051/triage-assistant")
+                        .cookie(manager).with(csrf()))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+        mockMvc.perform(asyncDispatch(review))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "AI is unavailable")));
+    }
+
+    @Test
     void reqAi005WorkPlanFailureExposesSafeCodeAndMessage() throws Exception {
         Cookie technician = login("technician1", VALID_PASSWORD, "/technician");
         MvcResult workPlan = mockMvc.perform(post("/technician/requests/FF-000051/work-plan")

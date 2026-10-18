@@ -39,6 +39,15 @@ The source commit was verified against the MP2 `master` branch on 12 October
 
 ## Current evidence and measurement detail
 
+Facilities Manager first slice (17 October): overview, deterministic queue,
+combined filters, on-behalf creation and audit-viewer behavior are
+**concept-only** reuse of approved MP2 domain behavior and MP3 requirements.
+No MP2 JavaFX or SQLite source was copied. The Spring MVC/JDBC implementation,
+templates, CI workflow and PostgreSQL tests are new MP3 work. Two MP2 findings
+were intentionally converted into new regression tests: action filtering and a
+missing Request association remaining null rather than becoming a sentinel ID.
+Exact final line measurements and teammate review remain pending.
+
 Part 3 V2/V3, initialization source/tests, database test extensions and completion
 guide/ADR-006 are **new** MP3 code/documentation, not MP2-derived. Demo usernames,
 development-only password and lifecycle scenarios are **concept-only** reuse

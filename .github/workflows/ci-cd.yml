@@ -54,6 +54,13 @@ jobs:
       - name: Run checks and build executable JAR
         run: ./gradlew clean check bootJar --no-daemon
 
+      - name: Run dependency-free JavaScript checks when present
+        shell: bash
+        run: |
+          while IFS= read -r test_file; do
+            node "$test_file"
+          done < <(find src/test/js -type f -name '*.test.cjs' -print 2>/dev/null | sort)
+
       - name: Install checksum-verified Grype
         shell: bash
         run: |
