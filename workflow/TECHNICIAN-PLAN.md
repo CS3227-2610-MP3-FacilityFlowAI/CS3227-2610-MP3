@@ -4,8 +4,8 @@ Status: Technician-specific implementation workflow, configured 18 October 2026.
 Original application baseline: 6b091532c40223a829e4aa1b70640b3a5c860413.
 The user now requests committed configuration and separate iteration commits.
 Each iteration requires a scope/agent/model/check preview and explicit user
-permission. T0 was previewed and explicitly authorized after the configuration
-commit; later iterations remain unapproved. Execution results belong under logs/.
+permission. T0-T2 are committed; T3 and later remain unapproved. Execution
+evidence belongs under logs/; runtime/token summaries appear in the conversation.
 Overlap between iterations requires authorization for both scopes. No push or
 merge is authorized by this workflow.
 
@@ -23,7 +23,8 @@ assignments per iteration. Model selection does not approve starting an iteratio
 
 Each feature iteration uses backend (B), UI (U), and test-authoring (T) lanes after
 contracts are agreed. One owner writes shared files. Tests can be authored early;
-execution/review uses a fixed integrated candidate. Concrete task packets must
+execution/review follows [batched verification](agents/technician-workflow.md#batched-verification-and-corrections)
+after compile/database smoke on a fixed candidate. Concrete task packets must
 name exact paths before dispatch; directory labels below are responsibility only.
 
 | Iteration | Scope and dependencies | Concurrent assignments | Exit evidence |
@@ -66,7 +67,8 @@ To discontinue this workflow, make a reviewed follow-up change to its scoped
 pointers/documents. Preserve implementation commits, shared workflow guidance
 and evidence. Do not reset history or overwrite teammate edits.
 
-Measure per-iteration elapsed time, total tokens when exposed, repair cycles,
-completed criteria and regressions. Compare equivalent accepted scope; mark
-unavailable metrics explicitly. Configuration/link checks do not establish
-runtime savings or successful multi-agent execution.
+Keep repair cycles, completed criteria and regression evidence in the iteration
+record. Present runtime and actual token usage in the conversation using the
+[metrics protocol](agents/technician-workflow.md#conversation-only-runtime-and-token-usage).
+Configuration/link checks do not establish runtime savings or successful
+multi-agent execution.

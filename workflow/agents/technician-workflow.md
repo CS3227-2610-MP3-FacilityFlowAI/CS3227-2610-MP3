@@ -14,8 +14,8 @@ explicit user permission for that named iteration before research, dispatch or
 implementation within it. Approval covers its necessary fixes, verification,
 local implementation/evidence commit and report; it does not start later
 iterations. Independent later work overlaps only when explicitly approved too.
-Report each agent's actual contribution/model, checks/results, unresolved issues,
-commit ID and available elapsed/token metrics before awaiting the next approval.
+Report each agent's contribution/model, checks/results, unresolved issues and
+commit ID. Include the conversation-only metrics below before the next approval.
 
 1. The coordinator checks the current diff and approved requirements, then reads
    [the Technician plan](../TECHNICIAN-PLAN.md). Reuse settled requirements and
@@ -83,36 +83,54 @@ dispatch, use fresh task context for explicit overrides, and report the actual
 model. Change an approved model
 assignment only with user authorization; continue other authorized work meanwhile.
 
-## Verification and corrections
+## Batched verification and corrections
 
-Freeze production/test inputs before execution and review. Identify the candidate
-by commit or by base commit plus a saved patch including new files and its digest.
-Record workflow configuration separately. Automated checks and read-only reviews may
-run concurrently on that candidate; serialize runners sharing build/database
-resources. Review roles may share an independent invocation when its packet
-explicitly covers each responsibility. Respect the active worker limit.
+1. **Preflight:** finish affected authoring, compile all changed tests and pass
+   a minimal real-database smoke for each new write path, including fixture and
+   audit assertions. Fix mechanical failures with the owner before review.
+   Prepare affected guides/traceability with honest pending-check statuses.
+2. **Freeze:** identify the integrated source/test candidate by commit or base
+   plus saved patch (including new files) and digest. Pause affected writers.
+   Include preflight failure/fix evidence in the review packet. Dispatch one
+   independent reviewer for combined security/spec/standards/test adequacy; run
+   scoped tests concurrently through the single designated runner.
+3. **Batch:** reviewer completes one source pass and returns PASS for reviewed
+   scope or FIX with one consolidated actionable list. Label pending execution
+   explicitly. Each finding gives ID, requirement, file/line, trigger/consequence,
+   required correction and regression. Keep the summary within 300 words plus
+   necessary findings; put optional suggestions separately, outside the gate.
+4. **Correct:** send each owner their findings once; owners fix the batch and
+   return changed paths plus finding IDs. Reference existing evidence instead
+   of relaying the same explanation through several agents. Notify early only
+   for a blocking interface/ownership issue that prevents independent progress.
+5. **Verify the delta:** a fresh check by a verifier uninvolved in writing the
+   fixes covers corrected hunks and relevant regressions. Reuse the independent
+   reviewer while its context remains focused; fresh verification does not
+   require a new agent for each typo. Send one correction packet containing the
+   findings, diff and executed results. Reopen the whole review only for material
+   scope/interface changes; additional real defects still block acceptance.
+6. **Close:** run required integrated regression/build checks once on the final
+   candidate, then send their results with the correction packet (or unchanged
+   candidate) for one final reviewer verdict. Full cross-role/browser acceptance
+   stays at its milestone. After two unsuccessful repair cycles, report the
+   blocker and revise the task decomposition; continue independent ready work.
 
-Run scoped tests once per stable candidate. Run required CI/build/regression
-checks at iteration integration, and full cross-role/browser acceptance at the
-final milestone. Reuse results only for identical tested inputs; changed code
-invalidates affected checks/reviews. Agent agreement cannot replace executed
-checks or human review.
-
-Report findings with ID, requirement, location, reproduction and expected result.
-Send fixes directly to the file owner. Revisit analysis/design only for unresolved
-behavior/interfaces. A fresh verifier uninvolved in writing the fix receives the
-finding, corrected diff and regression evidence, then reproduces/rechecks it and
-relevant regressions before closing it. After two unsuccessful repair cycles,
-report the blocker and revise the task decomposition; continue independent work.
+The reviewer starts after preflight on frozen inputs. It returns a findings batch
+and final verdict, rather than monitoring changing files or narrating unchanged
+status. The coordinator owns mechanical checks for hashes, scope, whitespace,
+links and test totals; automate these where practical and send a compact result.
+The reviewer checks relevant direct execution evidence for corrected findings
+without repeating every mechanical check. Changed inputs invalidate affected
+results; rerun focused failures before the final integrated check. Independent
+fix verification, required tests and teammate merge review remain mandatory.
 
 ## Iteration evidence and commits
 
 Keep one coordinator-owned iteration record under logs/ with task IDs,
-dependencies, actual agent roles, start/end times, candidate identity, commands,
-results, findings, handoff links and commit. Record input/output/cached tokens
-when exposed; otherwise record unavailable. Compare elapsed time, total tokens,
-rework and accepted outcomes with a comparable baseline. Claim savings only from
-measurement. Workers write distinct handoff files, not the shared iteration record.
+dependencies, actual agent roles, candidate identity, commands/results, findings,
+handoff links and commit. Workers write distinct handoffs referencing that
+record. Runtime and token summaries belong in the conversation, as below;
+existing historical reports remain unchanged.
 
 The user authorized a separate configuration commit followed by local commits of
 verified, explicitly approved iteration artifacts. T0 commits planning/evidence;
@@ -123,6 +141,30 @@ workflow grants no push, merge, history rewrite, automatic stash/reset or
 deployment authority. Teammate review remains necessary for non-trivial merges;
 a local commit is not human approval. Configuration changes in later iterations
 must be explicit and reported separately from feature work.
+
+## Conversation-only runtime and token usage
+
+At the start, capture the observed turn/task start time; mark phase boundaries
+for authoring, review and checks when available. After the local commit, include
+elapsed wall time in the final conversation response, with start/end boundaries
+and available review/check durations. Concurrent durations overlap; do not sum
+them as elapsed time. If still running, label the value as elapsed so far.
+
+Use actual tool/session usage metadata when exposed. For cumulative counters,
+subtract the same session's task-start baseline; detect resets or missing
+boundaries and report unavailable instead. Report input, cached input, output
+and total tokens with scope (coordinator, individual worker or complete team)
+and sampling cutoff. Cached input is part of input; add input plus output for
+the total, not input plus cached input plus output. Include reasoning tokens
+only as a labelled component when exposed, without adding them again when
+included in output. Aggregate workers only when all required task-local counters
+are available and scopes do not overlap; otherwise
+label the team total unavailable. Account quota percentages and text-length
+estimates are not task token counts. A sample before the final reply excludes
+that reply and must say so. Inspect usage metadata only, avoiding message bodies
+and unrelated sessions. Keep transient metrics outside committed reports and
+handoffs. Report unavailable values explicitly; claim savings only against a
+measured comparable baseline. Model assignments remain as approved.
 
 ## Handoff protocol
 
