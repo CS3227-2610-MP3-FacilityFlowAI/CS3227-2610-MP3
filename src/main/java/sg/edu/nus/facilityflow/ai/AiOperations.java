@@ -7,5 +7,4 @@ public interface AiOperations {
     record Permit(UUID slotId, long version) { }
     Permit acquire(UUID actor, int timeoutSeconds);
     void release(Permit permit);
-    void record(UUID actor, UUID correlation, String model, AiGateway.Result result, long latencyMs);
 }

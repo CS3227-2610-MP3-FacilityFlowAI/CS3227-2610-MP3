@@ -43,6 +43,13 @@ server:
         http-only: true
         secure: ${SESSION_COOKIE_SECURE:true}
         same-site: lax
+logging:
+  structured:
+    format:
+      console: logstash
+    json:
+      add:
+        deployment_version: ${APP_VERSION:local}
 facilityflow:
   ai:
     # Bind as strings so malformed deployment values make AI unavailable without

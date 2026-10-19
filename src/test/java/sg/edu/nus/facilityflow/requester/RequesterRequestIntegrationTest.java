@@ -850,10 +850,33 @@ class RequesterRequestIntegrationTest {
         assertEquals(0, count("audit_event"));
     }
 
+    @Test
+    void aiSec017MonitoringStartFailurePreventsProviderAndTerminalFailureWithholdsSuggestion() {
+        admin.execute("ALTER TABLE facilityflow.ai_invocation ADD CONSTRAINT reject_started CHECK (status <> 'STARTED') NOT VALID");
+        try {
+            var reply = assistant(OWNER, AccountRole.REQUESTER, 0).suggest(null, null, rough());
+            assertEquals(AiGateway.Status.AI_UNAVAILABLE, reply.status());
+            assertNull(reply.suggestion());
+            assertEquals(0, ai.calls.get());
+            assertEquals(0, count("ai_invocation"));
+        } finally { admin.execute("ALTER TABLE facilityflow.ai_invocation DROP CONSTRAINT reject_started"); }
+        admin.execute("ALTER TABLE facilityflow.ai_invocation ADD CONSTRAINT reject_succeeded CHECK (status <> 'SUCCEEDED') NOT VALID");
+        try {
+            var reply = assistant(OWNER, AccountRole.REQUESTER, 0).suggest(null, null, rough());
+            assertEquals(AiGateway.Status.AI_UNAVAILABLE, reply.status());
+            assertNull(reply.suggestion());
+            assertEquals(1, ai.calls.get());
+            assertEquals("STARTED", app.queryForObject("SELECT status FROM facilityflow.ai_invocation", String.class));
+            assertEquals(0, count("maintenance_request"));
+            assertEquals(0, count("audit_event"));
+        } finally { admin.execute("ALTER TABLE facilityflow.ai_invocation DROP CONSTRAINT reject_succeeded"); }
+    }
+
     private SmartReportService assistant(UUID id, AccountRole role, long version) {
         return new SmartReportService(() -> new CurrentAccount(id, "synthetic", "Synthetic", role, version),
                 context.getBean(RequesterRequestRepository.class), context.getBean(PlatformTransactionManager.class),
-                context.getBean(JdbcAiOperations.class), context.getBean(AiGateway.class));
+                context.getBean(JdbcAiOperations.class), context.getBean(AiGateway.class),
+                context.getBean(sg.edu.nus.facilityflow.ai.AiInvocationTelemetry.class));
     }
 
     @Test
@@ -950,7 +973,8 @@ class RequesterRequestIntegrationTest {
         var repository = org.mockito.Mockito.mock(RequesterRequestRepository.class,
                 org.mockito.AdditionalAnswers.delegatesTo(context.getBean(RequesterRequestRepository.class)));
         var assistant = new SmartReportService(() -> new CurrentAccount(OWNER, "synthetic", "Synthetic", AccountRole.REQUESTER, 0),
-                repository, context.getBean(PlatformTransactionManager.class), context.getBean(AiOperations.class), context.getBean(AiGateway.class));
+                repository, context.getBean(PlatformTransactionManager.class), context.getBean(AiOperations.class), context.getBean(AiGateway.class),
+                context.getBean(sg.edu.nus.facilityflow.ai.AiInvocationTelemetry.class));
         assertThrows(RequestUnavailableException.class, () -> assistant.suggest("FF-000000", "0", rough()));
         assertEquals(AiGateway.Status.AI_INVALID_REQUEST,
                 assistant.suggest(null, null, new SmartReportInput("a".repeat(2001), "", "", "", "", "")).status());

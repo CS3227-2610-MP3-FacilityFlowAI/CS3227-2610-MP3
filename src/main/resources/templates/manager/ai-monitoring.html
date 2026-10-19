@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AI monitoring · FacilityFlow AI</title>
+    <link rel="stylesheet" th:href="@{/css/technician.css}">
+    <link rel="stylesheet" th:href="@{/css/ai-monitoring.css}">
+</head>
+<body>
+<div th:replace="~{fragments/authenticated-header :: header(${username}, ${displayName}, ${role})}"></div>
+<main id="main-content">
+    <h1>AI monitoring</h1>
+    <p>Aggregate assistant activity. Suggestions are separate from saved maintenance actions.</p>
+    <form method="get" th:action="@{/manager/ai-monitoring}" class="monitoring-filters">
+        <div><label for="from">From date (Singapore)</label><input id="from" name="from" type="date" th:value="${filters.from}" aria-describedby="from-error"><p id="from-error" role="alert" th:if="${page != null and page.errors.containsKey('from')}" th:text="${page.errors.get('from')}"></p></div>
+        <div><label for="to">To date (inclusive)</label><input id="to" name="to" type="date" th:value="${filters.to}" aria-describedby="to-error"><p id="to-error" role="alert" th:if="${page != null and page.errors.containsKey('to')}" th:text="${page.errors.get('to')}"></p></div>
+        <div><label for="feature">Assistant</label><select id="feature" name="feature" aria-describedby="feature-error"><option value="">All assistants</option><option th:each="value : ${ {'SMART_REPORT','WORK_PLAN','TRIAGE'} }" th:value="${value}" th:selected="${filters.feature == value}" th:text="${value}"></option></select><p id="feature-error" role="alert" th:if="${page != null and page.errors.containsKey('feature')}" th:text="${page.errors.get('feature')}"></p></div>
+        <button type="submit">Apply filters</button><a th:href="@{/manager/ai-monitoring}">Reset filters</a>
+    </form>
+    <p role="alert" th:if="${monitoringError}" th:text="${monitoringError}"></p>
+    <div th:if="${page != null}">
+        <p>Shared gateway readiness on this application instance: <strong th:text="${page.readiness}">DISABLED</strong>. Refreshing this page makes no model call.</p>
+        <p th:text="${'Snapshot: ' + #temporals.format(page.generatedAt, 'dd MMM uuuu HH:mm:ss XXX') + ' Asia/Singapore'}"></p>
+        <div th:if="${page.report != null}" th:with="totals=${page.report.totals}">
+            <p role="status" th:if="${totals.admitted == 0}">No admitted AI invocations in this selection. Try changing or resetting the filters.</p>
+            <dl class="monitoring-cards">
+                <div><dt>Admitted invocations</dt><dd th:text="${totals.admitted}">0</dd></div>
+                <div><dt>Finished invocations</dt><dd th:text="${totals.finished}">0</dd></div>
+                <div><dt>Successful suggestions</dt><dd th:text="${totals.succeeded}">0</dd></div>
+                <div><dt>Success rate among finished</dt><dd th:text="${totals.successPercent() == null ? 'Unavailable' : totals.successPercent() + '%'}"></dd></div>
+                <div><dt>Unfinished</dt><dd th:text="${totals.pending}">0</dd></div>
+                <div><dt>Unresolved for over one minute</dt><dd th:text="${totals.unresolved}">0</dd></div>
+                <div><dt>Retries</dt><dd th:text="${totals.retries}">0</dd></div>
+                <div><dt>Median duration (ms)</dt><dd th:text="${totals.medianMs == null ? 'Unavailable' : #numbers.formatDecimal(totals.medianMs, 1, 1)}"></dd></div>
+                <div><dt>p95 duration (ms)</dt><dd th:text="${totals.p95Ms == null ? 'Unavailable' : #numbers.formatDecimal(totals.p95Ms, 1, 1)}"></dd></div>
+            </dl>
+            <p>Durations cover the admitted invocation through its final outcome, including failures. Unfinished records are excluded from duration and success-rate calculations. An unresolved record is not automatically classified as a timeout.</p>
+            <h2>Provider-reported token usage</h2>
+            <dl class="monitoring-cards">
+                <div><dt>Known input tokens</dt><dd th:text="${totals.inputTokens == null ? 'Unavailable' : totals.inputTokens}"></dd><dd th:text="${totals.missingInputUsage + ' finished invocations without input usage'}"></dd></div>
+                <div><dt>Known output tokens</dt><dd th:text="${totals.outputTokens == null ? 'Unavailable' : totals.outputTokens}"></dd><dd th:text="${totals.missingOutputUsage + ' finished invocations without output usage'}"></dd></div>
+                <div><dt>Known total tokens</dt><dd th:text="${totals.totalTokens == null ? 'Unavailable' : totals.totalTokens}"></dd><dd th:text="${totals.missingTotalUsage + ' finished invocations without total usage'}"></dd></div>
+            </dl>
+            <p>These are sums of reported values, not estimates. Missing usage and unfinished calls can make them incomplete. Retries belong to the original invocation; admitted invocations are not a count of provider requests or accepted business actions.</p>
+            <h2>Outcomes</h2>
+            <ul><li th:each="outcome : ${page.report.outcomes}" th:text="${outcome.status + ': ' + outcome.count}"></li></ul>
+            <h2>Assistant, model and prompt version</h2>
+            <div class="monitoring-table"><table>
+                <caption>Aggregate invocation breakdown</caption>
+                <thead><tr><th scope="col">Assistant</th><th scope="col">Model</th><th scope="col">Prompt version</th><th scope="col">Admitted</th><th scope="col">Finished</th><th scope="col">Succeeded</th><th scope="col">Retries</th><th scope="col">Known tokens</th><th scope="col">p95 ms</th></tr></thead>
+                <tbody><tr th:each="row : ${page.report.breakdown}"><td th:text="${row.feature}"></td><td th:text="${row.model ?: 'Unavailable'}"></td><td th:text="${row.templateVersion}"></td><td th:text="${row.counts.admitted}"></td><td th:text="${row.counts.finished}"></td><td th:text="${row.counts.succeeded}"></td><td th:text="${row.counts.retries}"></td><td th:text="${row.counts.totalTokens == null ? 'Unavailable' : row.counts.totalTokens}"></td><td th:text="${row.counts.p95Ms == null ? 'Unavailable' : #numbers.formatDecimal(row.counts.p95Ms, 1, 1)}"></td></tr></tbody>
+            </table></div>
+            <h2>Compare with SoCLaaS portal usage</h2>
+            <p>Select both dates and all assistants above, then enter the portal counts for the same key, environment and exact period. This records a comparison in operational logs; invocation records are unchanged. Differences are portal minus known application counts.</p>
+            <form method="post" th:action="@{/manager/ai-monitoring/reconcile}" data-pending-form>
+                <input type="hidden" name="from" th:value="${filters.from}"><input type="hidden" name="to" th:value="${filters.to}"><input type="hidden" name="feature" th:value="${filters.feature}">
+                <div th:if="${comparisonErrors != null and !comparisonErrors.isEmpty()}" role="alert"><p th:each="error : ${comparisonErrors}" th:text="${error.value}"></p></div>
+                <div class="monitoring-filters">
+                    <div><label for="portal-input">Portal input tokens (required)</label><input id="portal-input" name="portalInput" type="text" inputmode="numeric" pattern="[0-9]{1,19}" maxlength="19" required aria-describedby="portal-input-error" th:attr="aria-invalid=${comparisonErrors != null and comparisonErrors.containsKey('portalInput')}" th:value="${portal == null ? '' : portal.portalInput}"><p id="portal-input-error" th:text="${comparisonErrors == null ? '' : comparisonErrors.get('portalInput')}"></p></div>
+                    <div><label for="portal-output">Portal output tokens (required)</label><input id="portal-output" name="portalOutput" type="text" inputmode="numeric" pattern="[0-9]{1,19}" maxlength="19" required aria-describedby="portal-output-error" th:attr="aria-invalid=${comparisonErrors != null and comparisonErrors.containsKey('portalOutput')}" th:value="${portal == null ? '' : portal.portalOutput}"><p id="portal-output-error" th:text="${comparisonErrors == null ? '' : comparisonErrors.get('portalOutput')}"></p></div>
+                    <div><label for="portal-total">Portal total tokens (required)</label><input id="portal-total" name="portalTotal" type="text" inputmode="numeric" pattern="[0-9]{1,19}" maxlength="19" required aria-describedby="portal-total-error" th:attr="aria-invalid=${comparisonErrors != null and comparisonErrors.containsKey('portalTotal')}" th:value="${portal == null ? '' : portal.portalTotal}"><p id="portal-total-error" th:text="${comparisonErrors == null ? '' : comparisonErrors.get('portalTotal')}"></p></div>
+                    <button type="submit">Record comparison</button>
+                </div>
+            </form>
+            <div th:if="${comparison != null}" role="status">
+                <p>Comparison recorded. Matching counts do not establish complete billing coverage.</p>
+                <p th:text="${'Input difference: ' + (comparison.inputDifference == null ? 'Unavailable' : comparison.inputDifference)}"></p>
+                <p th:text="${'Output difference: ' + (comparison.outputDifference == null ? 'Unavailable' : comparison.outputDifference)}"></p>
+                <p th:text="${'Total difference: ' + (comparison.totalDifference == null ? 'Unavailable' : comparison.totalDifference)}"></p>
+                <p th:if="${comparison.incomplete}">Application usage is incomplete: there are missing usage values or unfinished invocations.</p>
+                <p>Investigate period boundaries, other key consumers, retries with unreported usage, and provider reporting delay. Preserve discrepancies rather than rewriting recorded usage.</p>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

@@ -3,12 +3,9 @@ package sg.edu.nus.facilityflow.technician;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import sg.edu.nus.facilityflow.ai.AiAccessGuard;
 import sg.edu.nus.facilityflow.ai.AiReadinessDeadline;
@@ -29,7 +26,6 @@ import sg.edu.nus.facilityflow.identity.IdentityAuthorization;
 @Service
 public final class TechnicianWorkPlanService {
     private static final String TEMPLATE_VERSION = "work-plan-v1";
-    private static final Logger LOGGER = LoggerFactory.getLogger(TechnicianWorkPlanService.class);
     private final IdentityAuthorization authorization;
     private final AiAccessGuard aiAccessGuard;
     private final AiInvocationCoordinator invocationCoordinator;
@@ -139,7 +135,7 @@ public final class TechnicianWorkPlanService {
         AiInvocationTelemetry.Invocation invocation;
         try {
             invocation = telemetry.start(new AiInvocationTelemetry.StartRequest(
-                    technician.id(), UUID.randomUUID(), AiInvocationTelemetry.Feature.WORK_PLAN,
+                    technician.id(), sg.edu.nus.facilityflow.operations.RequestCorrelationFilter.currentId(), AiInvocationTelemetry.Feature.WORK_PLAN,
                     model, TEMPLATE_VERSION));
         } catch (RuntimeException telemetryFailure) {
             permit.get().release();
@@ -225,7 +221,7 @@ public final class TechnicianWorkPlanService {
                     status(response), latencyMs, invocation.retryCount(), invocation.inputTokens(),
                     invocation.outputTokens(), invocation.totalTokens()));
         } catch (RuntimeException telemetryFailure) {
-            LOGGER.warn("AI terminal telemetry persistence failed for invocation {}", invocation.id());
+            sg.edu.nus.facilityflow.ai.AiFailureDiagnostics.persistenceFailed(invocation);
             terminalResponse = WorkPlanResponse.failure(WorkPlanFailureCode.AI_UNAVAILABLE);
         } finally {
             permit.release();

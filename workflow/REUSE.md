@@ -1,5 +1,13 @@
 # MP2 Reuse Ledger
 
+19 October AI observability: the aggregate filter/report and single AiMonitoring
+module, Manager controller/view/styles, portal comparison, correlation filter,
+and focused tests are new MP3 work. Existing MP3 invocation and diagnostic logging,
+role-service, navigation, configuration and guide code is adapted. No MP2 source
+was consulted or copied (zero copied MP2 lines). The implementation uses existing
+Spring Boot, SLF4J/Logback, PostgreSQL and JUnit dependencies; no new dependency.
+See logs/2026-10-19-ai-observability.md for executed checks and scope.
+
 16 October Requester step 7: the Node/CDP browser/load runner, opt-in Gradle
 task, graceful application/session restart regression, versioned 12-case AI
 corpus and gateway evaluation test are **new** MP3 test/build work. The related

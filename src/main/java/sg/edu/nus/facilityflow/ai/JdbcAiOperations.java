@@ -63,12 +63,4 @@ public class JdbcAiOperations implements AiOperations {
                 permit.slotId(), permit.version());
     }
 
-    public void record(UUID actor, UUID correlation, String model, AiGateway.Result result, long latencyMs) {
-        jdbc.update("""
-                INSERT INTO facilityflow.ai_invocation (actor_id, correlation_id, feature, model, template_version, status,
-                    latency_ms, retry_count, input_tokens, output_tokens, total_tokens)
-                VALUES (?, ?, 'SMART_REPORT', ?, ?, ?, ?, ?, ?, ?, ?)
-                """, actor, correlation, model, SmartReportSchema.VERSION, result.status().name(), Math.max(0, latencyMs), result.retryCount(),
-                result.inputTokens(), result.outputTokens(), result.totalTokens());
-    }
 }

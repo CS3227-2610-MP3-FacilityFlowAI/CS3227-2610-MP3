@@ -568,6 +568,48 @@ closed issue codes at WARN. See AI-SEC-017/019.
 
 ## Usage and audit metadata
 
+Implementation direction approved by the stakeholder on 19 October 2026:
+implement the proposed application AI observability in one session, without the
+multi-agent workflow. REQ-AI-007–009 have the following presentation contract:
+
+- A Manager-only `/manager/ai-monitoring` page reads aggregate invocation data,
+  filtered by assistant and inclusive Asia/Singapore dates. Persisted active
+  Manager role and session version are checked before queries. No actor,
+  correlation, invocation or Request identifiers appear in page projections.
+- Counts distinguish admitted, finished, successful and unfinished invocations;
+  success rate is successes divided by finished invocations. Median/p95 duration
+  covers finished end-to-end invocations, including failed ones. No-data rates
+  and durations are unavailable. A STARTED record older than one minute is
+  labelled unresolved, without rewriting its disposition.
+- Report provider-known token sums with per-field missing-usage counts. An
+  entirely unknown sum remains unavailable; known zero is zero. Retries stay in
+  their logical invocation. Pre-admission failures belong in safe diagnostics,
+  not admitted-invocation totals. Model/template breakdowns are aggregate only.
+- Readiness is a snapshot of the serving application's lifecycle, without
+  readiness discovery, protected context loading or model work on page reads.
+- A CSRF-protected Manager POST compares independent, non-negative portal token
+  counts against known application sums for a bounded date period and all
+  assistants. It records an `AI_USAGE_RECONCILED` structured operational event
+  with the snapshot, signed portal-minus-application differences and missing
+  coverage. It never updates original invocation data or creates business audit
+  events. Operators match the same environment/key and period and perform this
+  comparison periodically; matching known totals do not prove complete billing
+  coverage. No portal scraping or scheduled external integration is introduced.
+- JSON logs carry deployment version and server-issued correlation identifiers.
+  Durable invocation handles retain correlation/feature metadata across async
+  callbacks. Request diagnostics never log URL/query/body/header values; AI
+  diagnostics accept typed identifiers, outcomes and numeric usage only.
+
+These details refine the approved requirements and the implementation plan;
+teammate/security review remains a separate gate.
+
+Subsequent stakeholder direction on 19 October: simplify the implementation and
+tests. Keep recording through the existing JDBC invocation telemetry and query
+the database directly through one authorized `AiMonitoring` aggregation module.
+Use existing diagnostics for failures and lifecycle logs. Avoid a separate
+monitoring repository, forwarding service or diagnostics wrapper. Preserve failure
+recording and the STARTED/final-outcome contract, access checks and usage semantics.
+
 - **REQ-AI-007:** Capture provider input, output and total token counts when
   returned, plus feature/model/template version/latency/status/retry count.
   One admitted logical invocation consumes one Account-rate timestamp; its retry

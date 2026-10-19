@@ -4,11 +4,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import sg.edu.nus.facilityflow.ai.AiAccessGuard;
@@ -32,7 +29,6 @@ import sg.edu.nus.facilityflow.requester.RequesterSmartReportRepository.Eligibil
 @Service
 public final class RequesterSmartReportService {
     private static final String TEMPLATE_VERSION = "smart-report-v2";
-    private static final Logger LOGGER = LoggerFactory.getLogger(RequesterSmartReportService.class);
 
     private final IdentityAuthorization authorization;
     private final AiAccessGuard accessGuard;
@@ -162,7 +158,7 @@ public final class RequesterSmartReportService {
         AiInvocationTelemetry.Invocation invocation;
         try {
             invocation = telemetry.start(new AiInvocationTelemetry.StartRequest(
-                    requester.id(), UUID.randomUUID(), AiInvocationTelemetry.Feature.SMART_REPORT,
+                    requester.id(), sg.edu.nus.facilityflow.operations.RequestCorrelationFilter.currentId(), AiInvocationTelemetry.Feature.SMART_REPORT,
                     model, TEMPLATE_VERSION));
         } catch (RuntimeException telemetryFailure) {
             permit.get().release();
@@ -279,7 +275,7 @@ public final class RequesterSmartReportService {
                     status(response), latencyMs, invocation.retryCount(), invocation.inputTokens(),
                     invocation.outputTokens(), invocation.totalTokens()));
         } catch (RuntimeException telemetryFailure) {
-            LOGGER.warn("AI terminal telemetry persistence failed for invocation {}", invocation.id());
+            sg.edu.nus.facilityflow.ai.AiFailureDiagnostics.persistenceFailed(invocation);
             terminalResponse = SmartReportResponse.failure(SmartReportFailureCode.AI_UNAVAILABLE);
         } finally {
             permit.release();

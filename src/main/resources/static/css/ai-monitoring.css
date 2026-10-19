@@ -1,0 +1,9 @@
+.monitoring-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 1rem; margin: 1rem 0; }
+.monitoring-filters label { display: block; margin-bottom: .4rem; }
+.monitoring-filters input, .monitoring-filters select { max-width: 100%; }
+.monitoring-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1rem; }
+.monitoring-cards > div { padding: 1rem; border: 1px solid #526276; border-radius: .4rem; }
+.monitoring-cards dt { font-weight: 600; }
+.monitoring-cards dd { margin: .5rem 0 0; }
+.monitoring-table { overflow-x: auto; }
+.monitoring-table th, .monitoring-table td { padding: .6rem; text-align: left; }
