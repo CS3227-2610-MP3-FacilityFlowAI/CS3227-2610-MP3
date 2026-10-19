@@ -1,5 +1,11 @@
 # MP2 Reuse Ledger
 
+20 October reflection refresh: the replacement reflection sections in
+`docs/Reflections.md` and associated session/handoff evidence are **new** MP3
+documentation based on this project's specifications, source and verified logs.
+No MP2 source was consulted or copied. See
+`logs/2026-10-20-reflections-refresh.md`.
+
 20 October PR error-association correction: Manager template ARIA/error IDs,
 failed-action scoping, browser validation regressions and acceptance/evidence
 updates are **new** MP3 work adapting existing MP3 templates and tests. No further
