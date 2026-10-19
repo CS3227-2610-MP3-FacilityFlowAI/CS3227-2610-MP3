@@ -101,3 +101,12 @@ browsers or hosted release acceptance. Existing navigation identity differences
 and unimplemented MP2-only interactions are documented rather than changed.
 Local snapshot is for review; the existing load target remains unresolved and
 must be assessed in its own performance scope before claiming release readiness.
+
+## Review branch preparation
+
+At the user's subsequent request, the UI commit `d13bb32` was retained on the
+separate local branch `feat/responsive-ui-mp3`. Local `master` was restored to
+its preceding commit `253fb0f`, matching the existing `origin/master` tracking
+reference. No application files changed and no tests were rerun for branch
+preparation. The working tree was clean before the operation. No branch was
+pushed and no remote PR was created; PR title/body are supplied in the conversation.
