@@ -49,7 +49,7 @@ class TechnicianWorkPlanServiceTest {
         CountingRepository repository = new CountingRepository();
         CountingAssistant assistant = new CountingAssistant();
         TechnicianWorkPlanService service = serviceFor(
-                new CurrentAccount(TECHNICIAN_ID, "requester", "Requester", AccountRole.REQUESTER),
+                new CurrentAccount(TECHNICIAN_ID, "requester", "Requester", AccountRole.REQUESTER, 0),
                 repository,
                 assistant);
 
@@ -64,7 +64,7 @@ class TechnicianWorkPlanServiceTest {
         CountingRepository repository = new CountingRepository();
         CountingAssistant assistant = new CountingAssistant();
         TechnicianWorkPlanService service = serviceFor(
-                new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN),
+                new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN, 0),
                 repository,
                 assistant);
 
@@ -82,7 +82,7 @@ class TechnicianWorkPlanServiceTest {
         CountingAssistant assistant = new CountingAssistant();
         RecordingTelemetry telemetry = new RecordingTelemetry();
         TechnicianWorkPlanService service = serviceFor(
-                new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN),
+                new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN, 0),
                 repository,
                 assistant, telemetry);
 
@@ -98,7 +98,7 @@ class TechnicianWorkPlanServiceTest {
     void asyncCompletionUsesPersistedEligibilityRecheck() throws Exception {
         Thread requestThread = Thread.currentThread();
         CurrentAccount account = new CurrentAccount(
-                TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN);
+                TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN, 0);
         IdentityAuthorization authorization = new IdentityAuthorization(() -> {
             if (Thread.currentThread() != requestThread) {
                 throw new IllegalStateException("request-thread authentication is unavailable");
@@ -130,7 +130,7 @@ class TechnicianWorkPlanServiceTest {
     @DisplayName("AI-SEC-028 changed session snapshot discards an async result")
     void changedSessionSnapshotDiscardsAsyncResult() throws Exception {
         CurrentAccount account = new CurrentAccount(
-                TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN);
+                TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN, 0);
         CurrentAccountSnapshot snapshot = new CurrentAccountSnapshot(
                 TECHNICIAN_ID, AccountRole.TECHNICIAN, 7);
         CurrentAccountProvider currentAccounts = new CurrentAccountProvider() {
@@ -168,7 +168,7 @@ class TechnicianWorkPlanServiceTest {
     @DisplayName("AI-SEC-008 shared admission limit rejects before protected context loading")
     void admissionLimitRejectsBeforeRepositoryAndReleasesAfterCompletion() {
         CurrentAccount account = new CurrentAccount(
-                TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN);
+                TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN, 0);
         IdentityAuthorization authorization = new IdentityAuthorization(() -> account);
         CountingRepository repository = new CountingRepository();
         CompletableFuture<WorkPlanResponse> provider = new CompletableFuture<>();
@@ -199,7 +199,7 @@ class TechnicianWorkPlanServiceTest {
         CountingAssistant assistant = new CountingAssistant();
         RecordingTelemetry telemetry = new RecordingTelemetry();
         TechnicianWorkPlanService service = serviceFor(
-                new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN),
+                new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN, 0),
                 repository, assistant, telemetry);
 
         WorkPlanResponse response = await(service.request("FF-000001"));
@@ -220,7 +220,7 @@ class TechnicianWorkPlanServiceTest {
         RecordingTelemetry telemetry = new RecordingTelemetry();
         telemetry.failFinish = true;
         TechnicianWorkPlanService service = serviceFor(
-                new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN),
+                new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN, 0),
                 new CountingRepository(), new CountingAssistant(), telemetry);
 
         WorkPlanResponse response = await(service.request("FF-000001"));
@@ -264,9 +264,9 @@ class TechnicianWorkPlanServiceTest {
         };
         TechnicianWorkPlanService service = new TechnicianWorkPlanService(
                 new IdentityAuthorization(() -> new CurrentAccount(
-                        TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN)),
+                        TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN, 0)),
                 new AiAccessGuard(new IdentityAuthorization(() -> new CurrentAccount(
-                        TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN))),
+                        TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN, 0))),
                 coordinator(), new ReadyLifecycle(), repository, assistant,
                 AiInvocationTelemetry.noop(), new AiConfiguration.Available(
                         java.net.URI.create("https://soclaas-api.comp.nus.edu.sg/v1"),
@@ -284,7 +284,7 @@ class TechnicianWorkPlanServiceTest {
         CountingRepository repository = new CountingRepository();
         CountingAssistant assistant = new CountingAssistant();
         TechnicianWorkPlanService service = serviceFor(
-                new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN),
+                new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN, 0),
                 repository, assistant, telemetry);
 
         WorkPlanResponse response = await(service.request("FF-000001"));

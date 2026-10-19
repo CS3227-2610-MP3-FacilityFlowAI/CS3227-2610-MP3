@@ -43,7 +43,17 @@ dependencies {
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform { excludeTags 'requester-verification' }
+}
+
+// Explicit local browser/load verification; normal CI tests need neither Chrome nor Node.
+tasks.register('requesterVerification', Test) {
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'requester-verification' }
+    systemProperty 'facilityflow.verifyRequester', 'true'
+    systemProperty 'facilityflow.verificationPoolSize', providers.gradleProperty('requesterPoolSize').getOrElse('2')
+    inputs.file 'src/test/js/requester-verification.cjs'
 }
 
 tasks.withType(JavaCompile).configureEach {

@@ -90,6 +90,20 @@ class SecurityIntegrationTest {
         environment.getPropertySources().remove(
                 org.springframework.core.env.StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME);
         application.setEnvironment(environment);
+        // H2 tests authentication; PostgreSQL tests exercise the real workspace and row locks.
+        application.addInitializers(applicationContext -> {
+            var workspace = org.mockito.Mockito.mock(sg.edu.nus.facilityflow.requester.RequesterRequests.class);
+            org.mockito.Mockito.when(workspace.dashboard()).thenReturn(
+                    new sg.edu.nus.facilityflow.requester.RequesterRequests.Dashboard(
+                            sg.edu.nus.facilityflow.requester.RequesterRequests.STATUSES.stream()
+                                    .map(status -> new sg.edu.nus.facilityflow.requester.RequesterRequests.StatusCount(status, 0)).toList(),
+                            java.util.List.of()));
+            var definition = org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition(
+                    sg.edu.nus.facilityflow.requester.RequesterRequests.class, () -> workspace).getBeanDefinition();
+            definition.setPrimary(true);
+            ((org.springframework.beans.factory.support.BeanDefinitionRegistry) applicationContext.getBeanFactory())
+                    .registerBeanDefinition("authenticationOnlyRequesterWorkspace", definition);
+        });
         context = (org.springframework.web.context.ConfigurableWebApplicationContext) application.run(
                 "--spring.profiles.active=test", "--server.port=0", "--server.address=127.0.0.1",
                 "--spring.datasource.url=jdbc:h2:mem:facilityflow;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1",
@@ -149,6 +163,7 @@ class SecurityIntegrationTest {
                                 sg.edu.nus.facilityflow.ai.technician.WorkPlanFailureCode.AI_UNAVAILABLE)));
         jdbc.update("DELETE FROM facilityflow.spring_session_attributes");
         jdbc.update("DELETE FROM facilityflow.spring_session");
+        jdbc.update("DELETE FROM facilityflow.audit_event");
         jdbc.update("DELETE FROM facilityflow.requester_update");
         jdbc.update("DELETE FROM facilityflow.work_log");
         jdbc.update("DELETE FROM facilityflow.maintenance_request");
@@ -904,6 +919,24 @@ class SecurityIntegrationTest {
         Cookie cookie = result.getResponse().getCookie("SESSION");
         assertThat(cookie).as("Spring Session cookie").isNotNull();
         return cookie;
+    }
+
+    @Test
+    void reqSh006LoginAuditFailureDoesNotLeaveAnAuthenticatedSession() throws Exception {
+        jdbc.execute("ALTER TABLE facilityflow.audit_event ADD CONSTRAINT test_reject_login CHECK (action <> 'LOGIN_SUCCESS')");
+        try {
+            var result = mockMvc.perform(post("/login").with(csrf())
+                            .param("username", "requester1").param("password", VALID_PASSWORD))
+                    .andExpect(redirectedUrl("/login?error")).andReturn();
+            Cookie cookie = result.getResponse().getCookie("SESSION");
+            if (cookie != null) {
+                mockMvc.perform(get("/requester").cookie(cookie)).andExpect(redirectedUrl("/login"));
+            }
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM facilityflow.spring_session WHERE principal_name = 'requester1'",
+                    Integer.class)).isZero();
+        } finally {
+            jdbc.execute("ALTER TABLE facilityflow.audit_event DROP CONSTRAINT test_reject_login");
+        }
     }
 
     private MvcResult performSuccessfulLogin(

@@ -61,7 +61,7 @@ class AiAccessGuardTest {
     }
 
     private static AiAccessGuard guardFor(AccountRole role) {
-        CurrentAccount account = new CurrentAccount(CURRENT_ID, "current", "Current User", role);
+        CurrentAccount account = new CurrentAccount(CURRENT_ID, "current", "Current User", role, 0);
         return new AiAccessGuard(new IdentityAuthorization(() -> account));
     }
 }

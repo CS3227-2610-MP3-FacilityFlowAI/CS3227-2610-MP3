@@ -46,18 +46,18 @@ latest release rather than the intended design.
 
 ## Project overview
 
-FacilityFlow AI, CS3227 MP3. Database/authentication foundations, shared password
-and navigation screens, Technician assigned-work reads, start/log/completion and
-advisory Work Plan controls, and Manager request lifecycle, administration and
-Triage Assistant workflows are integrated in source. Requester manual workflows
-remain pending. See README and AGENTS.md.
+FacilityFlow AI, CS3227 MP3. Shared authentication/password/navigation,
+Requester manual workflow and Smart Report review, Technician assigned-work
+start/log/completion and Work Plan review, and Manager lifecycle/administration
+and Triage review are implemented locally. Human and hosted release gates remain
+pending. See README and AGENTS.md.
 
 ## Repository structure
 
 src/: application code/tests; workflow/: specs/process; docs/: guides/planning;
 logs/: summaries; .github/: PR-Agent/contribution template. The Gradle build
 packages the application, Technician read/command modules and Manager workflow
-and administration modules; Requester manual workflows remain pending.
+and administration modules alongside the Requester manual workflow and Smart Report UI.
 
 ## Architecture
 
@@ -92,6 +92,102 @@ migrations alone do not implement those controls.
 
 The accepted entities, relationships, transaction boundaries, invariants and
 concurrency approach are defined in `../workflow/specs/TECHNICAL-SPEC.md`.
+
+## Requester first manual slice (step 2)
+
+REQ-RQ-002/004/005/009–011: `RequesterRequests` exposes bounded use cases and page
+records; `RequesterRequestService` supplies the transaction boundary and
+`RequesterRequestRepository` isolates persistence. Controllers accept an immutable
+five-field `RequestDraft` plus a submission ID. Actor/owner/status/priority/IDs
+and timestamps are never bound from client authority fields.
+
+Every operation rechecks persisted active state, REQUESTER role and session
+version in its transaction. Reads hold a shared account lock; creation holds an
+exclusive account lock so duplicate submissions from the same account serialize
+across server instances. The selected active category is locked for the short
+create transaction. Request creation, its audit event and durable submission ID
+commit together. Validation, stale account, duplicate command, audit/storage
+failure and display-number exhaustion leave no partial business record.
+
+Queries scope by owner before selecting detail/history. History projects only
+approved lifecycle/edit labels, public transition reasons and Requester Updates;
+it never selects Work Logs or returns the audit details object. Returned page
+records omit internal Request UUIDs, credentials, assignments and completion metadata,
+following retained MP2 Requester detail behavior. Thymeleaf encodes user text.
+History action names are the `REQUEST_CREATED/EDITED/ASSIGNED/REASSIGNED/STARTED/
+COMPLETED/CLOSED/CANCELLED/RETURNED/REOPENED` variants enumerated in the repository;
+public transition reasons use `details.reason`. Other role services must use
+this shared history contract or update the projection with matching tests.
+
+Apply **V5 and V6** using the existing explicit migration profile before web startup.
+It adds an append-only submission table and read-only `schema_version` view.
+`SchemaReadinessCheck` requires successful versions 1-6; missing/failed/future
+versions stop startup with safe guidance. Runtime still cannot read or write the
+full Flyway history or perform DDL. Flyway checksum validation remains part of
+the explicit migration process; startup checks version compatibility only.
+
+`RequesterRequestIntegrationTest` starts a loopback app with genuine disposable
+PostgreSQL and the restricted app role. Existing H2 tests remain authentication-
+only with a clearly marked readiness fixture. Run `gradlew.bat test bootJar` and
+`node src/test/js/request-form.test.cjs`; the Node check uses only standard APIs.
+No new application dependency was added. Browser/hosted/performance verification
+and human review remain pending.
+
+## Requester eligible mutations (step 3)
+
+REQ-RQ-006–011: the existing use-case/repository interfaces now expose bounded
+edit, cancellation and append-update operations. Each transaction rechecks the
+active Requester/session version, locks only an owned Request, validates its
+persisted state and compares the submitted non-negative version. Edit/cancel are
+OPEN-only; updates reject CLOSED/CANCELLED. A missing/foreign Request yields the
+same unavailable result. The SQL writes also assert expected version/state.
+
+Every successful mutation increments Request.version, including an append update.
+Repeated or concurrent submissions with the same version reject the second
+operation. Request fields/state/update insertion and audit append share one
+transaction; audit failure restores the prior row, version and history. Edit
+rechecks/locks the selected active category. Public cancellation reasons are
+stored in `details.reason`; update text and report free text are never copied
+into audit details. Updated timestamps use PostgreSQL clock_timestamp after lock
+acquisition. No migration or application dependency was added in this step.
+
+The create template is reused for edit with a version field. A shared action
+page handles cancellation and updates. Cancellation requires a server-validated
+reason, checkbox and explicit cancel decision; missing/implicit decisions keep
+the report. Keep is the first submit action. The shared pending-submit script
+leaves named decision buttons enabled so their values remain in the browser's
+payload, while rejecting a second pending submit. Node checks cover that case.
+
+Centralized mutation error handling preserves submitted values and their original
+version; it never substitutes a fresh version behind stale user input. Reloading
+is explicit. Tests cover all states, replay, foreign/wrong-role/CSRF denial,
+post-load assignment/category changes, concurrent edits/cancel-update races,
+all-mutation audit rollback/retry and inactive/invalidated direct-service access.
+
+## Requester dashboard and discovery (step 4)
+
+REQ-RQ-001/003/004/009 and REQ-SH-008/009: `RequestFilters` binds only five
+immutable filter inputs, normalizes whitespace and validates status, category
+UUID, strict dates and date order before queries. Invalid or unknown category
+filters return HTTP 422 with retained values and no unfiltered fallback.
+
+The service derives the owner from the revalidated account. Every count/list
+query constrains that owner; the search OR group remains inside that predicate.
+Bound `position` expressions implement literal case-insensitive substrings over
+display ID, title and location. All filters combine with AND. Inclusive Singapore
+dates become UTC bounds `created_at >= start` and `created_at < next day start`.
+List and five-recent queries share creation-descending/display-ID-ascending order.
+The dashboard fills absent states with zero. Filter categories include inactive
+history options; creation/edit choices remain active-only. No migration or
+dependency was added.
+
+PostgreSQL integration tests cover ownership, all six counts, five recent reports,
+literal punctuation, combined filters, local midnight boundaries, reset/empty
+states and escaped retained errors. The H2 authentication suite uses a primary
+`RequesterRequests` dashboard stub registered only by its test initializer,
+because H2 cannot execute PostgreSQL `FOR SHARE`. Its security chain, persisted
+accounts, JDBC sessions and password/audit services remain real; PostgreSQL
+workspace tests exercise the actual authorization and locking.
 
 ## Facilities Manager workflow
 
@@ -299,16 +395,19 @@ configuration, initial limits, retention and typed results are defined in
 `../workflow/specs/INTEGRATION-SPEC.md` and
 `../workflow/specs/AI-SECURITY-SPEC.md`.
 
+### Shared gateway from master
+
 The shared gateway now includes startup-safe configuration, HTTPS identity-only
 transport, generation-aware readiness recovery, bounded decoding,
 admission/lease coordination, telemetry, bounded retry, a single end-to-end
 Technician deadline, strict typed Work Plan/Smart Report/Triage provider
 contracts, deterministic Manager candidate ranking and server-side output
-disclosure checks. The provider core remains advisory and mutation-free. Only
-the Manager and Technician slices include role-facing review controls over their
-services/APIs; Requester Smart Report remains an API/service seam until its owner
-adds workflow UI. Compressed responses remain deferred by the
-authoritative integration specification.
+disclosure checks. The provider core remains advisory and mutation-free. Technician Work Plan, Requester Smart Report and Manager Triage now have
+role-facing service/controller seams; owner/teammate release approval remains
+pending. Technician Work Plan also has browser controls. The Manager slice also supplies a Triage Assistant review page.
+The Requester review UI continues to use its separate
+`/requester/requests/assistant` flow documented below. Compressed responses remain deferred
+by the authoritative integration specification.
 
 `AI_ENABLED` defaults to `false`. When enabled, the application binds all
 deployment values as raw strings and resolves them to disabled, unavailable or
@@ -329,7 +428,38 @@ SoCLaaS provider. A manual 17 October 2026 smoke check verified model discovery
 and one minimal completion using the developer's external secret environment;
 no credential or raw response was recorded in the repository.
 
+## Identity operations (Requester step 1)
+
+REQ-SH-002/004/006/014: the merged password flow uses SharedPagesController,
+PasswordChangeService and JdbcPasswordChangeRepository. It captures the server
+snapshot, validates Unicode lengths and exact confirmation, then locks and
+rechecks active state/role/session version before verifying and replacing the
+current stored hash. The password, account version/time and one
+ACCOUNT_PASSWORD_CHANGED audit event commit atomically; failures roll back.
+Existing sessions and session versions are retained. Errors never return password
+values. The earlier JdbcIdentityOperations password method remains covered as a
+legacy internal persistence operation, but no web route calls it. See T5 below.
+
+`RoleLoginSuccessHandler` records `LOGIN_SUCCESS` before redirecting. Audit failure
+clears authentication and invalidates the newly established session, returning the
+generic login failure. Neither audit action records password material.
+
+Manager integration contract (REQ-SH-004, REQ-MGR-013–015): Manager operations
+remain with the Manager owner. Deactivation/reset must atomically mutate the
+account, increment `session_version`, remove affected JDBC sessions and append
+their audit event. The existing request filter also rejects stale session versions.
+Eligible role changes retain the current session and the next protected request
+reloads the persisted role. Manager self-change restrictions and active Technician
+assignment guards must be enforced in those use cases; this password endpoint
+accepts no target account or role. Those Manager operations remain unimplemented.
+
+The password interaction is sourced from MP2 commit
+`9819b857d880134c1fc1ffef8a8bcd5d6e536f43`, `AuthenticationService.changePassword`
+and `ApplicationRouter`'s password page, under the spec index's source precedence.
+Spring reference: [form login success processing](https://docs.spring.io/spring-security/reference/7.0/servlet/authentication/passwords/form.html).
+
 ## AI security
+
 
 Gateway failures include a stable `code` and readable `message`, for example:
 
@@ -359,6 +489,123 @@ corpus, hosted application verification and final Security Reviewer/teammate
 verification remain pending. See
 AI-SECURITY-SPEC.md and ../workflow/SECURITY.md.
 
+### Smart Report service (Requester step 5)
+
+`ai/SmartReportService` calls the role-owned read repository, `AiGateway` and
+`AiOperations` persistence seams. POST `/requester/requests/assistant` accepts
+`SmartReportInput`; POST `/requester/requests/{displayId}/assistant` also requires
+the ordinary Request version. Existing role filters and CSRF protect both. They
+return no-store JSON with a typed suggestion or stable failure category and safe
+guidance. The step 6 review UI is described below. Service code
+never calls a Request mutation or business-audit operation.
+
+The input permits incomplete current fields within their normal maxima. Actor,
+object/version checks, input bounds and database admission precede category
+loading/provider use. Context includes only current rough/form text, selected
+category label/urgency and active category labels. No saved Request description,
+Account/display/internal IDs, history or unrelated records enter the prompt.
+Fixed field rules live in source-controlled `SmartReportSchema` template
+`smart-report-v1`. Jackson 3 serializes one provenance-labelled data object;
+untrusted strings never extend the fixed system instructions.
+
+`ValidatedAiGateway` bounds aggregate system/data JSON to 12,000 UTF-16 units
+(conservative for Unicode), output to 800 tokens and deadline to 30 seconds.
+It has five worker slots without a waiting queue, cancels/ignores late responses,
+and retries network/503 once or 429 once only for Retry-After up to two seconds
+inside the original deadline. Other failures never retry. The strict parser
+rejects duplicate/unknown fields, trailing JSON, wrong types, invalid enum/category,
+empty optional strings, schema lengths and missing required structure. Plain-text
+validation rejects active markup/links, unsafe control/format characters, identifiers,
+prompt markers, known secrets and adapter-provided disclosure canaries. This
+bounded detector is not proof against every semantic or obfuscated disclosure.
+
+`JdbcAiOperations` uses the existing V3 tables: a locked per-Account rolling
+timestamp array (five/minute, 30/hour) plus five global expiring slot leases
+claimed with FOR UPDATE SKIP LOCKED. Versioned release cannot clear a newer
+lease. Short transactions end before inference. Limits survive service instances;
+each invocation reserves one quota unit, including its permitted retry. Leases
+last the configured provider deadline plus 15 seconds for local processing.
+Adapters must honor remaining deadlines/interruption; bounded workers also
+prevent ignored cancellation from creating an unbounded local call queue.
+
+Telemetry stores actor/correlation IDs, feature, configured model/template,
+status/latency/retry and provider usage, retaining known counts even when a
+freshness check discards output. Missing usage remains null. No prompt, provider
+error body, free-text input/output or business Audit Event is recorded. A metadata
+storage failure cannot return a successful suggestion.
+
+Runtime `AiConfiguration` now installs `SoClaasTransport`; `FakeAiTransport`
+exists only under tests. Missing/invalid configuration leaves AI unavailable.
+Portal reconciliation and other role results remain pending with the gateway owner.
+`AI_ENABLED` defaults false. `AI_TIMEOUT_SECONDS`, `AI_MAX_OUTPUT_TOKENS`,
+`AI_MAX_IN_FLIGHT`, `AI_RATE_PER_MINUTE` and `AI_RATE_PER_HOUR` may reduce defaults;
+values are clamped to 1 through their approved maximum. `SOCLAAS_API_KEY` is a
+server-only bearer credential and forbidden output value. No dependency or
+migration was added. Tests use synthetic values and no external provider.
+
+### Review UI and SoCLaaS adapter (Requester step 6)
+
+`requester/create.html` embeds an optional, separately labelled review section
+outside the ordinary create/edit form. `smart-report.js` sends only current
+allowlisted fields, rough text, expected edit version and CSRF to the same-origin
+POST endpoint. It renders with textContent, never HTML/Markdown. Explicit per-field
+buttons map active category labels to current form option IDs and urgency labels
+to the ordinary enum. Accepted fields remain editable. There is no AI submit or
+save operation, acceptance flag or result ID that can authorize a write.
+
+While awaiting a response, manual fields remain usable. Changed input discards
+late output; a field changed after review cannot be overwritten by its old
+suggestion. Discard, ordinary submission and page navigation abort/ignore pending
+browser results and remove transient suggestion nodes. No chat/localStorage or
+other suggestion persistence. Browser cancellation is best effort; the server
+invocation remains bounded by its deadline/quotas. A no-JavaScript manual path
+remains available. Framework page/JSON escaping plus DOM textContent protect
+display; no raw provider body is sent to the browser.
+
+`SoClaasTransport` uses one JDK HttpClient, default certificate validation and no
+redirects. Runtime accepts only the approved HTTPS SoCLaaS `/v1` origin; it never
+sends credentials to configurable arbitrary hosts or an HTTP URL. The
+adapter also rejects a model setting containing the configured key, preventing
+that misconfiguration from reaching model metadata. The
+package-private injected client/base constructor is for loopback contract tests,
+with no runtime insecure flag. Configuration uses `AI_ENABLED=true`,
+`SOCLAAS_BASE_URL` (default `https://soclaas-api.comp.nus.edu.sg/v1`), a server-only
+`SOCLAAS_API_KEY` and `SOCLAAS_MODEL`. No model is hard-coded. Configure separate
+non-production/production keys where supported, outside tracked files.
+
+Startup and `available()` never contact the provider. After ordinary admission,
+first use checks GET `/models` within two seconds and the invocation's remaining
+deadline. One probe per process runs at a time; success caches five minutes,
+failure cools down 60 seconds. Generation uses POST `/chat/completions` with model,
+stream=false, reasoning_effort=none, max_tokens and exactly system/user messages.
+No tools, history or response ID. Credentials stay in the Authorization header. Generation and probe
+share the original deadline; future cancellation closes the HTTP exchange.
+
+Response bodies are capped at 64 KiB with a typed overflow error so oversized or
+malformed output never becomes a network retry. The adapter requires exactly one
+completed assistant-text choice and rejects tool/refusal/truncated responses;
+the existing strict Smart Report parser then validates content. Numeric non-negative
+usage is extracted without estimating missing values. Status/Retry-After map into
+the existing one-retry gateway policy; redirects never forward bearer headers.
+No prompt/output/provider-error body is logged or persisted.
+
+`SoClaasTransportTest` exercises the real HTTP adapter against a loopback provider.
+PostgreSQL integration tests cover rendered create/edit routes and explicit
+ordinary submission after review, including stale state and forged AI flags.
+Run `node src/test/js/smart-report.test.cjs` plus the existing request-form self-
+check for explicit acceptance/discard/stale/cancel/error/escaping behavior.
+These DOM checks do not replace real-browser accessibility/viewport verification.
+The 19 October non-production live smoke initially found Requester truncation
+failures. After aligning the transport with reasoning_effort=none, 19 focused
+tests passed and ordinary, missing-detail and instruction-injection synthetic
+live gateway cases all returned valid suggestions without retries. A subsequent
+authenticated create-assistant endpoint smoke passed all three cases with real
+security/JDBC sessions and disposable PostgreSQL; access/CSRF checks passed and
+no maintenance records changed. Live browser interaction, owned-edit/other-role
+checks and broader quality/security review remain pending.
+See [live evidence](../logs/2026-10-19-requester-live-ai-smoke.md). JDK reference:
+[HttpClient](https://docs.oracle.com/en/java/javase/25/docs/api/java.net.http/java/net/http/HttpClient.html).
+
 ## SDD workflow
 
 Use ../workflow/README.md: specify, approve, design, secure, implement, verify,
@@ -378,6 +625,32 @@ use an isolated H2 fixture under `src/test/resources/db/authentication`, separat
 from applied production migrations, and cover seeded PBKDF2 login as well as
 Argon2, session invalidation, role denial and CSRF. Browser/hosted checks remain
 required before release; local tests do not connect to Supabase.
+
+Requester browser/load verification is opt-in:
+
+```powershell
+.\gradlew.bat requesterVerification
+# Diagnostic override only; does not change application configuration:
+.\gradlew.bat requesterVerification -PrequesterPoolSize=5
+```
+
+This needs Node with built-in fetch/WebSocket (verified with 24.19.0) and desktop
+Chrome. Set `CHROME_PATH` if Chrome is outside the usual Windows installation
+paths. The runner creates its own ignored profile and synthetic accounts in
+disposable PostgreSQL; it never uses a personal profile or hosted database.
+It exercises real HTTP/browser manual and fake-AI workflows, three desktop
+viewports and 50 distinct authenticated users. Normal `test` excludes the tagged
+browser task and needs neither Chrome nor Node. Results/screenshots are under
+`build/verification/requester/`; cookie/CSRF values are not written to reports.
+The versioned `src/test/resources/ai/smart-report-evaluation-v1.json` corpus is
+deterministic fake-model safety evidence; it does not measure live usefulness.
+The restart test retains saved requests/JDBC sessions across a graceful app
+restart, not a database crash or restore. See the
+[step 7 evidence](../logs/2026-10-16-requester-step-7-verification.md): browser
+checks passed, but both local pool configurations missed the 1,000 ms load gate.
+Timings include loopback networking; server-only and deployed performance,
+latest-stable Chrome confirmation, manual accessibility and cross-role
+lifecycle verification remain required. The task retains its failing gate.
 
 Follow the database guides for setup. Ordinary startup does not migrate or seed;
 use the app role for `./gradlew bootRun`, then open `/login`.
@@ -413,6 +686,35 @@ tests, and documentation separately and acknowledge every source before merge.
 
 Team: ../AGENTS.md. AI evidence: ../logs/. Reused material: reuse ledger.
 Other source/dependency acknowledgements: TBD.
+
+## Migration ordering after the 18 October master merge
+
+Master's `V5__ai_gateway_coordination.sql` stays V5. The Requester submission and
+read-only schema-version migration moves to `V6__request_submission_and_readiness.sql`
+without SQL content changes. Web readiness requires successful versions 1-6.
+No hosted migration was executed during this merge. The user is unsure whether
+the older Requester V5 was applied to shared Supabase; check privately before any
+upgrade using the read-only query:
+
+```sql
+SELECT version, script, success
+FROM facilityflow.flyway_schema_history
+WHERE version IS NOT NULL ORDER BY installed_rank;
+```
+
+If V5 names `V5__request_submission_and_readiness.sql`, stop and coordinate a
+migration-history reconciliation with the persistence owner. Do not run Flyway
+repair, baseline, clean, or alter applied history to bypass validation. The merged
+source sequence must not be applied blindly to that database. Disposable local
+test databases use the merged sequence and do not establish hosted compatibility.
+
+18 October history confirmation: the user's Supabase SQL Editor screenshot shows
+successful versions1-5 with `V5__ai_gateway_coordination.sql`. The earlier V5
+identity uncertainty above is resolved. Following credential correction, the
+validated Flyway migration profile applied Requester V6 to development Supabase
+on 18 October. Read-only postchecks confirmed successful V1-V6 history and app-role
+visibility of `request_submission` and `schema_version`. No repair or reseeding
+was performed. See [verification evidence](../logs/2026-10-18-supabase-history-and-full-reverification.md).
 
 
 ## T5 shared identity and screens

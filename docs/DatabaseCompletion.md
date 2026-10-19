@@ -1,4 +1,4 @@
-# Complete development database setup (V2-V4 and initialization)
+# Complete development database setup (V2-V6 and initialization)
 
 Prepared 15 October 2026. V1 is already applied, as shown in the user's screenshots.
 Update: the user reported successful hosted initialization with six Accounts,
@@ -15,6 +15,8 @@ schema, certificate and restricted roles. Do not edit V1 or rerun role provision
 | V2 | category (seven required initial categories), maintenance_request, requester_update, work_log, request_completion_history |
 | V3 | skill_tag, technician_skill, ai_invocation, rate_limit_bucket (five initial global slots) |
 | V4 | Require timestamps on new assignments while preserving existing migrated unknown times; no new tables |
+| V5 | Shared AI gateway lifecycle/lease coordination |
+| V6 | Append-only request_submission table for duplicate create rejection; read-only schema_version view for runtime compatibility checks |
 
 After V3 there are **14 tables**, including Flyway history. UUID identities,
 foreign keys, UTC-capable timestamps, catalogue uniqueness, Unicode character
@@ -22,6 +24,15 @@ limits and relevant lookup indexes are supplied. Display IDs are database-genera
 FF-000001 through FF-999999; overflow fails and never wraps. Runtime cannot alter
 Request owner/Recording Actor/IDs/creation times, hard-delete business history,
 or overwrite work logs, updates, completions and AI invocation evidence.
+
+After V6 there are **15 tables**, plus the `schema_version` view. Apply V5/V6 using
+the explicit `database-migrate` profile and the migration identity, following the
+existing setup commands below. Web startup now requires successful versions 1-6;
+it performs only a compatibility read, never a migration. Runtime can SELECT the
+version/success projection but cannot access full Flyway history or modify it.
+The original step 2 recorded no hosted Requester migration. The user is now unsure
+whether the old Requester V5 reached shared Supabase. Before upgrading, follow
+the migration-history check in DeveloperGuide.md; do not repair history blindly.
 
 All application tables have RLS restricted to the trusted JDBC server identity;
 the schema is not exposed to browser Data API roles. Product role authorization,

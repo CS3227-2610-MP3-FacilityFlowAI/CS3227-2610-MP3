@@ -115,10 +115,66 @@ class PasswordChangeSecurityIntegrationTest {
         mvc.perform(get("/technician").cookie(session)).andExpect(status().isOk());
     }
 
+    @Test void ownPasswordChangeRetainsSessionForEveryRole() throws Exception {
+        for (String role : new String[]{"REQUESTER", "TECHNICIAN", "FACILITIES_MANAGER"}) {
+            db.admin.execute("TRUNCATE facilityflow.spring_session CASCADE");
+            db.reset();
+            db.account(role, true, 4, initialHash);
+            Cookie session = login(PasswordChangeFixtures.OLD_PASSWORD);
+            String replacement = "😀".repeat(8);
+            mvc.perform(post("/account/password").cookie(session).with(csrf())
+                            .param("currentPassword", PasswordChangeFixtures.OLD_PASSWORD)
+                            .param("newPassword", replacement).param("confirmPassword", replacement))
+                    .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/account/password?changed"));
+            mvc.perform(get("/account/password").cookie(session)).andExpect(status().isOk());
+            mvc.perform(post("/login").with(csrf()).param("username", "password-test")
+                            .param("password", PasswordChangeFixtures.OLD_PASSWORD))
+                    .andExpect(redirectedUrl("/login?error"));
+            login(replacement);
+            assertThat(db.app.queryForObject("SELECT session_version FROM facilityflow.user_account", Long.class)).isEqualTo(4L);
+            assertThat(db.app.queryForObject("SELECT count(*) FROM facilityflow.audit_event WHERE action = 'ACCOUNT_PASSWORD_CHANGED'",
+                    Integer.class)).isEqualTo(1);
+        }
+    }
+
+    @Test void invalidPasswordAndMissingCsrfDoNotMutateOrEchoCredentials() throws Exception {
+        Cookie session = login(PasswordChangeFixtures.OLD_PASSWORD);
+        mvc.perform(post("/account/password").cookie(session)
+                        .param("currentPassword", PasswordChangeFixtures.OLD_PASSWORD)
+                        .param("newPassword", REPLACEMENT).param("confirmPassword", REPLACEMENT))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/account/password").cookie(session).with(csrf())
+                        .param("currentPassword", "wrong-secret")
+                        .param("newPassword", REPLACEMENT).param("confirmPassword", REPLACEMENT))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("wrong-secret"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(REPLACEMENT))));
+        for (String invalid : new String[]{"", "a".repeat(7), "😀".repeat(25)}) {
+            mvc.perform(post("/account/password").cookie(session).with(csrf())
+                            .param("currentPassword", PasswordChangeFixtures.OLD_PASSWORD)
+                            .param("newPassword", invalid).param("confirmPassword", invalid))
+                    .andExpect(status().isBadRequest());
+        }
+        assertThat(db.app.queryForObject("SELECT password_hash FROM facilityflow.user_account", String.class)).isEqualTo(initialHash);
+        assertThat(db.app.queryForObject("SELECT count(*) FROM facilityflow.audit_event WHERE action = 'ACCOUNT_PASSWORD_CHANGED'",
+                Integer.class)).isZero();
+        String maximum = "x".repeat(24);
+        mvc.perform(post("/account/password").cookie(session).with(csrf())
+                        .param("currentPassword", PasswordChangeFixtures.OLD_PASSWORD)
+                        .param("newPassword", maximum).param("confirmPassword", maximum))
+                .andExpect(status().isSeeOther());
+    }
+
     private Cookie login(String password) throws Exception {
+        String role = db.app.queryForObject("SELECT role FROM facilityflow.user_account", String.class);
+        String destination = switch (role) {
+            case "REQUESTER" -> "/requester";
+            case "FACILITIES_MANAGER" -> "/manager";
+            default -> "/technician";
+        };
         Cookie cookie = mvc.perform(post("/login").with(csrf()).param("username", "password-test")
                         .param("password", password))
-                .andExpect(redirectedUrl("/technician")).andReturn().getResponse().getCookie("SESSION");
+                .andExpect(redirectedUrl(destination)).andReturn().getResponse().getCookie("SESSION");
         assertThat(cookie).isNotNull();
         return cookie;
     }

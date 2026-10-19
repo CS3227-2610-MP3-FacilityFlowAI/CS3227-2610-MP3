@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${editing ? 'Edit request' : 'Report a problem'} + ' · FacilityFlow AI'">Report a problem · FacilityFlow AI</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script defer th:src="@{/js/request-form.js}"></script>
+    <script defer th:src="@{/js/smart-report.js}"></script>
+</head>
+<body>
+<header th:replace="~{fragments/authenticated-header :: header(${username}, ${displayName}, ${role})}"></header>
+<main id="main-content">
+    <h1 th:text="${editing ? 'Edit request ' + displayId : 'Report a problem'}">Report a problem</h1>
+    <p>All fields are required.</p>
+    <p th:if="${message}" th:text="${message}" role="alert"></p>
+    <p th:if="${!errors.isEmpty()}" role="alert">Check the marked fields and try again.</p>
+    <p th:if="${errors.containsKey('submissionId')}" th:text="${errors['submissionId']}" role="alert"></p>
+    <p th:if="${errors.containsKey('version')}" th:text="${errors['version']}" role="alert"></p>
+    <section data-smart-report aria-labelledby="assistant-heading"
+             th:attr="data-endpoint=${editing} ? @{/requester/requests/{id}/assistant(id=${displayId})} : @{/requester/requests/assistant}">
+        <h2 id="assistant-heading">Smart Report Assistant (optional)</h2>
+        <p>AI suggestions may be wrong. Review them before using your ordinary report form below. Nothing is saved automatically.</p>
+        <label for="roughText">Rough problem description (up to 2,000 characters)</label>
+        <textarea id="roughText" rows="3" data-rough-text></textarea>
+        <p>The assistant also uses the current report fields below. Share maintenance details only.</p>
+        <button type="button" data-ask-assistant hidden>Get AI suggestions</button>
+        <button type="button" data-discard-suggestions hidden>Discard suggestions</button>
+        <p role="status" aria-live="polite" data-assistant-status></p>
+        <div data-assistant-review hidden aria-labelledby="suggestions-heading">
+            <h3 id="suggestions-heading" tabindex="-1">AI suggestions — review before use</h3>
+            <div data-suggested-fields></div>
+            <h4>Missing information</h4>
+            <ul data-assistant-questions></ul>
+            <h4>Why these suggestions</h4>
+            <p class="free-text" data-assistant-rationale></p>
+            <p>Use individual suggestions, edit the report fields yourself, or discard all suggestions. Submit or save only when you are ready.</p>
+        </div>
+        <noscript><p>AI review requires JavaScript. You can complete and submit the ordinary form below.</p></noscript>
+    </section>
+    <form method="post" th:action="${editing} ? @{/requester/requests/{id}/edit(id=${displayId})} : @{/requester/requests}" data-request-form>
+        <input th:unless="${editing}" type="hidden" name="submissionId" th:value="${submissionId}">
+        <input th:if="${editing}" type="hidden" name="version" th:value="${version}">
+        <label for="title">Title (5–100 characters)</label>
+        <input id="title" name="title" th:value="${form.title}" required
+               th:attr="aria-invalid=${errors.containsKey('title')},aria-describedby=${errors.containsKey('title') ? 'title-error' : null}">
+        <p id="title-error" class="error" th:if="${errors.containsKey('title')}" th:text="${errors['title']}"></p>
+        <label for="description">Description (10–2,000 characters)</label>
+        <textarea id="description" name="description" rows="7" th:text="${form.description}" required
+                  th:attr="aria-invalid=${errors.containsKey('description')},aria-describedby=${errors.containsKey('description') ? 'description-error' : null}"></textarea>
+        <p id="description-error" class="error" th:if="${errors.containsKey('description')}" th:text="${errors['description']}"></p>
+        <label for="location">Location (2–120 characters)</label>
+        <input id="location" name="location" th:value="${form.location}" required
+               th:attr="aria-invalid=${errors.containsKey('location')},aria-describedby=${errors.containsKey('location') ? 'location-error' : null}">
+        <p id="location-error" class="error" th:if="${errors.containsKey('location')}" th:text="${errors['location']}"></p>
+        <label for="categoryId">Category</label>
+        <select id="categoryId" name="categoryId" required
+                th:attr="aria-invalid=${errors.containsKey('categoryId')},aria-describedby=${errors.containsKey('categoryId') ? 'category-error' : null}">
+            <option value="">Choose a category</option>
+            <option th:each="category : ${categories}" th:value="${category.id}" th:text="${category.name}"
+                    th:selected="${category.id.toString() == form.categoryId}"></option>
+            <option th:if="${!form.categoryId.isEmpty() and !categories.![id.toString()].contains(form.categoryId)}"
+                    th:value="${form.categoryId}" selected>Previous selection unavailable — choose an active category</option>
+        </select>
+        <p id="category-error" class="error" th:if="${errors.containsKey('categoryId')}" th:text="${errors['categoryId']}"></p>
+        <label for="reportedUrgency">Reported urgency</label>
+        <select id="reportedUrgency" name="reportedUrgency" required
+                th:attr="aria-invalid=${errors.containsKey('reportedUrgency')},aria-describedby=${errors.containsKey('reportedUrgency') ? 'urgency-error' : null}">
+            <option th:each="urgency : ${ {'LOW','NORMAL','HIGH','EMERGENCY'} }" th:value="${urgency}"
+                    th:text="${urgency}" th:selected="${form.reportedUrgency == urgency}"></option>
+        </select>
+        <p id="urgency-error" class="error" th:if="${errors.containsKey('reportedUrgency')}" th:text="${errors['reportedUrgency']}"></p>
+        <button type="submit" th:text="${editing ? 'Save changes' : 'Submit request'}">Submit request</button>
+        <p data-submitting hidden role="status">Saving your request…</p>
+    </form>
+    <p th:if="${editing}"><a th:href="@{/requester/requests/{id}(id=${displayId})}">Reload current request details</a></p>
+    <a th:href="@{/requester/requests}">Back to My requests</a>
+</main>
+</body>
+</html>

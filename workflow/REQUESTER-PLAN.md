@@ -7,6 +7,68 @@ they are not evidence available when it was first prepared.
 
 ## Progress notes
 
+- **16 October Requester step 7:** Step 6 committed as `7cc20eb` at the user's
+  request. Added graceful application/session restart coverage, a 12-case
+  versioned fake-model evaluation corpus and an opt-in real Chrome/50-user
+  runner. All 67 browser checks passed; the local load gate failed (p95
+  1,733 ms with development pool 2; 1,467 ms with test-only pool 5; 400 HTTP
+  successes each). Independent final pool-2 retest again passed all 67 browser
+  assertions and failed load at p95 1,413 ms. Normal suite/build passed with
+  114 tests and no failures/skips. Runtime defaults are unchanged. Section 9 exit remains open:
+  performance, full cross-role services, latest-stable confirmation, remaining
+  manual accessibility and teammate review. See
+  `logs/2026-10-16-requester-step-7-verification.md` for exact evidence/limits.
+  Next planned checkpoint is documentation/reflection/reuse (section 10), keeping
+  unresolved verification gates visible. Live SoCLaaS remains user-deferred.
+
+- **16 October Requester step 6:** Step 5 committed as `3dc3a60` at the user's
+  request. Create/OPEN-edit AI review, explicit field acceptance/discard, stale
+  input protection and live SoCLaaS adapter/model readiness are implemented.
+  Tests use only local fakes; the user explicitly deferred the live smoke check.
+  See `logs/2026-10-16-requester-step-6-review-live-adapter.md` for executed evidence.
+  Next is integration/security/usability verification (section 9), including
+  deferred browser/hosted/cross-role checks within available authorization.
+
+- **16 October Requester step 5:** Step 4 committed as `66b970c` at the user's
+  request. Smart Report service, strict typed output, bounded fake-tested gateway,
+  CSRF-protected POST routes, rolling database admission/leases and redacted
+  metadata are implemented. Runtime adapter remains unavailable until live
+  integration; no fake suggestions are served in ordinary runtime. See
+  `logs/2026-10-16-requester-step-5-assistant-service.md` for executed checks.
+  Next is the AI review UI and live SoCLaaS integration (section 8).
+
+- **16 October Requester step 4:** Step 3 committed as `8d00fe6` at the user's
+  request. Own status counts, five recent reports and combined list search,
+  status/category/inclusive Singapore date filters are implemented locally.
+  Visible filters, reset, validation and distinct empty/no-match states are
+  supplied. See `logs/2026-10-16-requester-step-4-discovery.md` for verification.
+  Next is the Smart Report service against a fake gateway (section 7).
+
+- **16 October Requester step 3:** Step 2 committed as `9ff8a5b` at the user's
+  request. Owned OPEN edit/cancel and non-terminal Requester Updates are now
+  implemented with Request version/state locks and atomic audit, using the
+  existing V1-V6 schema. Cancellation has an explicit reason/confirmation and
+  defaults to keeping the report. Forms retain input and reject stale/repeated
+  commands. See `logs/2026-10-16-requester-step-3-mutations.md` for verification.
+  Next is dashboard counts/recent requests and list search/filters (section 6).
+
+- **16 October Requester step 2:** Step 1 committed as `74949cd` at the user's
+  request. Create, own-list and detail are implemented on `feat/requester-workflow`,
+  with server validation, owner-scoped history, transactional audit and durable
+  duplicate-submission rejection. V6 is required before web startup; runtime
+  schema readiness is now checked read-only. About/shared navigation is supplied.
+  See `logs/2026-10-16-requester-step-2-manual-slice.md` for executed checks and
+  remaining limits. The next user-facing step is eligible edits, cancellation
+  and Requester Updates (plan section 5).
+
+- **16 October Requester step 1:** Work started on `feat/requester-workflow`.
+  Shared own-password change, current-session retention and atomic password/login
+  audit recording are implemented. The current/new password interaction is
+  resolved by retained MP2 behavior under the specification index precedence.
+  See `logs/2026-10-16-requester-step-1-identity.md` for actual checks and limits.
+  Manager account-administration services remain with their owner. The next
+  Requester implementation slice is create, own list and detail.
+
 - **14 October snapshot:** Part 1 scaffold and Part 2a connection configuration
   were prepared. Part 2b supplied identity/audit/session storage and role setup;
   hosted migration was still pending in that checkpoint. See the dated Part 1,
@@ -302,6 +364,7 @@ each PR. Step 9 adds integration evidence; it does not delay earlier tests.
 - [ ] Guides, traceability, reuse, logs, handoffs and individual reflection current.
 - [ ] Teammate review, CI and deployed-release checks complete on public master.
 
-All completion boxes remain unchecked: Part 1 is a build scaffold, not the
-complete walking skeleton. See the Part 1 log for executed evidence. No commits,
-deployment or changes to `MP3 instructions/` have been performed.
+Completion boxes remain unchecked until their full exits are evidenced. The
+progress notes and dated logs record local implementation and commits; full
+cross-role, live/hosted and review gates remain open. No deployment or changes
+to `MP3 instructions/` have been performed in these Requester steps.
