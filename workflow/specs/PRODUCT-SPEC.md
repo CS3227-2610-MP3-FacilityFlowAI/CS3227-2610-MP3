@@ -173,6 +173,9 @@ CLOSED reopen operation.
 - **NFR-A11Y-002:** Supported browser scope is the latest stable desktop Google
   Chrome at verification time. Pages remain usable from 760 × 600 upward and
   responsive at 1,024 × 700 and 1,440 × 900.
+  Presentation acceptance and the retained MP2 UIX mapping are documented in
+  [the MP3 UI specification](user-interface.md); narrower-layout checks provide
+  additional design coverage without expanding the supported browser scope.
 - **NFR-REL-001:** AI failure never blocks the corresponding manual workflow and
   never erases user-entered business data.
 - **NFR-REL-002:** Production PostgreSQL is backed up at least daily with target
