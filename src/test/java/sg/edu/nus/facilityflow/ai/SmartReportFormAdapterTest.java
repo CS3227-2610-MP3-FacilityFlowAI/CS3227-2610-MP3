@@ -6,7 +6,9 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import sg.edu.nus.facilityflow.ai.requester.*;
 import sg.edu.nus.facilityflow.identity.*;
 import sg.edu.nus.facilityflow.requester.*;
@@ -18,9 +20,22 @@ import static org.mockito.Mockito.*;
 class SmartReportFormAdapterTest {
     private final RequesterRequestRepository repository = mock(RequesterRequestRepository.class);
     private final RequesterSmartReportService shared = mock(RequesterSmartReportService.class);
+    private final PlatformTransactionManager manager = mock(PlatformTransactionManager.class);
     private final SmartReportService form = new SmartReportService(
             () -> new CurrentAccount(UUID.randomUUID(), "requester", "Requester", AccountRole.REQUESTER, 0),
-            repository, mock(PlatformTransactionManager.class), shared);
+            repository, manager, shared);
+
+    @Test void preAdmissionReadTimeoutStopsBeforeSharedRuntime() {
+        doThrow(new QueryTimeoutException("Synthetic pre-admission timeout"))
+                .when(repository).requireRequester(any(), eq(false));
+        assertThrows(QueryTimeoutException.class, () -> form.suggest(null, null,
+                new SmartReportInput("Flickering light", "", "", "", "", "")));
+        var definition = ArgumentCaptor.forClass(TransactionDefinition.class);
+        verify(manager).getTransaction(definition.capture());
+        assertEquals(5, definition.getValue().getTimeout());
+        verify(manager).rollback(any());
+        verifyNoInteractions(shared);
+    }
 
     @Test void delegatesCurrentFieldsWithoutTruncatingOrSendingIdentifiersAsText() {
         var result = new SmartReportResult("Flickering light", null, null, "Electrical", "Normal", List.of(), "Clarify the room.");

@@ -495,7 +495,8 @@ REQ-RQ-012-017, REQ-SH-018 and REQ-AI-001-006: the browser form endpoints
 `/requester/requests/assistant` and `/requester/requests/{displayId}/assistant`
 use `ai.SmartReportService` only to adapt form input and the existing JSON reply.
 It delegates to `requester.RequesterSmartReportService`, the same service used by
-the typed Smart Report endpoints. There is no separate Requester gateway,
+the typed Smart Report endpoints. The adapter's preliminary account/version reads
+retain a five-second transaction timeout; inference runs outside that transaction. There is no separate Requester gateway,
 transport, admission backend or provider lifecycle.
 
 The shared service owns account/session authorization, eligibility, expected

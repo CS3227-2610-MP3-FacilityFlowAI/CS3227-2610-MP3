@@ -24,6 +24,7 @@ public class SmartReportService {
         this.accounts = accounts;
         this.requests = requests;
         this.transactions = new TransactionTemplate(manager);
+        this.transactions.setTimeout(5);
         this.shared = shared;
     }
 
