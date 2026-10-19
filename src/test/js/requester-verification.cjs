@@ -52,10 +52,27 @@ async function labelsAndLayout(name) {
         const visible=e=>e.getClientRects().length>0;
         const fields=[...document.querySelectorAll('main input:not([type=hidden]),main textarea,main select')].filter(visible);
         return {missing:fields.filter(e=>!e.labels?.length&&!e.getAttribute('aria-label')&&!e.getAttribute('aria-labelledby')).map(e=>e.id||e.name),
+            unassociated:fields.filter(e=>e.getAttribute('aria-invalid')==='true'&&!(e.getAttribute('aria-describedby')||'').trim().split(' ').some(id=>document.getElementById(id)?.textContent.trim())).map(e=>e.id||e.name),
             overflow:document.documentElement.scrollWidth>innerWidth+1};
     })()`);
     check(name + ': visible inputs have labels (NFR-A11Y-001)', result.missing.length === 0);
+    check(name + ': invalid fields reference error text (NFR-A11Y-001)', result.unassociated.length === 0);
     check(name + ': no page-level horizontal overflow (NFR-A11Y-002)', !result.overflow);
+}
+async function fieldErrors(name, invalid, valid = []) {
+    const result = await evaluate(`(()=>{
+        const invalid=${JSON.stringify(invalid)},valid=${JSON.stringify(valid)};
+        const ids=[...document.querySelectorAll('[id]')].map(e=>e.id);
+        return {unique:ids.length===new Set(ids).size,
+            missing:invalid.filter(selector=>{const control=document.querySelector(selector),error=document.getElementById(control?.id+'-error');
+                return !control||control.getAttribute('aria-invalid')!=='true'||control.getAttribute('aria-describedby')!==error?.id||
+                    !error?.textContent.trim()||!error.getClientRects().length||!control.form?.contains(error);}),
+            stale:valid.filter(selector=>{const control=document.querySelector(selector);return !control||control.getAttribute('aria-invalid')==='true'||control.hasAttribute('aria-describedby');})};
+    })()`);
+    check(name + ': unique field/error IDs', result.unique);
+    check(name + ': invalid controls reference visible errors in their own form (UIX-006–008/NFR-A11Y-001)', result.missing.length === 0);
+    check(name + ': valid and unrelated controls have no error metadata', result.stale.length === 0);
+    await labelsAndLayout(name);
 }
 async function paletteChecks() {
     const colors = await evaluate(`(()=>{
@@ -209,23 +226,49 @@ async function browserChecks() {
     check('Manager overview shows status, priority and workload sections (REQ-MGR-010)', await evaluate(`document.querySelector('#status-heading')&&document.querySelector('#priority-heading')&&document.querySelector('#workload-heading')`));
     await navigate('/manager/requests?status=INVALID'); await labelsAndLayout('Manager invalid status filter');
     check('Manager invalid status shows its specific validation message (REQ-MGR-001)', await evaluate(`document.querySelector('main').textContent.includes('Choose a listed status.')`));
+    await fieldErrors('Manager status filter error', ['#status'], ['#categoryId']);
+    await navigate('/manager/requests?search=' + 'x'.repeat(121) + '&createdFrom=2026-10-20&createdTo=2026-10-19');
+    await fieldErrors('Manager search and date filter errors', ['#search', '#createdTo'], ['#status', '#createdFrom']);
     await navigate('/manager/requests');
+    await fieldErrors('Manager reset filters', [], ['#status', '#search', '#createdTo']);
     for (const [width, height] of [[360, 800], [760, 600], [1024, 700], [1440, 900]]) {
         await command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
         await labelsAndLayout(`Manager request table ${width}x${height}`);
         if (width <= 760) check(`Manager table stays inside scroll container ${width}x${height}`, await evaluate(`(()=>{const table=document.querySelector('table');const wrapper=table?.parentElement;return !!table&&!!wrapper&&getComputedStyle(wrapper).overflowX==='auto'&&document.documentElement.scrollWidth<=innerWidth+1})()`));
     }
     check('Manager request queue renders rows (REQ-MGR-001)', await evaluate(`document.querySelectorAll('table tbody tr').length>0`));
-    const managerDetail = await evaluate(`document.querySelector('table tbody a[href^="/manager/requests/"]')?.getAttribute('href')`);
+    const managerDetail = await evaluate(`[...document.querySelectorAll('table tbody tr')].find(row=>[...row.cells].some(cell=>cell.textContent.trim()==='OPEN'))?.querySelector('a[href^="/manager/requests/"]')?.getAttribute('href')`);
     assert.ok(managerDetail, 'Manager request detail link exists');
     await navigate(managerDetail); await viewportChecks('Manager request detail');
     check('Manager request detail renders (REQ-MGR-001)', await evaluate(`document.querySelector('main h1')&&document.querySelector('#request-details')`));
+    // Bypass client constraints only to exercise server error responses on synthetic data.
+    await evaluate(`document.querySelector('#assign-technician').form.submit()`);
+    await waitFor(`!!document.querySelector('#assign-technician-error')`);
+    await fieldErrors('Manager assignment errors', ['#assign-technician', '#assign-priority'], ['#correct-priority', '#cancel-reason']);
+    await fill('#cancel-reason', 'tiny');
+    await evaluate(`document.querySelector('#cancel-reason').form.submit()`);
+    await waitFor(`!!document.querySelector('#cancel-confirmed-error')`);
+    await fieldErrors('Manager cancellation errors', ['#cancel-reason', '#cancel-confirmed'], ['#correct-reason', '#assign-technician']);
+    await evaluate(`document.querySelector('.edit-panel').open=true`);
+    await fill('#correct-title', 'Tiny'); await fill('#correct-description', 'short'); await fill('#correct-reason', 'tiny');
+    await evaluate(`document.querySelector('#correct-title').form.submit()`);
+    await waitFor(`!!document.querySelector('#correct-title-error')`);
+    await fieldErrors('Manager correction errors', ['#correct-title', '#correct-description', '#correct-reason'], ['#cancel-reason', '#assign-technician']);
+    check('invalid correction preserves entered title', await evaluate(`document.querySelector('#correct-title').value==='Tiny'`));
     await navigate('/manager/accounts'); await viewportChecks('Manager account administration');
     check('Manager account administration page is readable (REQ-MGR-013)', await evaluate(`document.querySelector('h1')?.textContent.includes('Account administration')`));
     await navigate('/manager/audit'); await viewportChecks('Manager audit viewer');
     check('Manager audit viewer renders read-only filters (REQ-MGR-011)', await evaluate(`document.querySelector('h1')?.textContent.includes('Audit viewer')&&document.querySelector('form[method=get]')&&!document.querySelector('main form[method=post]')`));
+    await navigate('/manager/audit?actor=' + 'x'.repeat(81) + '&occurredFrom=2026-10-20&occurredTo=2026-10-19');
+    await fieldErrors('Manager audit filter errors', ['#actor', '#occurredTo'], ['#action', '#occurredFrom']);
     await navigate('/manager/requests/new'); await viewportChecks('Manager record request form');
     check('Manager record request form renders (REQ-MGR-003)', await evaluate(`document.querySelector('h1')?.textContent.includes('Record a request on behalf')&&document.querySelector('#requesterId')`));
+    await fieldErrors('Manager valid create form', [], ['#requesterId', '#title', '#description', '#categoryId']);
+    await fill('#title', 'Tiny'); await fill('#description', 'short'); await fill('#location', 'Retained location');
+    await evaluate(`document.querySelector('#title').form.submit()`);
+    await waitFor(`!!document.querySelector('#title-error')`);
+    await fieldErrors('Manager create errors', ['#requesterId', '#title', '#description', '#categoryId'], ['#location', '#reportedUrgency']);
+    check('Manager invalid create retains valid location', await evaluate(`document.querySelector('#location').value==='Retained location'`));
     await navigate('/manager/categories'); await viewportChecks('Manager category catalogue');
     check('Manager category catalogue renders (REQ-MGR-016/017)', await evaluate(`document.querySelector('h1')?.textContent.includes('Category catalogue')`));
     await navigate('/manager/skills'); await viewportChecks('Manager skill catalogue');

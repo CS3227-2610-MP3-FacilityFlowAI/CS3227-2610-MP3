@@ -1,5 +1,10 @@
 # MP2 Reuse Ledger
 
+20 October PR error-association correction: Manager template ARIA/error IDs,
+failed-action scoping, browser validation regressions and acceptance/evidence
+updates are **new** MP3 work adapting existing MP3 templates and tests. No further
+MP2 source was copied. See `logs/2026-10-20-manager-field-error-accessibility.md`.
+
 19 October adaptive UI revision: `workflow/specs/user-interface.md` is **adapted**
 from the user-supplied MP2 `user-interface.md` Draft v0.2 (12 September 2026).
 Role separation/navigation, forms/feedback, lists/empty states, accessibility/

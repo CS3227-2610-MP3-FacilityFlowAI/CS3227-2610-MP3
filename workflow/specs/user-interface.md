@@ -36,6 +36,13 @@ hidden by the server or by the assistant's disclosure state.
 | UIX-015 | Preserve visible search/filter values and reset actions. MP3 retains descriptive All statuses/categories/priorities choices rather than MP2's dash-only choice (REQ-TECH-002 and role filter contracts). |
 | UIX-016 | Preserve existing lifecycle, priority, category and timestamp labels and formatting (REQ-SH-009). Styling never changes persisted values or list ordering. |
 
+For UIX-006–008 / NFR-A11Y-001, each rendered field error must have a stable,
+page-unique ID referenced by that invalid control's `aria-describedby`; the
+control must expose `aria-invalid="true"`. Valid controls must not retain error
+references. When several Manager action forms share a field name, errors and ARIA
+metadata belong only to the failed action. Browser verification must exercise
+server validation failures and check these relationships, not labels alone.
+
 ## Adaptive presentation
 
 The shared `workspace.css` visual layer loads after the existing role stylesheet.
