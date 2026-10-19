@@ -1,5 +1,16 @@
 # MP2 Reuse Ledger
 
+19 October adaptive UI revision: `workflow/specs/user-interface.md` is **adapted**
+from the user-supplied MP2 `user-interface.md` Draft v0.2 (12 September 2026).
+Role separation/navigation, forms/feedback, lists/empty states, accessibility/
+layout, and role inventory sections retain UIX provenance while mapping to MP3
+web requirements. MP2 desktop dialogs, account menu, dash-only filters and
+split-pane assumptions are **concept-only**, explicitly superseded by existing
+MP3 web behavior. The visual CSS, stylesheet links, browser checks and scoped
+guide/traceability/session/handoff additions are **new** MP3 work adapting existing
+MP3 assets; no MP2 application code is copied. See
+`logs/2026-10-19-responsive-ui.md` for executed results and review status.
+
 16 October Requester step 7: the Node/CDP browser/load runner, opt-in Gradle
 task, graceful application/session restart regression, versioned 12-case AI
 corpus and gateway evaluation test are **new** MP3 test/build work. The related

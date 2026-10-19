@@ -18,6 +18,17 @@ query was performed.
 
 ## Local scaffold (Part 1)
 
+The shared presentation layer is `src/main/resources/static/css/workspace.css`,
+loaded after each full page's existing role stylesheet. Keep semantic controls,
+Thymeleaf authorization, form/CSRF/version fields and JavaScript hooks intact
+when editing layout. `[hidden]` regions must stay hidden until existing scripts
+open them. UI requirements and MP2 adaptation are in
+[user-interface.md](../workflow/specs/user-interface.md). Run the existing
+`requesterVerification` Gradle task for disposable PostgreSQL/desktop Chrome
+layout and workflow checks; it requires Node and Chrome. Screenshots and measured
+results are generated under `build/verification/requester/`. This is separate
+from hosted acceptance and full accessibility review.
+
 Install JDK 25 and run the committed Gradle wrapper from the repository root.
 The first build requires network access to obtain Gradle and Maven dependencies;
 automated tests need no real database or SoCLaaS credentials. Running the

@@ -22,6 +22,7 @@ safe failure behavior.
 | Document | Contains | Does not contain |
 | --- | --- | --- |
 | [PRODUCT-SPEC](PRODUCT-SPEC.md) | shared domain, lifecycle, authentication, UI and quality requirements | role-specific AI schemas or implementation design |
+| [MP3 user interface](user-interface.md) | adaptive presentation and MP2 UIX mapping to approved MP3 requirements | new workflows or authorization rules |
 | [ROLE-REQUESTER](ROLE-REQUESTER.md) | Requester permissions, workflows and Report Assistant | other roles' workflows |
 | [ROLE-TECHNICIAN](ROLE-TECHNICIAN.md) | Technician permissions, workflows and Work Plan Assistant | assignment decisions |
 | [ROLE-MANAGER](ROLE-MANAGER.md) | Manager operations, catalogues, matching and Triage Assistant | SoCLaaS transport details |
