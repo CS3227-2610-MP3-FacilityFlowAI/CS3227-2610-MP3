@@ -1,0 +1,18 @@
+- Source agent: T5 coordinator.
+- Destination agent: user / retained T5 team for remaining browser acceptance.
+- Task/goal: locally verified shared/password implementation and local commit; browser gate explicitly pending.
+- Approved requirement IDs: scoped REQ-SH-002/004/006/009/010/012/014/018, account password rule and NFRs in T5 contract; original Technician manual/AI boundaries retained.
+- Approved specification revision/evidence: approved product baseline; user authorized T5, paused after implementation, then said Resume. Baseline c15d26e and [contract](../technician/T5-CONTRACT.md) preserve authority.
+- Authorized scope/permissions: verified local implementation/evidence commit only; no push, merge, deployment, live provider/database or disabled-browser bypass. Agents retained/addressable.
+- Relevant input artifacts/provenance: [report](../technician/T5-REPORT.md), [candidate](../technician/T5-CANDIDATE.json), [result](../technician/T5-RESULT.json), [review](2026-10-18-technician-T5-review.md), original pause/resume/author handoffs.
+- Assumptions: existing schema/maintained encoder/session and manual/AI seams reused; no migration/dependency changes.
+- Unresolved questions: browser use disabled in Work settings. Latest Chrome/keyboard/viewport/contrast/lifecycle acceptance cannot be claimed from automated tests; checklist pending.
+- Files changed:24 tested source/test inputs, five scoped guide/mapping/reuse files and T5 evidence/handoffs; mechanical result records exact inventory/counts. Root security fix stores no failed-login exception/attempted credential.
+- Commands/tools: offline Gradle compile/preflight/scoped/check bootJar; three node actual-script fixtures; source/patch/hash/link/scope/staged blob/whitespace bookkeeping; exact local Git staging/commit.
+- Verification performed/results/evidence: initial8 service/PG smoke; finalweb46 in3suites; scoped52 in7suites; full 646 tests/49 suites zero failures/errors/skips, JaCoCo and executable JAR; three scripts passed. Reviewer independently checked credential correction and harness repairs; final docs finding T5-R1 resolved through closing verdict.
+- Security considerations/unresolved risks: persisted actor/current hash lock, atomic account/audit and retained sessions verified locally, including real encoder/JDBC sessions; failed-login credential session leak reproduced/fixed/regressed. No browser/hosted/human safety approval inferred.
+- Suggestions accepted/rejected: repaired test harnesses without weakening valid expectations, added real-stack credential/session evidence and corrected observed failure exception leakage; current docs reconciled while historical pause records retained.
+- Human approval required and reason: teammate merge, identity/gateway/corpus and hosted-release gates remain. Browser setting must be enabled by user for remaining acceptance; no broader access or bypass performed.
+- Human reviewer/outcome/evidence: pending. Independent development-agent result in reviewer handoff is not teammate approval.
+- Next authorized action: report local commit and passing automated scope; remaining T5 browser checklist when tool setting becomes available. Retained agents can handle actual findings. Suggested skills facilityflow-handoff, cs3227-unit-test, browser UI tools when enabled.
+- Status: locally verified implementation; browser acceptance blocked/pending. Commit identified by Git history containing T5-REPORT.md.

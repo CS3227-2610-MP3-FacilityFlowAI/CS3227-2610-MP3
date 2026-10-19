@@ -8,8 +8,8 @@
     <script defer th:src="@{/js/smart-report.js}"></script>
 </head>
 <body>
-<header th:replace="~{dashboard :: header}"></header>
-<main>
+<header th:replace="~{fragments/authenticated-header :: header(${username}, ${displayName}, ${role})}"></header>
+<main id="main-content">
     <h1 th:text="${editing ? 'Edit request ' + displayId : 'Report a problem'}">Report a problem</h1>
     <p>All fields are required.</p>
     <p th:if="${message}" th:text="${message}" role="alert"></p>

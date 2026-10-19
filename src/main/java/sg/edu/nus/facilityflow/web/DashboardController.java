@@ -1,5 +1,6 @@
 package sg.edu.nus.facilityflow.web;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -9,15 +10,18 @@ import sg.edu.nus.facilityflow.identity.CurrentAccountPrincipal;
 @Controller
 public class DashboardController {
 
-    @GetMapping("/about")
-    String about() {
-        return "about";
+    private final TechnicianQueueController technicianQueue;
+
+    public DashboardController(TechnicianQueueController technicianQueue) {
+        this.technicianQueue = technicianQueue;
     }
 
     @GetMapping("/technician")
-    String technician(@AuthenticationPrincipal CurrentAccountPrincipal principal, Model model) {
-        addIdentity(model, principal, "Technician workspace");
-        return "dashboard";
+    String technician(
+            @AuthenticationPrincipal CurrentAccountPrincipal principal,
+            Model model,
+            HttpServletResponse response) {
+        return technicianQueue.workspace(principal, model, response);
     }
 
     @GetMapping("/manager")

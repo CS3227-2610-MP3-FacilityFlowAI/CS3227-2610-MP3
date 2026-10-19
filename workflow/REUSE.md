@@ -180,3 +180,56 @@ regressions and guide updates) are new MP3 work; no MP2 source copied.
 updates are new MP3 integration work. Requester migration moved from V5 to V6
 without SQL changes; master V5 preserved. No additional MP2 source copied;
 existing per-slice reuse provenance above remains authoritative.
+
+Technician T1 (18 October): new query service/repository/read models, MVC
+controller, templates/CSS, requirement-based tests and scoped guide additions
+are **new** MP3 implementation based on the approved MP3 specifications and
+existing MP3 authentication/PostgreSQL seams. No MP2 files were consulted or
+copied in this iteration. Shared DashboardController wiring and the H2
+authentication test's synthetic read fixtures adapt existing MP3 files, not MP2 source.
+Exact added/deleted application/resource/test line counts and executed evidence are
+recorded in `logs/technician/T1-REPORT.md`; final project-wide reuse percentages
+remain release work.
+
+Technician T2 (18 October): command service/repository/errors/controller,
+versioned manual forms, pending-submit script, tests and affected guide sections
+are **new** MP3 work based on approved MP3 requirements and existing MP3 seams.
+Shared T1 detail/CSS and authentication-test changes adapt MP3 work; no MP2
+source was consulted or copied. The implementation/evidence inventory and
+measured added/deleted counts are in `logs/technician/T2-REPORT.md`; project-wide
+reuse percentages and teammate review remain release gates.
+
+Technician T3: completion extends MP3 command/controller/detail code and uses
+existing MP3 completion-history storage and test fixture. Added completion tests
+and scoped guide/traceability sections are new MP3 work; no MP2 source was
+consulted or copied. Exact implementation line changes and verification evidence
+are in `logs/technician/T3-REPORT.md`; release-wide reuse totals remain pending.
+
+
+Technician T4: new Work Plan browser script and PostgreSQL/script regressions,
+with adapted existing MP3 detail/CSS, Work Plan service/repository and MVC/service
+tests. Existing MP3 typed provider, safety policy, prompt allowlisting, admission,
+telemetry and endpoint are reused; no MP2 source was consulted or copied. Scoped
+guides/traceability and process evidence are new MP3 documentation. Measured line
+changes and executed verification are in `logs/technician/T4-REPORT.md`; human
+review and project-wide reuse totals remain pending.
+
+
+Technician T5: new own-password identity classes, shared controller/header/
+password/About views, generic pending script and tests; adapted existing MP3
+login/dashboard/Technician pages, Work Plan lifecycle, security and integration
+fixtures. Real-stack password/session/audit tests are new MP3 work. The demonstrated
+credential-bearing login exception is corrected within the existing security
+configuration. Shared guide/mapping/process evidence is new MP3 documentation.
+Existing MP3 schema, encoder, account/session filter and provider/manual modules
+are reused; no MP2 source consulted/copied. User paused after authorship and then
+resumed; scoped automated checks passed. Final measured source/guide changes,
+integrated results, independent review and local commit are in
+`logs/technician/T5-REPORT.md`. Browser/human/hosted gates and release-wide reuse
+totals remain pending.
+
+19 October Requester/Technician master integration: shared-route consolidation,
+Requester header/browser caller updates, relocated PostgreSQL password regression
+checks and merged guides are **new** MP3 integration work adapting existing MP3
+code from both branches. No MP2 source was consulted or copied. Existing reuse
+records above remain authoritative for their original role slices.

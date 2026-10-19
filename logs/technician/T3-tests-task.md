@@ -1,0 +1,8 @@
+# T3 tests task
+
+- Authority: user said Now move on to the next iteration after T3 preview; T3only, baseline9ba7009 cleancheckout. Role/model:Tester cs3227_unit_test,gpt-6-luna/high.
+- Read [contract](T3-CONTRACT.md), AGENTS.md and scopedworkflow, ownrole/specminimumreading, ROLE-TECHNICIAN manualrequirements+TECH-A04/A05/A06, PRODUCT-SPEC lifecycle/limits/SH002/006/007/010/014, TECHNICAL-SPEC storage/security. ExistingT2 source/tests are dependencies; read targeted sections only.
+- Ownership:3NEWcompletiontestclasses in contract; reuse T2fixture unchanged; logs/handoffs/2026-10-18-technician-T3-tests.md and ownOS-temp. Allsourcepaths exact incontract. You are not alone: preserve concurrent edits, requestownership beforeotherwrites. No leafdelegation,builds,Git,liveDB orT4. Coordinator sole runner.
+- Interface/acceptance: exactcontract completionmethods/attributes/errors/transaction semantics. Existingstart/log andconstructor remain. Tester gets explicitchangedfileinput:4existingbackendfiles plus web/TechnicianCommandController.java, templates/technician/request-detail.html. Apply cs3227-unit-test with approvedMP3PostgreSQL override of olderSQLite recipe.
+- Completion: authorcontractcases, staticselfcheck, pausefreeze-ready, coordinatorcompile+realPGsuccessaudit/historysmoke; independentbatchedreview afterpreflight, thenscoped/fullchecks. Aftertwofailedcycles reportandreplan. Report<=300words paths/IDs/actualchecks/limits; no inventedtestpass.
+- Handoff: use .agents/skills/facilityflow-handoff/SKILL.md, OS-temp and own durablefile; referencecontract, not transcript. Suggestedskill: tester cs3227-unit-test. Runtime/tokenmetadata conversationonly; seecontract.

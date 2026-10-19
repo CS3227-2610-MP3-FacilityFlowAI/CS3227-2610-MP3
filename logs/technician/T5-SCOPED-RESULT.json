@@ -1,0 +1,70 @@
+{
+  "candidate": "bf02c41c486d1e932f484eb05316618074acbf7a3a405d8966ca952893dd8cbf",
+  "command": ".\\gradlew.bat --offline --no-daemon --console=plain test --tests JdbcPasswordChangeRepositoryTest --tests PasswordChangeServiceTest --tests TechnicianCommandServiceTest --tests TechnicianCompletionServiceTest --tests TechnicianWorkPlanServiceTest --tests TechnicianCommandControllerTest --tests TechnicianCompletionControllerTest",
+  "outcome": "PASS",
+  "totals": {
+    "tests": 52,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "classes": 7,
+  "suites": [
+    {
+      "name": "sg.edu.nus.facilityflow.identity.JdbcPasswordChangeRepositoryTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "8.519"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.identity.PasswordChangeServiceTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.024"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.technician.TechnicianCommandServiceTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "1.86"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.technician.TechnicianCompletionServiceTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.024"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.technician.TechnicianWorkPlanServiceTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.073"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.web.TechnicianCommandControllerTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.255"
+    },
+    {
+      "name": "sg.edu.nus.facilityflow.web.TechnicianCompletionControllerTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.034"
+    }
+  ]
+}

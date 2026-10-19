@@ -1,0 +1,8 @@
+{
+  "candidate": "09e9a58476d87814e8da69448248257b1ac80f02c602dc9032eb64fdcae3d8e8",
+  "commands": [
+    {"command": "node src/test/js/technician-work-plan.test.cjs", "outcome": "PASS", "scope": "actual script; deterministic DOM/fetch fixture; atomic output, schema/markup rejection, safe errors, CSRF-only POST/no-store, pending/manual/lifecycle behavior"},
+    {"command": "node src/test/js/technician-commands.test.cjs", "outcome": "PASS", "scope": "existing actual manual-command script; pending duplicate suppression, independent forms, retained inputs, pageshow reset"}
+  ],
+  "limits": "No complete browser rendering, assistive-technology or live-provider acceptance is claimed. Recheck after any script/test changes."
+}

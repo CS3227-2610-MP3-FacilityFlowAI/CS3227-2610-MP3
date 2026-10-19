@@ -6,8 +6,8 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-<header th:replace="~{dashboard :: header}"></header>
-<main>
+<header th:replace="~{fragments/authenticated-header :: header(${username}, ${displayName}, ${role})}"></header>
+<main id="main-content">
     <h1><span th:text="${request.displayId}"></span> — <span th:text="${request.title}"></span></h1>
     <dl>
         <dt>Description</dt><dd class="free-text" th:text="${request.description}"></dd>

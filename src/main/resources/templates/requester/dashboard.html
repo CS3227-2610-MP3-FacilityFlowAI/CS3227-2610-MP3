@@ -6,8 +6,8 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-<header th:replace="~{dashboard :: header}"></header>
-<main>
+<header th:replace="~{fragments/authenticated-header :: header(${username}, ${displayName}, ${role})}"></header>
+<main id="main-content">
     <h1>Requester workspace</h1>
     <nav aria-label="Requester navigation">
         <a th:href="@{/requester/requests}">My requests</a>

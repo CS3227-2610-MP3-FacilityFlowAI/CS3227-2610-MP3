@@ -1,0 +1,3 @@
+# T4 dispatch
+
+User explicitly approved T4 following scope/model/check preview. Baseline 1640606, branch technician-workflow. [Contract](T4-CONTRACT.md); [backend](T4-backend-task.md), [UI](T4-ui-task.md), [custom tester](T4-tests-task.md) prepared before dispatch. Backend gpt-6.1-sol/medium, UI and tester gpt-6-luna/high; fresh independent gpt-6.1-sol/high reviewer after authoring and preflight. Root plus at most three leaf workers; root sole test/Git runner. Root owns real security/MVC integration, shared guides/traceability/reuse, candidate identity and local commit. No T5, push, merge or deployment. Runtime/tokens conversation only. Dispatch handoffs under logs/handoffs/ and OS temp reference these packets; actual returns recorded separately.

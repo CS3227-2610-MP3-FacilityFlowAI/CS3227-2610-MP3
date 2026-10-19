@@ -1,0 +1,10 @@
+# T5 tests task packet
+
+- User approval: T5 implementation only, then pause and keep agents available. Baseline c15d26e, clean technician-workflow checkout.
+- Role/model: Tester, gpt-6-luna / high; fresh focused leaf context, no delegation.
+- Goal: Author requirement-based identity unit/real-PostgreSQL/controller/script tests and browser acceptance checklist against fixed contract. Do not execute tests. Use cs3227-unit-test skill; MP3 PostgreSQL overrides older SQLite recipe.
+- Authority/interfaces/DTOs/routes/validation/errors/session/transaction rules and exact write ownership: [T5-CONTRACT](T5-CONTRACT.md). Validate against PRODUCT-SPEC scoped REQ-SH/NFR IDs and ROLE-TECHNICIAN. Read role workflow/agents/tester.md and minimum-reading table workflow/specs/README.md; expand with a reason only when necessary.
+- Ownership: ONLY your lane's exact files in contract plus logs/handoffs/2026-10-18-technician-T5-tests.md and OS-temp return. Root owns shared security/MVC integration/guides/evidence. New classes/methods are fixed; tests may author concurrently before source exists. Blocking interface conflicts go to root; do not redesign consumers silently.
+- You are not alone in this checkout. Preserve others' changes; never revert them. No builds, test/script/browser execution, live network/provider/database, Git mutation, migrations/dependencies/spec/config edits or delegation. Root sole runner after resume. No automatic progression to review/commit. Keep your agent available and idle after return, do not terminate/despawn it.
+- Acceptance: normal/boundary/forbidden/failure cases and future verification listed in contract. All authored tests remain unexecuted. No passwords/raw sensitive values in models, audit, logs, exceptions or handoffs. No new session invalidation rule.
+- Return <=300 words plus essential blocking findings: changed paths, requirement IDs, assumptions/risks, actual commands/checks (authoring only) and pending next action. Use facilityflow-handoff skill and repository template for both durable+temp return; no runtime/token metrics in committed evidence. Read .agents/skills/facilityflow-handoff/SKILL.md.

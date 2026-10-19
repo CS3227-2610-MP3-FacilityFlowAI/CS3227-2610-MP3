@@ -80,15 +80,17 @@ class TechnicianWorkPlanServiceTest {
         CountingRepository repository = new CountingRepository();
         repository.stillEligible = false;
         CountingAssistant assistant = new CountingAssistant();
+        RecordingTelemetry telemetry = new RecordingTelemetry();
         TechnicianWorkPlanService service = serviceFor(
                 new CurrentAccount(TECHNICIAN_ID, "technician", "Technician", AccountRole.TECHNICIAN, 0),
                 repository,
-                assistant);
+                assistant, telemetry);
 
         WorkPlanResponse response = await(service.request("FF-000001"));
         assertEquals(WorkPlanFailureCode.DISCARDED_ACCESS_CHANGED, failureCode(response));
         assertEquals(1, repository.loadCalls.get());
         assertEquals(1, assistant.calls.get());
+        assertEquals(Status.DISCARDED_ACCESS_CHANGED, telemetry.status);
     }
 
     @Test
@@ -144,7 +146,7 @@ class TechnicianWorkPlanServiceTest {
         };
         IdentityAuthorization authorization = new IdentityAuthorization(currentAccounts);
         CountingRepository repository = new CountingRepository();
-        repository.snapshotStillEligible = false;
+        repository.stillEligible = false;
         CompletableFuture<WorkPlanResponse> provider = new CompletableFuture<>();
         WorkPlanAssistant assistant = ignored -> provider;
         TechnicianWorkPlanService service = new TechnicianWorkPlanService(
@@ -206,7 +208,8 @@ class TechnicianWorkPlanServiceTest {
         assertEquals(1, telemetry.starts.get());
         assertEquals(1, telemetry.finishes.get());
         assertEquals(AiInvocationTelemetry.Status.SUCCEEDED, telemetry.status);
-        assertTrue(telemetry.startedBeforeContext);
+        assertTrue(repository.observedStartedBeforeLoad,
+                "admission telemetry must start before the protected repository read");
         assertEquals(AiInvocationTelemetry.Feature.WORK_PLAN, telemetry.feature);
         assertEquals("work-plan-v1", telemetry.templateVersion);
     }
@@ -249,13 +252,13 @@ class TechnicianWorkPlanServiceTest {
         };
         TechnicianWorkPlanRepository repository = new TechnicianWorkPlanRepository() {
             @Override
-            public Optional<WorkPlanContext> loadEligible(String displayId, UUID technicianId) {
+            public Optional<WorkPlanContext> loadEligible(String displayId, CurrentAccountSnapshot account) {
                 clock.advance(Duration.ofSeconds(5));
                 return Optional.of(context());
             }
 
             @Override
-            public boolean isStillEligible(WorkPlanContext context) {
+            public boolean isStillEligible(WorkPlanContext context, CurrentAccountSnapshot account) {
                 return true;
             }
         };
@@ -300,7 +303,20 @@ class TechnicianWorkPlanServiceTest {
     private static TechnicianWorkPlanService serviceFor(
             CurrentAccount account, CountingRepository repository, CountingAssistant assistant,
             AiInvocationTelemetry telemetry) {
-        IdentityAuthorization authorization = new IdentityAuthorization(() -> account);
+        if (telemetry instanceof RecordingTelemetry recordingTelemetry) {
+            repository.telemetry = recordingTelemetry;
+        }
+        IdentityAuthorization authorization = new IdentityAuthorization(new CurrentAccountProvider() {
+            @Override
+            public CurrentAccount requireCurrentAccount() {
+                return account;
+            }
+
+            @Override
+            public CurrentAccountSnapshot requireCurrentAccountSnapshot() {
+                return new CurrentAccountSnapshot(account.id(), account.role(), 7);
+            }
+        });
         return new TechnicianWorkPlanService(
                 authorization,
                 new AiAccessGuard(authorization),
@@ -350,26 +366,22 @@ class TechnicianWorkPlanServiceTest {
         private final AtomicInteger loadCalls = new AtomicInteger();
         private final AtomicInteger eligibilityChecks = new AtomicInteger();
         private boolean stillEligible = true;
-        private boolean snapshotStillEligible = true;
         private long observedSessionVersion = Long.MIN_VALUE;
+        private RecordingTelemetry telemetry;
+        private boolean observedStartedBeforeLoad;
 
         @Override
-        public Optional<WorkPlanContext> loadEligible(String displayId, UUID technicianId) {
+        public Optional<WorkPlanContext> loadEligible(String displayId, CurrentAccountSnapshot account) {
             loadCalls.incrementAndGet();
+            observedStartedBeforeLoad = telemetry == null || telemetry.starts.get() == 1;
             return Optional.of(context());
-        }
-
-        @Override
-        public boolean isStillEligible(WorkPlanContext context) {
-            eligibilityChecks.incrementAndGet();
-            return stillEligible;
         }
 
         @Override
         public boolean isStillEligible(WorkPlanContext context, CurrentAccountSnapshot accountSnapshot) {
             eligibilityChecks.incrementAndGet();
             observedSessionVersion = accountSnapshot.sessionVersion();
-            return stillEligible && snapshotStillEligible;
+            return stillEligible;
         }
     }
 

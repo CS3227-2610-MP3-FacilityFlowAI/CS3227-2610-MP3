@@ -1,0 +1,184 @@
+{
+  "candidate": "bf02c41c486d1e932f484eb05316618074acbf7a3a405d8966ca952893dd8cbf",
+  "scope": "exact changed implementation/test/guide/evidence paths; scoped application security changes; no workflow configuration/migration/dependency changes",
+  "sourceInputs": 24,
+  "localMarkdownLinksChecked": 123,
+  "whitespace": "PASS git diff --check",
+  "changes": [
+    {
+      "path": "docs/DeveloperGuide.md",
+      "added": 47,
+      "deleted": 0,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "docs/UserGuide.md",
+      "added": 38,
+      "deleted": 2,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/identity/JdbcPasswordChangeRepository.java",
+      "added": 108,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/identity/PasswordChangeException.java",
+      "added": 57,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/identity/PasswordChangeRepository.java",
+      "added": 6,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/identity/PasswordChangeService.java",
+      "added": 75,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/web/SecurityConfiguration.java",
+      "added": 10,
+      "deleted": 2,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/web/SharedPagesController.java",
+      "added": 92,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/main/resources/static/css/technician.css",
+      "added": 23,
+      "deleted": 4,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/main/resources/static/js/form-submission.js",
+      "added": 22,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/main/resources/static/js/technician-work-plan.js",
+      "added": 3,
+      "deleted": 0,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/main/resources/templates/about.html",
+      "added": 16,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/main/resources/templates/account/change-password.html",
+      "added": 33,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/main/resources/templates/dashboard.html",
+      "added": 3,
+      "deleted": 9,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/main/resources/templates/fragments/authenticated-header.html",
+      "added": 24,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/main/resources/templates/login.html",
+      "added": 4,
+      "deleted": 2,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/main/resources/templates/technician/queue.html",
+      "added": 2,
+      "deleted": 7,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/main/resources/templates/technician/request-detail.html",
+      "added": 2,
+      "deleted": 7,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/identity/JdbcPasswordChangeRepositoryTest.java",
+      "added": 209,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/identity/PasswordChangeFixtures.java",
+      "added": 76,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/identity/PasswordChangeSecurityIntegrationTest.java",
+      "added": 125,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/identity/PasswordChangeServiceTest.java",
+      "added": 139,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/web/SecurityIntegrationTest.java",
+      "added": 105,
+      "deleted": 0,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/web/SharedPagesControllerTest.java",
+      "added": 132,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/test/js/form-submission.test.cjs",
+      "added": 77,
+      "deleted": 0,
+      "origin": "new MP3"
+    },
+    {
+      "path": "src/test/js/technician-work-plan.test.cjs",
+      "added": 29,
+      "deleted": 0,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "workflow/REUSE.md",
+      "added": 14,
+      "deleted": 0,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "workflow/TRACEABILITY.md",
+      "added": 24,
+      "deleted": 1,
+      "origin": "existing MP3 adapted"
+    },
+    {
+      "path": "workflow/technician/ACCEPTANCE-MAP.md",
+      "added": 27,
+      "deleted": 0,
+      "origin": "existing MP3 adapted"
+    }
+  ],
+  "checks": "source hashes match candidate; changed source inventory exact; only T5 evidence and five owned documentation paths additional"
+}

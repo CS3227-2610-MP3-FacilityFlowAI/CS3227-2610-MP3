@@ -1,0 +1,53 @@
+{
+  "baseline": "1640606",
+  "kind": "T4 frozen source/test inputs UTF8/LF",
+  "files": [
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/ai/technician/WorkPlanContext.java",
+      "sha256": "f3f630edc2256dda58fb1deb81590c48b780ae810d07d6f5156f7be166fb095f"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/JdbcTechnicianWorkPlanRepository.java",
+      "sha256": "55bfd8637505e26c883b1c86a4fef508d9dac1fcd0faf7a4c5b38a93975dab18"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianWorkPlanRepository.java",
+      "sha256": "78b2f8f4b3f22ae1ba2b3b0a38b88d857e41a22e2a59f61f16ed884bf398fbde"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianWorkPlanService.java",
+      "sha256": "34a7591fd2ba53c76da8b0b28e63369f45d3e809ca21d54c3d993c71363f1a3f"
+    },
+    {
+      "path": "src/main/resources/static/css/technician.css",
+      "sha256": "777ffe821d32d16f135e4ca780bcbc4c2f7f311e20758ce1d551eb947bb55cd4"
+    },
+    {
+      "path": "src/main/resources/static/js/technician-work-plan.js",
+      "sha256": "d6e7d3c7daa2a72432aed41d98a3cbe918dffee08af6801815e995565da8b84c"
+    },
+    {
+      "path": "src/main/resources/templates/technician/request-detail.html",
+      "sha256": "de6a47125214f79abe83ca9f686d67479b7eb859bef8d5e4aa7c26f55394d59e"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/technician/JdbcTechnicianWorkPlanRepositoryTest.java",
+      "sha256": "df4411d46841f27b6c53e93e3f105cbc4dede0c3c137803ad86fd21fa2932d22"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/technician/TechnicianWorkPlanServiceTest.java",
+      "sha256": "a425c134923f3710c21fb626eb22b4e3354f69fe7716c994cb002317c69ebb0e"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/web/SecurityIntegrationTest.java",
+      "sha256": "a1501bf284d33f87f980f4683add1def67a6b3db8eda7e506590430fdc3627e7"
+    },
+    {
+      "path": "src/test/js/technician-work-plan.test.cjs",
+      "sha256": "735175870df31dc32928fc9e6513c261b3a67900724df01895fda60049eb4341"
+    }
+  ],
+  "sha256": "09e9a58476d87814e8da69448248257b1ac80f02c602dc9032eb64fdcae3d8e8",
+  "patch": "build/T4-PREFLIGHT-CANDIDATE.patch",
+  "patchSha256": "032dffaaa6cb41ab09a443c774dc6330836de3bc0cdf923fe3fc99d16bf8f684"
+}

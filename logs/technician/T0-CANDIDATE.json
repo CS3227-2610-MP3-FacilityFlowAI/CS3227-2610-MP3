@@ -1,0 +1,48 @@
+{
+  "baseline": "7c8f214799167a4e1f371f8ddae23af986533df0",
+  "kind": "T0 planning inputs; excludes derived report/integration handoff/manifest",
+  "sha256": "06b3f335db53c2b3eab7a9068e41320e0fb32c729eec03a114b2d7137ffd2172",
+  "files": [
+    {
+      "path": "logs/handoffs/2026-10-18-technician-T0-backend.md",
+      "sha256": "63d074bdb21d213cc9d1323be5f5b4690874232d0b18e6a4eb74dd66d9ba0a1f"
+    },
+    {
+      "path": "logs/handoffs/2026-10-18-technician-T0-tests.md",
+      "sha256": "2d96e53584d0e962d5dc1751ab2357bd443619796dd96357e6ba9a29fb6fe6af"
+    },
+    {
+      "path": "logs/handoffs/2026-10-18-technician-T0-ui.md",
+      "sha256": "6e18206045b388b7c1ac2a30993e738ace10777ba78851b8ee0e0020befbcb60"
+    },
+    {
+      "path": "logs/technician/T0-DISPATCH.md",
+      "sha256": "a66ebb8de7594136c52b2457af4e7d3d860efcbfac7ee8fe087cdcccc9f952c6"
+    },
+    {
+      "path": "logs/technician/T1-backend-task.md",
+      "sha256": "e90a90873ca32fc6f782ac4f77222073b8396e78d52f6f96cb07b53864508a45"
+    },
+    {
+      "path": "logs/technician/T1-tests-task.md",
+      "sha256": "26f42ed4a2a743a094fa0138ebfa37806345077fc7e5620ca5c545c7809e4fc9"
+    },
+    {
+      "path": "logs/technician/T1-ui-task.md",
+      "sha256": "e35ac94e039afd3d029ade321fe0329f048c5c2ca54a036efb1da80c7131f4e1"
+    },
+    {
+      "path": "workflow/TRACEABILITY.md",
+      "sha256": "19857bce993f899455902679130f5c4f4225af670521d84d1f7ca9a938428733"
+    },
+    {
+      "path": "workflow/technician/ACCEPTANCE-MAP.md",
+      "sha256": "360b384d147f85f433f94303aa1541913c477732ee7028b72a1f4d733f2aa74e"
+    },
+    {
+      "path": "workflow/technician/CONTRACTS.md",
+      "sha256": "98517e3fb4c607c1bccb986db63c0b9061bc180d9b082f7c45c66205394361b1"
+    }
+  ],
+  "canonicalization": "UTF-8 text without BOM; CRLF/CR normalized to LF; final newline retained"
+}

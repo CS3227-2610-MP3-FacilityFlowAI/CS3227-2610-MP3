@@ -1,0 +1,26 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="history(requesterUpdates, workLogs, displayZone)" aria-label="Request history">
+    <section aria-labelledby="updates-heading">
+        <h2 id="updates-heading">Requester updates</h2>
+        <p th:if="${requesterUpdates.isEmpty()}">No requester updates.</p>
+        <ol th:if="${!requesterUpdates.isEmpty()}">
+            <li th:each="update : ${requesterUpdates}">
+                <p class="preserved-text" th:text="${update.note}">Update text</p>
+                <p>By <span th:text="${update.authorDisplayName}">Author</span> ·
+                    <time th:datetime="${update.createdAt}"
+                          th:text="${#temporals.format(update.createdAt.atZone(displayZone), 'dd MMM uuuu HH:mm z')}">18 Oct 2026 15:00 +08</time></p>
+            </li>
+        </ol>
+    </section>
+    <section aria-labelledby="worklogs-heading">
+        <h2 id="worklogs-heading">Work logs</h2>
+        <p th:if="${workLogs.isEmpty()}">No work logs.</p>
+        <ol th:if="${!workLogs.isEmpty()}">
+            <li th:each="log : ${workLogs}">
+                <p class="preserved-text" th:text="${log.note}">Work log text</p>
+                <p><span th:text="${log.minutes}">0</span> minutes · By <span th:text="${log.authorDisplayName}">Author</span> ·
+                    <time th:datetime="${log.createdAt}"
+                          th:text="${#temporals.format(log.createdAt.atZone(displayZone), 'dd MMM uuuu HH:mm z')}">18 Oct 2026 15:00 +08</time></p>
+            </li>
+        </ol>
+    </section>
+</section>

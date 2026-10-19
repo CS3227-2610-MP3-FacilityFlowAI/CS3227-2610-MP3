@@ -1,41 +1,75 @@
 package sg.edu.nus.facilityflow.identity;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
-/** REQ-SH-002/004/006/014: own-password changes retain the current session. */
+/** REQ-SH-002/004: the server captures the actor and preserves their current session. */
 @Service
 public class PasswordChangeService {
     private final CurrentAccountProvider currentAccounts;
-    private final AccountRepository accounts;
-    private final JdbcIdentityOperations operations;
-    private final PasswordEncoder passwords;
+    private final PasswordChangeRepository repository;
 
-    public PasswordChangeService(CurrentAccountProvider currentAccounts, AccountRepository accounts,
-            JdbcIdentityOperations operations, PasswordEncoder passwords) {
-        this.currentAccounts = currentAccounts;
-        this.accounts = accounts;
-        this.operations = operations;
-        this.passwords = passwords;
+    public PasswordChangeService(CurrentAccountProvider currentAccounts, PasswordChangeRepository repository) {
+        this.currentAccounts = Objects.requireNonNull(currentAccounts, "currentAccounts");
+        this.repository = Objects.requireNonNull(repository, "repository");
     }
 
-    public void changePassword(String currentPassword, String newPassword) {
-        var current = currentAccounts.requireCurrentAccount();
-        var account = accounts.findById(current.id()).orElseThrow(() -> new AccessDeniedException("Sign in again."));
-        if (!account.active() || account.sessionVersion() != current.sessionVersion()
-                || account.role() != current.role()) {
-            throw new AccessDeniedException("Sign in again.");
+    public void changeOwnPassword(String currentPassword, String newPassword, String confirmPassword) {
+        try {
+            CurrentAccountSnapshot actor = currentAccounts.requireCurrentAccountSnapshot();
+            requireSnapshot(actor);
+            Map<String, String> errors = inputErrors(currentPassword, newPassword);
+            if (confirmPassword == null || confirmPassword.isEmpty() || !confirmPassword.equals(newPassword)) {
+                errors.put("confirmPassword", "Confirm the new password exactly.");
+            }
+            requireValid(errors);
+            repository.changeOwnPassword(actor, currentPassword, newPassword);
+        } catch (PasswordChangeException failure) {
+            throw failure;
+        } catch (AuthenticationException | AccessDeniedException failure) {
+            throw new PasswordChangeException(PasswordChangeException.Code.ACCESS_CHANGED);
+        } catch (RuntimeException failure) {
+            throw new PasswordChangeException(PasswordChangeException.Code.UNAVAILABLE);
         }
-        if (newPassword == null || newPassword.codePointCount(0, newPassword.length()) < 8
-                || newPassword.codePointCount(0, newPassword.length()) > 24) {
-            throw new IllegalArgumentException("New password must contain 8–24 characters.");
+    }
+
+    static void requireSnapshot(CurrentAccountSnapshot actor) {
+        if (actor == null || actor.sessionVersion() < 0) {
+            throw new PasswordChangeException(PasswordChangeException.Code.ACCESS_CHANGED);
         }
-        if (currentPassword == null || currentPassword.codePointCount(0, currentPassword.length()) > 24
-                || !passwords.matches(currentPassword, account.passwordHash())) {
-            throw new IllegalArgumentException("Current password is incorrect.");
+    }
+
+    // Shared by the persistence seam so direct callers cannot bypass pre-hash validation.
+    static void validatePasswords(String currentPassword, String newPassword) {
+        requireValid(inputErrors(currentPassword, newPassword));
+    }
+
+    private static Map<String, String> inputErrors(String currentPassword, String newPassword) {
+        Map<String, String> errors = new LinkedHashMap<>();
+        if (!hasLength(currentPassword, 1, 24)) {
+            errors.put("currentPassword", "Enter your current password using 1 to 24 Unicode code points.");
         }
-        // Hash before opening the short database transaction; the update rejects changed credentials.
-        operations.changePassword(account, passwords.encode(newPassword));
+        if (!hasLength(newPassword, 8, 24)) {
+            errors.put("newPassword", "Enter a new password using 8 to 24 Unicode code points.");
+        }
+        return errors;
+    }
+
+    private static boolean hasLength(String value, int minimum, int maximum) {
+        if (value == null) {
+            return false;
+        }
+        int length = value.codePointCount(0, value.length());
+        return length >= minimum && length <= maximum;
+    }
+
+    private static void requireValid(Map<String, String> errors) {
+        if (!errors.isEmpty()) {
+            throw new PasswordChangeException(PasswordChangeException.Code.INVALID_INPUT, errors);
+        }
     }
 }

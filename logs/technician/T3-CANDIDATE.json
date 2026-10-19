@@ -1,0 +1,49 @@
+{
+  "baseline": "9ba7009",
+  "kind": "T3 frozen source/test inputs UTF8/LF",
+  "files": [
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/JdbcTechnicianCommandRepository.java",
+      "sha256": "4d95deb9bc0c0ed1e6bff47f0031e5bbbd4ac1d7a640b908421987e033f2244b"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianCommandException.java",
+      "sha256": "5921e0cae1956dc60aa5c623874e786fb6767eaf78dd5625ee6c80928d54586d"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianCommandRepository.java",
+      "sha256": "d9dc0bd58d6cb621f0ac58ad0405eecc9ed81afa2897f33c6c5c4630c5d43b88"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/technician/TechnicianCommandService.java",
+      "sha256": "c63d79b96ecec50cd03bf7ef8f7bab469bfa38c17a9cab66ffb2f6f0d3fcbfff"
+    },
+    {
+      "path": "src/main/java/sg/edu/nus/facilityflow/web/TechnicianCommandController.java",
+      "sha256": "63c57f34c71e36de2bd80df3387b5fafea925f5a36bc8230e0b0dd94acd5d7f4"
+    },
+    {
+      "path": "src/main/resources/templates/technician/request-detail.html",
+      "sha256": "5ffa635b67ac3bb44d98542019077b97bd35ec859d316970b6fcf73c52209630"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/technician/JdbcTechnicianCompletionRepositoryTest.java",
+      "sha256": "239e84bfb3438ff0aef83d8fa584ccdfbc11308f09361153e4420cd92e1f2dc3"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/technician/TechnicianCompletionServiceTest.java",
+      "sha256": "aa3f1646e276cb1b9fa762e4956ead598d95e8ad9622b1e740d69c3c4697723f"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/web/SecurityIntegrationTest.java",
+      "sha256": "57a62c2b0762f30d706a1caa0a0e3e7404e567fd41842fa92bd40247b498b40d"
+    },
+    {
+      "path": "src/test/java/sg/edu/nus/facilityflow/web/TechnicianCompletionControllerTest.java",
+      "sha256": "1437d4e23a26dfbae115f1527accc485f2933fe636703b7e4619169ba0fee032"
+    }
+  ],
+  "sha256": "acdb9a67839d3b133d50c5e5bf41ce50f59f4502a0cf4878f43d31ee336a8be1",
+  "patch": "build/T3-CANDIDATE.patch",
+  "patchSha256": "792568da15c35465954d11deaef8d7ec6ee5b5e5fb93a8ce270d6ed7f68069e9"
+}

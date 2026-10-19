@@ -7,8 +7,8 @@
     <script defer th:src="@{/js/request-form.js}"></script>
 </head>
 <body>
-<header th:replace="~{dashboard :: header}"></header>
-<main>
+<header th:replace="~{fragments/authenticated-header :: header(${username}, ${displayName}, ${role})}"></header>
+<main id="main-content">
     <h1><span th:text="${operation == 'cancel' ? 'Cancel request' : 'Add Requester Update'}"></span> — <span th:text="${displayId}"></span></h1>
     <p th:if="${requestTitle != null}" th:text="${requestTitle}"></p>
     <p th:if="${operation == 'cancel'}">Cancellation stops this request. It remains in your history and cannot be edited or updated afterward.</p>

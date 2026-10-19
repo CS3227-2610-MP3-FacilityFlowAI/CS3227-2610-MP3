@@ -151,9 +151,9 @@ async function browserChecks() {
     check('foreign data absent from error page', !(await evaluate('document.body.textContent')).includes('FOREIGN_BROWSER_CANARY'));
     await navigate('/account/password'); await labelsAndLayout('password');
     await viewportChecks('password');
-    await fill('#currentPassword', password); await fill('#newPassword', 'ChangedSynthetic123');
+    await fill('#currentPassword', password); await fill('#newPassword', 'ChangedSynthetic123'); await fill('#confirmPassword', 'ChangedSynthetic123');
     await click('main button[type=submit]'); await waitFor(`!!document.querySelector('main [role=status]')`);
-    check('own password change retains session', (await evaluate('document.querySelector("main").textContent')).includes('remain signed in'));
+    check('own password change retains session', (await evaluate('document.querySelector("main").textContent')).includes('Your password was changed.'));
     await navigate('/requester'); await click('header button[type=submit]');
     await waitFor(`location.pathname==='/login'`);
     check('logout returns to login', true);
