@@ -1,0 +1,13 @@
+.git
+.github
+.gradle
+.idea
+.vercel
+build
+docs
+logs
+workflow
+*.env
+.env*
+*.iml
+*.log
