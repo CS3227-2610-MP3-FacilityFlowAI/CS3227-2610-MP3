@@ -87,7 +87,11 @@ public class JdbcRequesterSmartReportRepository implements RequesterSmartReportR
     public ContextSnapshot loadContext(Eligibility eligibility, RequesterSmartReportInput input) {
         List<CategorySnapshot> categories = activeCategories();
         List<String> labels = categories.stream().map(CategorySnapshot::name).toList();
-        SmartReportContext context = input.toContext(labels);
+        // Form posts carry category IDs; resolve them only after shared authorization/admission.
+        String selected = categories.stream().filter(category -> category.id().toString().equalsIgnoreCase(input.selectedCategory()))
+                .map(CategorySnapshot::name).findFirst().orElse(input.selectedCategory());
+        SmartReportContext context = new RequesterSmartReportInput(input.roughTitle(), input.roughDescription(),
+                input.roughLocation(), selected, input.selectedUrgency()).toContext(labels);
         if (context.selectedCategory() != null && !labels.contains(context.selectedCategory())) {
             throw new IllegalArgumentException("selected category is inactive");
         }

@@ -2,6 +2,7 @@ package sg.edu.nus.facilityflow.requester;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -225,6 +226,22 @@ class RequesterSmartReportServiceTest {
 
     private static SmartReportFailureCode failure(SmartReportResponse response) {
         return assertInstanceOf(SmartReportResponse.Failure.class, response).code();
+    }
+
+    @Test void editFormVersionMismatchStopsBeforeAdmissionTelemetryAndContext() {
+        var repository = new FakeRepository();
+        var telemetry = new RecordingTelemetry();
+        var calls = new AtomicInteger();
+        SmartReportAssistant assistant = context -> {
+            calls.incrementAndGet();
+            return CompletableFuture.completedFuture(success());
+        };
+        var response = await(service(AccountRole.REQUESTER, repository, assistant, telemetry, coordinator(5))
+                .requestEdit("FF-000042", input(), 2L));
+        assertEquals(SmartReportFailureCode.DISCARDED_ACCESS_CHANGED, failure(response));
+        assertEquals(0, repository.contextLoads.get());
+        assertNull(telemetry.feature);
+        assertEquals(0, calls.get());
     }
 
     private static SmartReportResponse await(CompletionStage<SmartReportResponse> stage) {

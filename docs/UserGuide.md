@@ -5,7 +5,8 @@ work, start-work, Work Logs, completion and advisory Work Plan controls, and the
 Requester manual workflow and Smart Report review, and Facilities Manager request lifecycle, administration and Triage Assistant
 workflow are implemented locally. Teammate, real-browser and hosted application
 review remain pending. Requester browser evidence is in the Requester verification
-logs; synthetic Requester live gateway and authenticated endpoint smoke passed.
+logs; historical synthetic live smoke passed against the retired Requester
+gateway. Shared-runtime consolidation checks are recorded separately.
 Live browser review remains pending. Local Technician evidence is in
 logs/technician/T1-REPORT.md
 through T5-REPORT.md; Manager evidence is in the Manager session logs.
@@ -264,7 +265,9 @@ from future selection but remain in historical records.
 
 On **Report a problem** or an owned OPEN report's **Edit request** page, optionally
 enter a rough description and select **Get AI suggestions**. The assistant uses
-that text and your current report fields. Keep sensitive personal details out of
+that text and your current report fields. Keep the rough text and current
+description together within 2,000 characters when they contain different text.
+Keep sensitive personal details out of
 the report. The ordinary form remains editable while you wait.
 
 The labelled **AI suggestions — review before use** panel shows proposed fields,
