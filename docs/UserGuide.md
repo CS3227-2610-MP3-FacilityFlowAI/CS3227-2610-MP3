@@ -4,7 +4,10 @@ Status: authentication, shared password/navigation screens, Technician assigned
 work, start-work, Work Logs, completion and advisory Work Plan controls, and the
 Requester manual workflow and Smart Report review, and Facilities Manager request lifecycle, administration and Triage Assistant
 workflow are implemented locally. Teammate, real-browser and hosted application
-review remain pending. Requester browser evidence is in the Requester verification logs; live AI smoke remains deferred. Local Technician evidence is in logs/technician/T1-REPORT.md
+review remain pending. Requester browser evidence is in the Requester verification
+logs; synthetic Requester live gateway and authenticated endpoint smoke passed.
+Live browser review remains pending. Local Technician evidence is in
+logs/technician/T1-REPORT.md
 through T5-REPORT.md; Manager evidence is in the Manager session logs.
 
 This guide must be updated continuously to match the deployed product exactly.

@@ -209,7 +209,7 @@ checks have passed. Existing performance failures remain recorded above.
 | AI-SEC-002 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | authorization and admission precede context/provider | no-category/no-provider denial/limit spy assertions | Requester service locally verified; other assistants pending |
 | AI-SEC-003 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | versioned fixed system prompt; provenance-labelled serialized data object | gateway direct/encoded/multilingual/delimiter payload test | locally verified at fake seam; live evaluation pending |
 | AI-SEC-004 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | allowlisted current input and category labels only | gateway/context and PostgreSQL foreign/identifier exclusions | Requester service locally verified; other assistants pending |
-| AI-SEC-005 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | transport sends exactly model/stream/max_tokens/system-user messages; no tools or mutation seam | exact HTTP payload and zero business-write tests | locally verified; live smoke deferred |
+| AI-SEC-005 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | transport sends exactly model/stream/reasoning_effort=none/max_tokens/system-user messages; no tools or mutation seam | exact HTTP payload and zero business-write tests | locally verified; live smoke deferred |
 | AI-SEC-006 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | stateless per-call context/two-message HTTP payload; no raw content persistence | exact HTTP payload, metadata schema and PostgreSQL assertions | Smart Report locally verified; live smoke deferred |
 | AI-SEC-007 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | field maxima and conservative 12000-unit serialized system/data bound | gateway input/aggregate limit tests | Smart Report locally verified |
 | AI-SEC-008 | [AI controls](specs/AI-SECURITY-SPEC.md#required-controls) | deadline/token caps, bounded workers, HTTP cancellation/body cap and PostgreSQL rolling quota/slot leases | gateway/HTTP deadline/no-queue and PostgreSQL minute/hour/global/concurrent tests | Smart Report locally verified; actual provider smoke deferred |
@@ -263,3 +263,23 @@ failures, errors or skips, plus JaCoCo, executable JAR packaging and all three
 JavaScript checks. See the [merge-resolution report](../logs/2026-10-18-master-technician-merge-resolution.md)
 for preservation checks and direct execution evidence. Resolution is staged;
 human teammate review and the existing browser/hosted/safety gates remain open.
+
+## 19 October Requester live transport fix
+
+REQ-RQ-012–017, REQ-AI-001–006 and AI-SEC-008/010/019/020: the earlier
+Requester live-smoke deferral annotations are superseded for the narrow synthetic
+gateway scope by [live evidence](../logs/2026-10-19-requester-live-ai-smoke.md).
+The initial truncation finding remains recorded. SoClaasTransport now sends
+reasoning_effort=none; exact-payload regression and gateway suites passed (19
+tests). Three rebuilt-production live gateway cases passed strict validation,
+with no retries or business writes. Fresh verifier found no blockers. Full
+authenticated live browser/service testing, other roles, broader response quality
+and human safety review remain pending; this is not release approval.
+
+19 October authenticated live continuation: the Requester create-assistant POST
+passed three real SoCLaaS cases through actual Spring MVC/security/JDBC sessions
+and disposable PostgreSQL. Anonymous, wrong-role and missing-CSRF checks passed;
+no-store and invocation metadata verified, zero maintenance/submission/update/log
+mutations. This supersedes authenticated endpoint deferral only; live browser,
+owned-edit/other-role and broader quality/security checks remain pending. Exact
+metrics and provenance are in the live evidence record above.

@@ -59,7 +59,7 @@ public final class SoClaasTransport implements AiTransport, AutoCloseable {
         long deadline = System.nanoTime() + remaining.toNanos();
         if (!modelReady(remaining)) throw new UnavailableException();
         String payload = SmartReportSchema.JSON.writeValueAsString(Map.of("model", configuredModel, "stream", false,
-                "max_tokens", Math.clamp(maximum, 1, 800), "messages", List.of(
+                "reasoning_effort", "none", "max_tokens", Math.clamp(maximum, 1, 800), "messages", List.of(
                         Map.of("role", "system", "content", system), Map.of("role", "user", "content", user))));
         var response = send("/chat/completions", payload, left(deadline));
         if (response.statusCode() != 200) {

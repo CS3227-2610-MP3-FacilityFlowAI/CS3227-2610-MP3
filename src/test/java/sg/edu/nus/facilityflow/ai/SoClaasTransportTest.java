@@ -109,7 +109,8 @@ class SoClaasTransportTest {
         assertEquals("Bearer " + KEY, sentAuthorization);
         assertEquals(sentAuthorization, modelAuthorization);
         var body = SmartReportSchema.JSON.readTree(sentBody);
-        assertEquals(java.util.Set.of("model", "stream", "max_tokens", "messages"), body.propertyNames());
+        assertEquals(java.util.Set.of("model", "stream", "reasoning_effort", "max_tokens", "messages"), body.propertyNames());
+        assertEquals("none", body.get("reasoning_effort").asString());
         assertEquals("synthetic-configured-model", body.get("model").asString());
         assertFalse(body.get("stream").asBoolean());
         assertEquals(800, body.get("max_tokens").asInt());

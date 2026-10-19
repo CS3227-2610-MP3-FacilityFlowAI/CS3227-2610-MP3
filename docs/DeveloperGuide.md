@@ -577,8 +577,8 @@ Startup and `available()` never contact the provider. After ordinary admission,
 first use checks GET `/models` within two seconds and the invocation's remaining
 deadline. One probe per process runs at a time; success caches five minutes,
 failure cools down 60 seconds. Generation uses POST `/chat/completions` with model,
-stream=false, max_tokens and exactly system/user messages. No tools, history or
-response ID. Credentials stay in the Authorization header. Generation and probe
+stream=false, reasoning_effort=none, max_tokens and exactly system/user messages.
+No tools, history or response ID. Credentials stay in the Authorization header. Generation and probe
 share the original deadline; future cancellation closes the HTTP exchange.
 
 Response bodies are capped at 64 KiB with a typed overflow error so oversized or
@@ -595,8 +595,15 @@ ordinary submission after review, including stale state and forged AI flags.
 Run `node src/test/js/smart-report.test.cjs` plus the existing request-form self-
 check for explicit acceptance/discard/stale/cancel/error/escaping behavior.
 These DOM checks do not replace real-browser accessibility/viewport verification.
-The user deferred the non-production live smoke check; no external model, token,
-quality or readiness evidence is claimed. JDK reference:
+The 19 October non-production live smoke initially found Requester truncation
+failures. After aligning the transport with reasoning_effort=none, 19 focused
+tests passed and ordinary, missing-detail and instruction-injection synthetic
+live gateway cases all returned valid suggestions without retries. A subsequent
+authenticated create-assistant endpoint smoke passed all three cases with real
+security/JDBC sessions and disposable PostgreSQL; access/CSRF checks passed and
+no maintenance records changed. Live browser interaction, owned-edit/other-role
+checks and broader quality/security review remain pending.
+See [live evidence](../logs/2026-10-19-requester-live-ai-smoke.md). JDK reference:
 [HttpClient](https://docs.oracle.com/en/java/javase/25/docs/api/java.net.http/java/net/http/HttpClient.html).
 
 ## SDD workflow

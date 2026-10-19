@@ -233,3 +233,8 @@ Requester header/browser caller updates, relocated PostgreSQL password regressio
 checks and merged guides are **new** MP3 integration work adapting existing MP3
 code from both branches. No MP2 source was consulted or copied. Existing reuse
 records above remain authoritative for their original role slices.
+
+19 October Requester live transport correction: the reasoning_effort=none payload
+member and exact-payload assertion adapt the existing MP3 shared gateway contract;
+the live evidence and guide updates are **new** MP3 work. No MP2 source consulted
+or copied; existing role reuse provenance remains unchanged.
