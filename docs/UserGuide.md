@@ -16,6 +16,15 @@ test, and use every released feature, including AI fallbacks and limitations.
 
 ## Introduction
 
+The adaptive interface uses consistent cards, blue primary actions and visible
+keyboard focus across the role workspaces. Navigation and action rows wrap on
+narrow windows, forms stack, and wide request tables scroll horizontally within
+their table area. Resizing preserves entered values and current selections.
+Use Tab to reach controls and the shared header's **Skip to main content** link.
+The supported browser remains desktop Chrome; the refresh changes presentation
+and preserves existing actions and permissions. See the
+[MP3 UI specification](../workflow/specs/user-interface.md) for layout targets.
+
 The application supports secure sign-in/sign-out and separate role workspaces.
 The Technician workspace lists assigned work and provides progress, completion
 and advisory Work Plan controls. The Manager workspace links to request,

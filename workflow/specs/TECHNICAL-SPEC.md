@@ -82,6 +82,12 @@ frame-ancestors none, nosniff, strict referrer policy and HSTS in Production.
 
 ## UI composition
 
+Presentation detail and MP2 provenance are in [the MP3 UI specification](user-interface.md).
+`workspace.css` loads after each existing role stylesheet to provide consistent
+surfaces, controls, wrapping navigation and responsive layouts for NFR-A11Y-001/002.
+The presentation layer preserves all routes, field names, CSRF/version inputs,
+script hooks, hidden states and server-rendered permissions.
+
 Templates have a shared authenticated shell but separate Requester, Technician
 and Manager navigation and routes. The header identifies role and username and
 offers main workspace, change password, about and logout. Forms and HTMX fragments

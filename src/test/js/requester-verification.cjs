@@ -47,24 +47,80 @@ async function key(name, code) {
     await command('Input.dispatchKeyEvent', { type: 'keyUp', key: name, code: name, windowsVirtualKeyCode: code });
 }
 async function labelsAndLayout(name) {
+    check(name + ': shared responsive stylesheet loaded', await evaluate(`(()=>{const link=document.querySelector('link[href*="/css/workspace.css"]');return !!link&&!!link.sheet})()`));
     const result = await evaluate(`(()=>{
         const visible=e=>e.getClientRects().length>0;
         const fields=[...document.querySelectorAll('main input:not([type=hidden]),main textarea,main select')].filter(visible);
         return {missing:fields.filter(e=>!e.labels?.length&&!e.getAttribute('aria-label')&&!e.getAttribute('aria-labelledby')).map(e=>e.id||e.name),
+            unassociated:fields.filter(e=>e.getAttribute('aria-invalid')==='true'&&!(e.getAttribute('aria-describedby')||'').trim().split(' ').some(id=>document.getElementById(id)?.textContent.trim())).map(e=>e.id||e.name),
             overflow:document.documentElement.scrollWidth>innerWidth+1};
     })()`);
-    check(name + ': visible inputs have labels', result.missing.length === 0);
-    check(name + ': no page-level horizontal overflow', !result.overflow);
+    check(name + ': visible inputs have labels (NFR-A11Y-001)', result.missing.length === 0);
+    check(name + ': invalid fields reference error text (NFR-A11Y-001)', result.unassociated.length === 0);
+    check(name + ': no page-level horizontal overflow (NFR-A11Y-002)', !result.overflow);
+}
+async function fieldErrors(name, invalid, valid = []) {
+    const result = await evaluate(`(()=>{
+        const invalid=${JSON.stringify(invalid)},valid=${JSON.stringify(valid)};
+        const ids=[...document.querySelectorAll('[id]')].map(e=>e.id);
+        return {unique:ids.length===new Set(ids).size,
+            missing:invalid.filter(selector=>{const control=document.querySelector(selector),error=document.getElementById(control?.id+'-error');
+                return !control||control.getAttribute('aria-invalid')!=='true'||control.getAttribute('aria-describedby')!==error?.id||
+                    !error?.textContent.trim()||!error.getClientRects().length||!control.form?.contains(error);}),
+            stale:valid.filter(selector=>{const control=document.querySelector(selector);return !control||control.getAttribute('aria-invalid')==='true'||control.hasAttribute('aria-describedby');})};
+    })()`);
+    check(name + ': unique field/error IDs', result.unique);
+    check(name + ': invalid controls reference visible errors in their own form (UIX-006–008/NFR-A11Y-001)', result.missing.length === 0);
+    check(name + ': valid and unrelated controls have no error metadata', result.stale.length === 0);
+    await labelsAndLayout(name);
+}
+async function paletteChecks() {
+    const colors = await evaluate(`(()=>{
+        const sample=document.createElement('div');sample.style.cssText='position:fixed;left:-10000px;top:0';
+        const error=document.createElement('span');error.className='error';error.textContent='error';
+        const button=document.createElement('button');button.className='button-primary';button.textContent='action';
+        sample.append(error,button);document.body.append(sample);
+        const style=e=>getComputedStyle(e), root=style(document.documentElement), body=style(document.body), focus=style(document.activeElement);
+        const value={ink:body.color,page:body.backgroundColor,muted:root.getPropertyValue('--muted').trim(),surface:root.getPropertyValue('--surface').trim(),
+            link:style(document.querySelector('a')).color,error:error?style(error).color:'',primaryText:style(button).color,primaryBackground:style(button).backgroundColor,
+            focusColor:focus.outlineColor,focusWidth:focus.outlineWidth,focusStyle:focus.outlineStyle,brand:root.getPropertyValue('--brand').trim()};
+        sample.remove();return value;
+    })()`);
+    const rgb = color => {
+        if (color.startsWith('#')) {
+            const hex = color.slice(1);
+            return (hex.length === 3 ? [...hex].map(value => value + value).join('') : hex).match(/../g).map(value => parseInt(value, 16));
+        }
+        return color.match(/[\d.]+/g).slice(0, 3).map(Number);
+    };
+    check('contrast parser handles rgb, #rgb and #rrggbb', rgb('rgb(32, 90, 197)').join(',') === '32,90,197' &&
+        rgb('#fff').join(',') === '255,255,255' && rgb('#205ac5').join(',') === '32,90,197');
+    const luminance = color => rgb(color).map(value => value / 255).map(value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4)
+        .reduce((sum, value, index) => sum + value * [.2126, .7152, .0722][index], 0);
+    const ratio = (foreground, background) => {
+        const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+        return (values[0] + .05) / (values[1] + .05);
+    };
+    report.contrast = { ink: ratio(colors.ink, colors.page), muted: ratio(colors.muted, colors.surface), link: ratio(colors.link, colors.page),
+        error: ratio(colors.error, colors.page), primary: ratio(colors.primaryText, colors.primaryBackground) };
+    check(`rendered shared palette meets 4.5:1 text contrast (NFR-A11Y-001); measured ${JSON.stringify(report.contrast)}`,
+        Object.values(report.contrast).every(value => value >= 4.5));
+    const brand = await evaluate(`(()=>{const e=document.createElement('span');e.style.color='var(--brand)';document.body.append(e);const color=getComputedStyle(e).color;e.remove();return color})()`);
+    check('keyboard focus uses a visible 3px shared brand outline (NFR-A11Y-001)', parseFloat(colors.focusWidth) >= 3 && colors.focusStyle !== 'none' && colors.focusColor === brand);
 }
 async function screenshot(name) {
     const result = await command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
     fs.writeFileSync(path.join(output, name + '.png'), Buffer.from(result.data, 'base64'));
 }
 async function viewportChecks(name) {
-    for (const [width, height] of [[760, 600], [1024, 700], [1440, 900]]) {
+    for (const [width, height] of [[360, 800], [760, 600], [1024, 700], [1440, 900]]) {
         await command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
         await labelsAndLayout(`${name} ${width}x${height}`);
     }
+}
+async function loginAs(username, workspace) {
+    await navigate('/login'); await fill('#username', username); await fill('#password', password); await key('Tab', 9); await key('Enter', 13);
+    await waitFor(`location.pathname===${JSON.stringify(workspace)}`);
 }
 async function browserChecks() {
     const executable = process.env.CHROME_PATH || ['C:/Program Files/Google/Chrome/Application/chrome.exe',
@@ -90,7 +146,7 @@ async function browserChecks() {
     });
     await command('Page.enable'); await command('Runtime.enable');
     await command('Emulation.setDeviceMetricsOverride', { width: 1024, height: 700, deviceScaleFactor: 1, mobile: false });
-    await navigate('/login'); await labelsAndLayout('login');
+    await navigate('/login'); await viewportChecks('login');
     await fill('#username', 'requester1'); await key('Tab', 9);
     check('login keyboard Tab reaches password', await evaluate(`document.activeElement.id==='password'`));
     await fill('#password', 'wrong-password'); await key('Tab', 9); await key('Enter', 13);
@@ -101,11 +157,12 @@ async function browserChecks() {
     check('role redirect and six dashboard states', await evaluate(`document.querySelectorAll('.status-counts > div').length===6`));
     await viewportChecks('dashboard');
     await navigate('/requester/requests/new');
-    for (const [width, height] of [[760, 600], [1024, 700], [1440, 900]]) {
+    for (const [width, height] of [[360, 800], [760, 600], [1024, 700], [1440, 900]]) {
         await command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
         await labelsAndLayout(`create ${width}x${height}`); await screenshot(`create-${width}x${height}`);
         report.viewports.push({ width, height });
     }
+    check('assistant review stays hidden before use', await evaluate(`document.querySelector('[data-assistant-review]').hidden&&document.querySelector('[data-assistant-review]').getClientRects().length===0`));
     await fill('#title', 'Tiny'); await fill('#description', 'Retain these manual details'); await fill('#location', 'Block A');
     await evaluate(`document.querySelector('#categoryId').selectedIndex=1`);
     await click('[data-request-form] button[type=submit]');
@@ -114,6 +171,12 @@ async function browserChecks() {
     await labelsAndLayout('invalid create');
     await fill('#title', 'Manual light report'); await fill('#roughText', 'Light flickers in room A');
     await waitFor(`!document.querySelector('[data-ask-assistant]').hidden`);
+    for (const [width, height] of [[360, 800], [760, 600], [1024, 700], [1440, 900]]) {
+        await command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+        await labelsAndLayout(`unsaved requester input ${width}x${height}`);
+        check(`resize preserves requester input ${width}x${height}`, await evaluate(`document.querySelector('#title').value==='Manual light report'&&document.querySelector('#description').value==='Retain these manual details'&&document.querySelector('#location').value==='Block A'&&document.querySelector('#roughText').value==='Light flickers in room A'`));
+        check(`resize preserves hidden assistant review ${width}x${height}`, await evaluate(`document.querySelector('[data-assistant-review]').hidden&&document.querySelector('[data-assistant-review]').getClientRects().length===0`));
+    }
     await click('[data-ask-assistant]');
     await waitFor(`!document.querySelector('[data-assistant-review]').hidden`);
     check('suggestion is separate and focuses review heading', await evaluate(`document.querySelector('#title').value==='Manual light report'&&document.activeElement.id==='suggestions-heading'`));
@@ -121,6 +184,7 @@ async function browserChecks() {
     check('keyboard accepts only title into editable form', await evaluate(`document.querySelector('#title').value==='Flickering light'&&document.querySelector('#description').value==='Retain these manual details'&&document.activeElement.id==='title'`));
     const focus = await evaluate(`(()=>{let s=getComputedStyle(document.activeElement);return {width:s.outlineWidth,style:s.outlineStyle,color:s.outlineColor}})()`);
     check('visible keyboard focus outline', parseFloat(focus.width) >= 3 && focus.style !== 'none');
+    await paletteChecks();
     await screenshot('ai-review');
     await click('[data-discard-suggestions]');
     check('discard keeps accepted manual text', await evaluate(`document.querySelector('[data-assistant-review]').hidden&&document.querySelector('#title').value==='Flickering light'`));
@@ -157,13 +221,62 @@ async function browserChecks() {
     await navigate('/requester'); await click('header button[type=submit]');
     await waitFor(`location.pathname==='/login'`);
     check('logout returns to login', true);
-    // Verify the shipped palette rather than claiming an automated WCAG certification.
-    const luminance = hex => {
-        const rgb = hex.match(/../g).map(x => parseInt(x, 16) / 255).map(x => x <= .04045 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4);
-        return .2126 * rgb[0] + .7152 * rgb[1] + .0722 * rgb[2];
-    };
-    report.contrast = Object.fromEntries(['17212b', '174f91', '9d1818'].map(color => [color, 1.05 / (luminance(color) + .05)]));
-    check('body/link/error palette contrast at least 4.5 to white', Object.values(report.contrast).every(value => value >= 4.5));
+    await loginAs('manager1', '/manager');
+    await navigate('/manager/overview'); await viewportChecks('Manager overview');
+    check('Manager overview shows status, priority and workload sections (REQ-MGR-010)', await evaluate(`document.querySelector('#status-heading')&&document.querySelector('#priority-heading')&&document.querySelector('#workload-heading')`));
+    await navigate('/manager/requests?status=INVALID'); await labelsAndLayout('Manager invalid status filter');
+    check('Manager invalid status shows its specific validation message (REQ-MGR-001)', await evaluate(`document.querySelector('main').textContent.includes('Choose a listed status.')`));
+    await fieldErrors('Manager status filter error', ['#status'], ['#categoryId']);
+    await navigate('/manager/requests?search=' + 'x'.repeat(121) + '&createdFrom=2026-10-20&createdTo=2026-10-19');
+    await fieldErrors('Manager search and date filter errors', ['#search', '#createdTo'], ['#status', '#createdFrom']);
+    await navigate('/manager/requests');
+    await fieldErrors('Manager reset filters', [], ['#status', '#search', '#createdTo']);
+    for (const [width, height] of [[360, 800], [760, 600], [1024, 700], [1440, 900]]) {
+        await command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+        await labelsAndLayout(`Manager request table ${width}x${height}`);
+        if (width <= 760) check(`Manager table stays inside scroll container ${width}x${height}`, await evaluate(`(()=>{const table=document.querySelector('table');const wrapper=table?.parentElement;return !!table&&!!wrapper&&getComputedStyle(wrapper).overflowX==='auto'&&document.documentElement.scrollWidth<=innerWidth+1})()`));
+    }
+    check('Manager request queue renders rows (REQ-MGR-001)', await evaluate(`document.querySelectorAll('table tbody tr').length>0`));
+    const managerDetail = await evaluate(`[...document.querySelectorAll('table tbody tr')].find(row=>[...row.cells].some(cell=>cell.textContent.trim()==='OPEN'))?.querySelector('a[href^="/manager/requests/"]')?.getAttribute('href')`);
+    assert.ok(managerDetail, 'Manager request detail link exists');
+    await navigate(managerDetail); await viewportChecks('Manager request detail');
+    check('Manager request detail renders (REQ-MGR-001)', await evaluate(`document.querySelector('main h1')&&document.querySelector('#request-details')`));
+    // Bypass client constraints only to exercise server error responses on synthetic data.
+    await evaluate(`document.querySelector('#assign-technician').form.submit()`);
+    await waitFor(`!!document.querySelector('#assign-technician-error')`);
+    await fieldErrors('Manager assignment errors', ['#assign-technician', '#assign-priority'], ['#correct-priority', '#cancel-reason']);
+    await fill('#cancel-reason', 'tiny');
+    await evaluate(`document.querySelector('#cancel-reason').form.submit()`);
+    await waitFor(`!!document.querySelector('#cancel-confirmed-error')`);
+    await fieldErrors('Manager cancellation errors', ['#cancel-reason', '#cancel-confirmed'], ['#correct-reason', '#assign-technician']);
+    await evaluate(`document.querySelector('.edit-panel').open=true`);
+    await fill('#correct-title', 'Tiny'); await fill('#correct-description', 'short'); await fill('#correct-reason', 'tiny');
+    await evaluate(`document.querySelector('#correct-title').form.submit()`);
+    await waitFor(`!!document.querySelector('#correct-title-error')`);
+    await fieldErrors('Manager correction errors', ['#correct-title', '#correct-description', '#correct-reason'], ['#cancel-reason', '#assign-technician']);
+    check('invalid correction preserves entered title', await evaluate(`document.querySelector('#correct-title').value==='Tiny'`));
+    await navigate('/manager/accounts'); await viewportChecks('Manager account administration');
+    check('Manager account administration page is readable (REQ-MGR-013)', await evaluate(`document.querySelector('h1')?.textContent.includes('Account administration')`));
+    await navigate('/manager/audit'); await viewportChecks('Manager audit viewer');
+    check('Manager audit viewer renders read-only filters (REQ-MGR-011)', await evaluate(`document.querySelector('h1')?.textContent.includes('Audit viewer')&&document.querySelector('form[method=get]')&&!document.querySelector('main form[method=post]')`));
+    await navigate('/manager/audit?actor=' + 'x'.repeat(81) + '&occurredFrom=2026-10-20&occurredTo=2026-10-19');
+    await fieldErrors('Manager audit filter errors', ['#actor', '#occurredTo'], ['#action', '#occurredFrom']);
+    await navigate('/manager/requests/new'); await viewportChecks('Manager record request form');
+    check('Manager record request form renders (REQ-MGR-003)', await evaluate(`document.querySelector('h1')?.textContent.includes('Record a request on behalf')&&document.querySelector('#requesterId')`));
+    await fieldErrors('Manager valid create form', [], ['#requesterId', '#title', '#description', '#categoryId']);
+    await fill('#title', 'Tiny'); await fill('#description', 'short'); await fill('#location', 'Retained location');
+    await evaluate(`document.querySelector('#title').form.submit()`);
+    await waitFor(`!!document.querySelector('#title-error')`);
+    await fieldErrors('Manager create errors', ['#requesterId', '#title', '#description', '#categoryId'], ['#location', '#reportedUrgency']);
+    check('Manager invalid create retains valid location', await evaluate(`document.querySelector('#location').value==='Retained location'`));
+    await navigate('/manager/categories'); await viewportChecks('Manager category catalogue');
+    check('Manager category catalogue renders (REQ-MGR-016/017)', await evaluate(`document.querySelector('h1')?.textContent.includes('Category catalogue')`));
+    await navigate('/manager/skills'); await viewportChecks('Manager skill catalogue');
+    check('Manager skill catalogue renders (REQ-MGR-018/019)', await evaluate(`document.querySelector('h1')?.textContent.includes('Skill catalogue')`));
+    await navigate('/manager'); await click('header button[type=submit]'); await waitFor(`location.pathname==='/login'`);
+    await loginAs('technician1', '/technician');
+    await navigate('/technician/requests'); await viewportChecks('Technician queue');
+    check('Technician queue is visible and read-only (REQ-TECH-001/002/011)', await evaluate(`document.querySelector('#queue-heading')&&document.querySelector('#q')&&document.querySelectorAll('main form[method=post]').length===0`));
     console.log('Chrome critical-flow checks passed');
 }
 
@@ -214,11 +327,15 @@ async function loadChecks() {
 (async () => {
     try { await browserChecks(); await loadChecks(); fs.writeFileSync(path.join(output, 'results.json'), JSON.stringify(report, null, 2)); }
     catch (error) {
+        const failure = { error: error.message, completed: report.checks };
         if (socket?.readyState === WebSocket.OPEN) {
             const state = await evaluate(`({route:location.pathname,ready:document.readyState,active:document.activeElement.tagName+':'+(document.activeElement.id||document.activeElement.type),alert:document.querySelector('[role=alert]')?.textContent,assistantStatus:document.querySelector('[data-assistant-status]')?.textContent,askHidden:document.querySelector('[data-ask-assistant]')?.hidden,valid:[...document.forms].map(f=>f.checkValidity())})`).catch(() => ({}));
-            fs.writeFileSync(path.join(output, 'failure.json'), JSON.stringify({ error: error.message, state, completed: report.checks }, null, 2));
+            failure.state = state;
             await screenshot('failure').catch(() => {});
         }
+        report.failure = failure;
+        fs.writeFileSync(path.join(output, 'results.json'), JSON.stringify(report, null, 2));
+        fs.writeFileSync(path.join(output, 'failure.json'), JSON.stringify(failure, null, 2));
         throw error;
     }
     finally { if (socket?.readyState === WebSocket.OPEN) { try { await command('Browser.close'); } catch {} socket.close(); } if (chrome && chrome.exitCode === null) chrome.kill(); }
