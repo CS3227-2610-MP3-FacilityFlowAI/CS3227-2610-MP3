@@ -103,7 +103,7 @@ class PasswordChangeServiceTest {
     void rejectsUnsupportedSnapshotBeforePersistence() {
         RecordingRepository repo = new RecordingRepository();
         CurrentAccountProvider negativeVersion = new CurrentAccountProvider() {
-            public CurrentAccount requireCurrentAccount() { return new CurrentAccount(ACTOR.id(), "tech", "Tech", ACTOR.role()); }
+            public CurrentAccount requireCurrentAccount() { return new CurrentAccount(ACTOR.id(), "tech", "Tech", ACTOR.role(), ACTOR.sessionVersion()); }
             public CurrentAccountSnapshot requireCurrentAccountSnapshot() {
                 return new CurrentAccountSnapshot(ACTOR.id(), ACTOR.role(), -1);
             }
@@ -119,7 +119,7 @@ class PasswordChangeServiceTest {
 
     private static CurrentAccountProvider provider() {
         return new CurrentAccountProvider() {
-            public CurrentAccount requireCurrentAccount() { return new CurrentAccount(ACTOR.id(), "tech", "Tech", ACTOR.role()); }
+            public CurrentAccount requireCurrentAccount() { return new CurrentAccount(ACTOR.id(), "tech", "Tech", ACTOR.role(), ACTOR.sessionVersion()); }
             public CurrentAccountSnapshot requireCurrentAccountSnapshot() { return ACTOR; }
         };
     }

@@ -26,7 +26,7 @@ class WorkPlanAuthorizationBoundaryTest {
         AtomicBoolean contextBuilt = new AtomicBoolean();
         AtomicInteger assistantCalls = new AtomicInteger();
         AiAccessGuard guard = new AiAccessGuard(new IdentityAuthorization(() -> new CurrentAccount(
-                CURRENT_TECHNICIAN, "technician", "Technician", AccountRole.TECHNICIAN)));
+                CURRENT_TECHNICIAN, "technician", "Technician", AccountRole.TECHNICIAN, 0)));
         WorkPlanAssistant assistant = context -> {
             assistantCalls.incrementAndGet();
             return CompletableFuture.completedFuture(WorkPlanResponse.failure(

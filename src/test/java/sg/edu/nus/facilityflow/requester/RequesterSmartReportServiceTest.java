@@ -170,7 +170,7 @@ class RequesterSmartReportServiceTest {
             SmartReportAssistant assistant,
             AiInvocationTelemetry telemetry,
             AiInvocationCoordinator coordinator) {
-        CurrentAccount account = new CurrentAccount(REQUESTER_ID, "requester", "Requester", role);
+        CurrentAccount account = new CurrentAccount(REQUESTER_ID, "requester", "Requester", role, 0);
         CurrentAccountSnapshot snapshot = new CurrentAccountSnapshot(REQUESTER_ID, role, 7);
         CurrentAccountProvider accounts = new CurrentAccountProvider() {
             @Override

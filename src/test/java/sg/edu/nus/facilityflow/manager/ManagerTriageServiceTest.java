@@ -138,7 +138,7 @@ class ManagerTriageServiceTest {
             TriageAssistant assistant,
             AiInvocationTelemetry telemetry,
             AiInvocationCoordinator coordinator) {
-        CurrentAccount account = new CurrentAccount(MANAGER_ID, "manager", "Manager", role);
+        CurrentAccount account = new CurrentAccount(MANAGER_ID, "manager", "Manager", role, 0);
         CurrentAccountSnapshot snapshot = new CurrentAccountSnapshot(MANAGER_ID, role, 7);
         CurrentAccountProvider accounts = new CurrentAccountProvider() {
             @Override

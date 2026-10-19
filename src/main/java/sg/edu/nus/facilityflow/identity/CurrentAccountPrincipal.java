@@ -73,7 +73,7 @@ public final class CurrentAccountPrincipal
     }
 
     public CurrentAccount asCurrentAccount() {
-        return new CurrentAccount(id, username, displayName, role);
+        return new CurrentAccount(id, username, displayName, role, sessionVersion);
     }
 
     @Override

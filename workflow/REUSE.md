@@ -1,5 +1,15 @@
 # MP2 Reuse Ledger
 
+16 October Requester step 7: the Node/CDP browser/load runner, opt-in Gradle
+task, graceful application/session restart regression, versioned 12-case AI
+corpus and gateway evaluation test are **new** MP3 test/build work. The related
+DeveloperGuide, plan, traceability, session evidence and handoff sections are
+**new** documentation. No MP2 source was consulted or copied in this step
+(zero copied MP2 lines). Acceptance/security scenarios come from approved MP3
+specifications; no third-party implementation source was copied. Existing MP3
+fixtures and standard Node/Chrome interfaces are reused internally. Exact
+final code/test/documentation line totals and teammate review remain pending.
+
 ## Baseline
 
 - Source repository: `CS3227-2610-MP2-FacilityFlow/CS3227-2610-MP2`
@@ -38,6 +48,65 @@ The source commit was verified against the MP2 `master` branch on 12 October
 | Documentation | Reuse factual domain descriptions with acknowledgement; rewrite for the released web product |
 
 ## Current evidence and measurement detail
+
+Requester step 6 (16 October): advisory review/accept/discard workflow follows
+**concept-only** behavior retained in approved MP3 Requester/AI specs, with zero
+copied MP2 code lines. No MP2 source consulted or copied. `SoClaasTransport`,
+runtime bean/configuration and typed transport failure additions, review template/
+JavaScript/CSS, local HTTP and DOM checks, PostgreSQL review-to-ordinary-submit
+test and guide/traceability/session/handoff updates are **new** MP3 work.
+No migration or dependency changes; final measurements and teammate review pending.
+
+Requester step 5 (16 October): Smart Report advisory/context/schema concepts are
+**concept-only** behavior retained in approved MP3 Requester/Integration/AI Security
+specs, with zero copied MP2 code lines. No MP2 source consulted/copied this step.
+`ai/` Smart Report input/service/schema, gateway/transport and persistence seams,
+disabled runtime adapter, bounded gateway, JDBC limits/telemetry, owner/OPEN-version
+read, POST controller, fake/gateway/PostgreSQL tests and associated guides/process
+records are **new** MP3 implementation. Existing V1–V5 are unchanged; no dependency
+was added. Final measurement and human teammate review remain pending.
+
+Requester step 4 (16 October): dashboard/status counts, five recent reports,
+literal search and combined filters follow **concept-only** Requester discovery
+behavior already retained in approved MP3 specs (zero copied code lines).
+No additional MP2 source consulted or copied. `RequestFilters`, use-case/repository/
+controller additions, dashboard/list templates and CSS, filter/PostgreSQL tests,
+authentication-only dashboard stub and guide/traceability/session/handoff updates
+are **new** MP3 implementation. No migration or dependency changes. Final line
+measurement and teammate review remain pending on `feat/requester-workflow`.
+
+Requester step 3 (16 October): edit/cancel/Requester Update use cases, Request
+version/state locking, reason/note validation, shared form/action templates and
+tests are **concept-only** reuse of behaviors already approved in MP3 product/
+Requester specs and retained MP2 lifecycle concepts (zero copied code lines).
+No additional MP2 source consulted or copied this step. The Spring/JDBC service
+and repository additions, typed failure classes, view-model version/category
+fields, shared error handling, named-submitter pending protection, tests and
+guide/session/handoff updates are **new** MP3 implementation. No migrations,
+dependencies or additional role operations added. Final line measurements and
+teammate review remain pending on `feat/requester-workflow`.
+
+Requester step 2 (16 October): `RequestDraft`, Requester use cases/repository,
+controller, templates and tests are **concept-only** reuse of the approved MP2
+Requester workflow/field rules and `RequesterDashboardView.showDetail` at the
+verified baseline (zero copied code lines). MP2 detail inspection confirms the
+report/status/urgency/priority/timestamp presentation without internal completion
+metadata. Spring MVC/Thymeleaf/PostgreSQL implementation is new. V5 migration,
+schema readiness check, durable submission handling, pending-submit script and
+Node self-check, CSS, About page, guide updates and session/handoff records are
+**new** MP3 work. Existing V1–V4 production migrations are unchanged. Final line
+measurement and teammate review remain pending on `feat/requester-workflow`.
+
+Requester step 1 (16 October): `PasswordChangeService`, `JdbcIdentityOperations`,
+`PasswordController`, password template and associated tests reuse MP2
+`AuthenticationService.changePassword` and `ApplicationRouter` password-page
+behavior at the verified baseline as **concept only** (zero copied code lines).
+Current/new password inputs, Unicode limits, current-session retention and
+password audit semantics are retained; the Spring/JDBC implementation is new.
+`AuthenticatedPageAdvice`, shared header edits, login audit failure handling,
+`CurrentAccount.sessionVersion`, H2 fixture additions and guide/session records
+are **new** MP3 changes. No JavaFX or SQLite code copied. Final line measurements
+and teammate review remain pending; branch `feat/requester-workflow`.
 
 Facilities Manager first slice (17 October): overview, deterministic queue,
 combined filters, on-behalf creation and audit-viewer behavior are
@@ -107,6 +176,11 @@ applied migrations are unchanged. See the dated review-fix log.
 Additional 16 October initializer review fixes (profile guard, bounded lock wait,
 regressions and guide updates) are new MP3 work; no MP2 source copied.
 
+18 October Requester/master integration: merge resolutions and compatibility
+updates are new MP3 integration work. Requester migration moved from V5 to V6
+without SQL changes; master V5 preserved. No additional MP2 source copied;
+existing per-slice reuse provenance above remains authoritative.
+
 Technician T1 (18 October): new query service/repository/read models, MVC
 controller, templates/CSS, requirement-based tests and scoped guide additions
 are **new** MP3 implementation based on the approved MP3 specifications and
@@ -153,3 +227,14 @@ resumed; scoped automated checks passed. Final measured source/guide changes,
 integrated results, independent review and local commit are in
 `logs/technician/T5-REPORT.md`. Browser/human/hosted gates and release-wide reuse
 totals remain pending.
+
+19 October Requester/Technician master integration: shared-route consolidation,
+Requester header/browser caller updates, relocated PostgreSQL password regression
+checks and merged guides are **new** MP3 integration work adapting existing MP3
+code from both branches. No MP2 source was consulted or copied. Existing reuse
+records above remain authoritative for their original role slices.
+
+19 October Requester live transport correction: the reasoning_effort=none payload
+member and exact-payload assertion adapt the existing MP3 shared gateway contract;
+the live evidence and guide updates are **new** MP3 work. No MP2 source consulted
+or copied; existing role reuse provenance remains unchanged.

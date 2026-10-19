@@ -38,7 +38,7 @@ final class PasswordChangeFixtures implements AutoCloseable {
         admin.execute("ALTER ROLE facilityflow_app LOGIN");
         DataSource migratorSource = dataSource(postgres, "facilityflow_migrator");
         Flyway.configure().dataSource(migratorSource).schemas("facilityflow").defaultSchema("facilityflow")
-                .cleanDisabled(true).ignoreMigrationPatterns(new String[0]).target("5").load().migrate();
+                .cleanDisabled(true).ignoreMigrationPatterns(new String[0]).target("6").load().migrate();
         var fixture = new PasswordChangeFixtures(postgres, admin, new JdbcTemplate(migratorSource),
                 new JdbcTemplate(dataSource(postgres, "facilityflow_app")));
         fixture.reset();

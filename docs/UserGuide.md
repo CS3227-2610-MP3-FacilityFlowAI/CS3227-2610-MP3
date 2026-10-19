@@ -2,9 +2,12 @@
 
 Status: authentication, shared password/navigation screens, Technician assigned
 work, start-work, Work Logs, completion and advisory Work Plan controls, and the
-Facilities Manager request lifecycle, administration and Triage Assistant
+Requester manual workflow and Smart Report review, and Facilities Manager request lifecycle, administration and Triage Assistant
 workflow are implemented locally. Teammate, real-browser and hosted application
-review remain pending. Local Technician evidence is in logs/technician/T1-REPORT.md
+review remain pending. Requester browser evidence is in the Requester verification
+logs; synthetic Requester live gateway and authenticated endpoint smoke passed.
+Live browser review remains pending. Local Technician evidence is in
+logs/technician/T1-REPORT.md
 through T5-REPORT.md; Manager evidence is in the Manager session logs.
 
 This guide must be updated continuously to match the deployed product exactly.
@@ -16,8 +19,8 @@ test, and use every released feature, including AI fallbacks and limitations.
 The application supports secure sign-in/sign-out and separate role workspaces.
 The Technician workspace lists assigned work and provides progress, completion
 and advisory Work Plan controls. The Manager workspace links to request,
-administration and audit workflows. The Requester manual workspace remains a
-placeholder.
+administration and audit workflows. Requesters can report, follow, edit and cancel their own requests and review
+optional Smart Report suggestions.
 
 ## Accessing the deployed application
 
@@ -30,15 +33,88 @@ the Account directly to its role workspace.
 
 Requester, Technician and Facilities Manager are the only roles. Each Account
 can open only its own role workspace. Directly entering another role's URL is
-denied. Own-password change is available through the authenticated header.
-Facilities Managers can provision and administer other Accounts.
+denied. Facilities Managers can provision and administer other Accounts.
+
+## Change your password
+
+The local implementation provides **Change password** in the authenticated header
+for all three roles. Enter your current password and a new password containing
+8–24 Unicode characters; no composition rule applies. Confirm the new password
+exactly. Select **Change password**.
+Success keeps you signed in. Subsequent sign-ins use the new password. Password
+fields are cleared on errors; re-enter them to retry. Select **My workspace** to leave the form. Hosted availability and browser checks are pending.
 
 ## Features
+
+### Requester: report and follow a problem
+
+Open **My requests** from the Requester workspace, then **Report a problem**.
+Enter a title (5–100 characters), description (10–2,000), location (2–120),
+an active category and reported urgency. Character limits count Unicode code
+points. Select **Submit request** once. Success opens the saved OPEN request
+with its database-generated FF identifier; ownership always comes from your
+signed-in account.
+
+Field errors appear beside the relevant inputs and retain entered text. If a
+category becomes unavailable, choose another active category. A temporary save
+failure retains the form for retry. Repeating the same submission produces a
+safe message directing you to **My requests**, without creating another report.
+
+**My requests** includes reports a Manager recorded on your behalf, newest first.
+Select a report to view its fields, status, Manager priority when set, timestamps,
+status history, public reasons and Requester Updates. Times display explicitly in
+Asia/Singapore. Other Requesters' reports and internal Work Logs/private Manager
+data are unavailable. The optional assistant is described below; it may be
+unavailable when AI is disabled or its provider configuration is not ready.
+
+### Requester: dashboard and finding reports
+
+The Requester workspace shows your counts for OPEN, ASSIGNED, IN_PROGRESS,
+COMPLETED, CLOSED and CANCELLED, plus your five newest reports. Select a status
+count to open **My requests** with that filter applied.
+
+Search **My requests** by display ID, title or location. Search ignores case and
+surrounding spaces; punctuation such as `%` and `_` matches literally. Combine
+search with status, category and creation-date filters, then select **Apply filters**.
+Both dates are inclusive in Asia/Singapore. Inactive categories remain available
+for finding older reports; new reports still require an active category.
+
+Applied values stay visible. **Reset filters** restores the full list. A new
+workspace explains that you have no requests; a search with no matches suggests
+changing or resetting filters. Invalid dates, reversed ranges or unavailable
+filter values show field errors and retain your input.
+
+### Requester: edit, cancel and add updates
+
+An owned **OPEN** report offers **Edit request**. Change the five report fields
+and select **Save changes**. If its category became unavailable, choose another
+active category. You can also edit OPEN reports a Manager recorded for you.
+
+**Cancel request** opens a separate confirmation page. Provide a reason containing
+5–500 characters, tick the confirmation and explicitly select **Cancel request**.
+**Keep request** leaves the report unchanged and is the default action. Cancellation
+preserves the report and reason in history. CANCELLED reports reject later edits
+and updates.
+
+Select **Add Requester Update** to append a 1–1,000-character follow-up. Updates
+are permitted while OPEN, ASSIGNED, IN_PROGRESS or COMPLETED awaiting Manager
+review. CLOSED and CANCELLED reports reject additions. Existing updates remain
+in history with their author and time.
+
+If a report changes after you open a form, saving fails safely and retains your
+input. Follow **Reload current request details**, review the latest report and
+reapply your intended change. Retrying the stale form cannot overwrite newer work
+or add the same update twice. A storage/audit failure retains input and permits
+retry without a partial change. Character limits use Unicode code points.
+
+### Shared navigation
 
 The authenticated header shows display name, username and role. Select
 **Sign out** to end the server-side session. A deactivated Account, a Manager
 password reset represented by a session-version change, or a persisted role
 change takes effect on the next request.
+The header also provides **My workspace**, **Change password** and
+**About**.
 
 ## Technician assigned work
 
@@ -184,10 +260,36 @@ from future selection but remain in historical records.
 
 ## AI features
 
-Three bounded SoC LLM assistants are defined:
+### Requester: Smart Report Assistant
 
-- Requesters may ask the Smart Report Assistant for an editable structured
-  draft, category and urgency suggestions, and missing-information questions.
+On **Report a problem** or an owned OPEN report's **Edit request** page, optionally
+enter a rough description and select **Get AI suggestions**. The assistant uses
+that text and your current report fields. Keep sensitive personal details out of
+the report. The ordinary form remains editable while you wait.
+
+The labelled **AI suggestions — review before use** panel shows proposed fields,
+missing-information questions and rationale. **Use suggested title**, for example,
+copies just that field into the ordinary form. Accept other fields individually
+or edit them yourself. Nothing is saved until you select **Submit request** or
+**Save changes**. All normal field, ownership and OPEN-state checks still apply.
+
+**Discard suggestions** clears the review panel and ignores an in-flight result.
+It keeps your manual fields, including values you already accepted. If you edit
+while waiting, the late result is discarded. If you change a field after review
+appears, an old suggestion cannot overwrite that field; ask again for new
+suggestions. Returning through browser history also clears the review panel.
+
+AI failure, timeout, invalid output or quota exhaustion shows safe guidance and
+keeps your manual input. You can submit normally without waiting for AI. With
+JavaScript disabled, the ordinary form still works. In the local implementation,
+defaults allow five AI attempts/minute and 30/hour per Account, with five in flight
+across the application. Discarding locally may leave a bounded server attempt
+finishing and consuming its quota. No live response quality is claimed yet.
+
+### Other role assistants
+
+The other role assistants are:
+
 - Technicians may ask the Work Plan Assistant for an advisory diagnostic and
   evidence-collection plan for an assigned request.
 - Facilities Managers may ask the Triage Assistant for explained category,
@@ -215,8 +317,8 @@ guidance and leaves the Request unchanged.
 
 ## Limitations
 
-AI drafts/recommends only; users perform authorized actions. Confirmed
-released resource limits and failure behavior: TBD.
+AI drafts/recommends only; users perform authorized actions. Live provider,
+hosted/browser behavior and released deployment limits remain unverified.
 
 The Manager slice has local automated evidence only; no hosted application or
 real-browser release claim is made yet. Teammate review remains required before

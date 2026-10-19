@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${operation == 'cancel' ? 'Cancel request' : 'Add Requester Update'} + ' · FacilityFlow AI'"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script defer th:src="@{/js/request-form.js}"></script>
+</head>
+<body>
+<header th:replace="~{fragments/authenticated-header :: header(${username}, ${displayName}, ${role})}"></header>
+<main id="main-content">
+    <h1><span th:text="${operation == 'cancel' ? 'Cancel request' : 'Add Requester Update'}"></span> — <span th:text="${displayId}"></span></h1>
+    <p th:if="${requestTitle != null}" th:text="${requestTitle}"></p>
+    <p th:if="${operation == 'cancel'}">Cancellation stops this request. It remains in your history and cannot be edited or updated afterward.</p>
+    <p th:if="${message}" th:text="${message}" role="alert"></p>
+    <p th:if="${!errors.isEmpty()}" role="alert">Check the marked fields and try again.</p>
+    <p th:if="${errors.containsKey('version')}" th:text="${errors['version']}" role="alert"></p>
+    <form method="post" th:action="@{/requester/requests/{id}/{operation}(id=${displayId},operation=${operation})}" data-request-form>
+        <input type="hidden" name="version" th:value="${version}">
+        <label for="text" th:text="${operation == 'cancel' ? 'Cancellation reason (required, 5–500 characters)' : 'Update (required, 1–1,000 characters)'}"></label>
+        <textarea id="text" th:name="${operation == 'cancel' ? 'reason' : 'note'}" rows="5" th:text="${text}" required
+                  th:attr="aria-invalid=${errors.containsKey(operation == 'cancel' ? 'reason' : 'note')},aria-describedby=${errors.containsKey(operation == 'cancel' ? 'reason' : 'note') ? 'text-error' : null}"></textarea>
+        <p id="text-error" class="error" th:if="${errors.containsKey(operation == 'cancel' ? 'reason' : 'note')}" th:text="${errors[operation == 'cancel' ? 'reason' : 'note']}"></p>
+        <div th:if="${operation == 'cancel'}">
+            <label><input type="checkbox" name="confirmed" value="true" th:checked="${confirmed}" required
+                          th:attr="aria-invalid=${errors.containsKey('confirmed')},aria-describedby=${errors.containsKey('confirmed') ? 'confirmation-error' : null}">
+                I confirm that I want to cancel this request.</label>
+            <p id="confirmation-error" class="error" th:if="${errors.containsKey('confirmed')}" th:text="${errors['confirmed']}"></p>
+            <button type="submit" name="decision" value="keep" formnovalidate>Keep request</button>
+            <button type="submit" name="decision" value="cancel">Cancel request</button>
+        </div>
+        <button th:unless="${operation == 'cancel'}" type="submit">Add update</button>
+        <p data-submitting hidden role="status">Saving your request…</p>
+    </form>
+    <a th:href="@{/requester/requests/{id}(id=${displayId})}">Reload current request details</a>
+</main>
+</body>
+</html>

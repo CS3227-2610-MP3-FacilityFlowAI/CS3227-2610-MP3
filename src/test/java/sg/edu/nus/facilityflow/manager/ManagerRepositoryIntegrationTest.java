@@ -385,14 +385,14 @@ class ManagerRepositoryIntegrationTest {
 
     private static ManagerService service(UUID id, AccountRole role) {
         String username = app.queryForObject("SELECT username FROM facilityflow.user_account WHERE id = ?", String.class, id);
-        var account = new CurrentAccount(id, username, "Synthetic Account", role);
+        var account = new CurrentAccount(id, username, "Synthetic Account", role, 0);
         var repository = new JdbcManagerRepository(new NamedParameterJdbcTemplate(appDataSource));
         return new ManagerService(() -> account, repository, new DataSourceTransactionManager(appDataSource));
     }
 
     private static ManagerAdminService adminService(UUID id, AccountRole role) {
         String username = app.queryForObject("SELECT username FROM facilityflow.user_account WHERE id = ?", String.class, id);
-        var account = new CurrentAccount(id, username, "Synthetic Account", role);
+        var account = new CurrentAccount(id, username, "Synthetic Account", role, 0);
         var repository = new JdbcManagerAdminRepository(new NamedParameterJdbcTemplate(appDataSource));
         return new ManagerAdminService(() -> account, repository,
                 Pbkdf2PasswordEncoder.defaultsForSpringSecurity_v5_8(),

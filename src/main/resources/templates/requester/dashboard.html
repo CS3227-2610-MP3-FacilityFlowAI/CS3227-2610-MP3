@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Requester workspace · FacilityFlow AI</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header th:replace="~{fragments/authenticated-header :: header(${username}, ${displayName}, ${role})}"></header>
+<main id="main-content">
+    <h1>Requester workspace</h1>
+    <nav aria-label="Requester navigation">
+        <a th:href="@{/requester/requests}">My requests</a>
+        <a th:href="@{/requester/requests/new}">Report a problem</a>
+    </nav>
+    <h2>Request status</h2>
+    <dl class="status-counts">
+        <div th:each="count : ${dashboard.counts}">
+            <dt><a th:href="@{/requester/requests(status=${count.status})}" th:text="${#strings.replace(count.status, '_', ' ')}"></a></dt>
+            <dd th:text="${count.count}"></dd>
+        </div>
+    </dl>
+    <h2>Recent requests</h2>
+    <p>The five newest reports you own, including those recorded for you by a Manager.</p>
+    <p th:if="${dashboard.recent.isEmpty()}">You have no requests yet. Report a problem to get started.</p>
+    <div th:replace="~{requester/list :: requestTable(${dashboard.recent})}"></div>
+    <a th:href="@{/requester/requests}">View all my requests</a>
+</main>
+</body>
+</html>
