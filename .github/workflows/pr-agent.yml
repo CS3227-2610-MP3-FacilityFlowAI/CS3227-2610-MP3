@@ -22,13 +22,13 @@ jobs:
     permissions:
       issues: write
       pull-requests: write
-      contents: write
+      contents: read
 
     name: Run PR Agent
 
     steps:
       - name: PR Agent
-        uses: the-pr-agent/pr-agent@main
+        uses: the-pr-agent/pr-agent@33d3e267c910d196689b6770c3e36f3ece0bd00f # main on 2026-10-18
         env:
           OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

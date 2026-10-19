@@ -676,15 +676,16 @@ no secret values belong in documentation or source control.
 ## Deployment
 
 Team-managed deployment must be independent of AI coding/build-host environments.
-The approved direction uses GitHub Actions and Vercel Preview/Production;
-humans approve promotion of a smoke-tested Production candidate without a
-rebuild. Secrets use GitHub/deployment-platform mechanisms. Provisioning,
-deployment workflows, backups and rollback remain unimplemented. The pull-request/master
-CI workflow validates the Gradle wrapper, runs `clean check bootJar`, executes
-dependency-free `src/test/js/*.test.cjs` checks when present, and uploads test,
-coverage and JAR artifacts. This is CI evidence only: Preview deployment,
-candidate smoke testing, human promotion, rollback and environment separation
-remain unimplemented until the Vercel spike confirms the approved flow.
+GitHub Actions now defines tests, secret/dependency checks, the Java 25
+container build, optional Vercel Preview deployment, staged Production candidate,
+smoke checks, protected no-rebuild promotion and manual rollback. Deployment is
+disabled until the team configures separated Vercel values, GitHub secrets and a
+required human reviewer. Follow [Deployment](Deployment.md). Hosted deployment,
+monitoring, backup and restore evidence remain pending and must not be claimed
+from workflow configuration alone. The pull-request/master verification job
+validates the Gradle wrapper, runs `clean check bootJar`, executes dependency-free
+`src/test/js/*.test.cjs` checks when present, scans the packaged application and
+committed history, and uploads test, coverage and JAR artifacts.
 
 ## MP2 reuse
 
