@@ -5,6 +5,14 @@ failed-action scoping, browser validation regressions and acceptance/evidence
 updates are **new** MP3 work adapting existing MP3 templates and tests. No further
 MP2 source was copied. See `logs/2026-10-20-manager-field-error-accessibility.md`.
 
+19 October AI observability: the aggregate filter/report and single AiMonitoring
+module, Manager controller/view/styles, portal comparison, correlation filter,
+and focused tests are new MP3 work. Existing MP3 invocation and diagnostic logging,
+role-service, navigation, configuration and guide code is adapted. No MP2 source
+was consulted or copied (zero copied MP2 lines). The implementation uses existing
+Spring Boot, SLF4J/Logback, PostgreSQL and JUnit dependencies; no new dependency.
+See logs/2026-10-19-ai-observability.md for executed checks and scope.
+
 19 October adaptive UI revision: `workflow/specs/user-interface.md` is **adapted**
 from the user-supplied MP2 `user-interface.md` Draft v0.2 (12 September 2026).
 Role separation/navigation, forms/feedback, lists/empty states, accessibility/

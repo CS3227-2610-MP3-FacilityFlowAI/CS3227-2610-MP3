@@ -104,6 +104,13 @@ for the implementation sequence.
 
 ## Documentation
 
+Managers can open **AI monitoring** from their workspace or overview to inspect
+aggregate assistant outcomes, durations, retries, token coverage and unresolved
+invocations, and record a manual comparison with SoCLaaS portal usage. Shared
+lifecycle telemetry and structured, correlated diagnostics support all three
+assistants; no prompt or generated advice is retained. See the User and Developer
+Guides for scope and operating instructions.
+
 - [User Guide](docs/UserGuide.md): released behavior; currently placeholders.
 - [Developer Guide](docs/DeveloperGuide.md): design/process and implementation TBDs.
 - [Reflections](docs/Reflections.md): evidence prompts, not completed reflections.

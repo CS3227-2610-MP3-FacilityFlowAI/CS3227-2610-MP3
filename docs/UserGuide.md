@@ -338,6 +338,34 @@ merge.
 
 ## Troubleshooting
 
+### AI monitoring for Facilities Managers
+
+Open **AI monitoring** from the Manager workspace or operational overview
+(`/manager/ai-monitoring`). This page shows aggregate recorded AI activity, not
+individual invocation records. Filter by assistant or inclusive Singapore dates;
+**Reset filters** returns to all activity. Readiness describes the serving
+application instance; refreshing does not call the model.
+
+Counts distinguish finished, successful and unfinished invocations. Success rate
+uses finished invocations only. Median/p95 duration includes all finished
+outcomes, including failures. STARTED records over one minute old are labelled
+unresolved, not automatically rewritten as failures. Historical records from
+before admission-only lifecycle recording may include early rejected attempts.
+
+Token figures sum known provider values; **Unavailable** and missing-usage counts
+mean the provider did not supply the value. Zero means a known zero. Invocations
+are not provider-request counts, and a successful suggestion does not establish
+that a business action was taken.
+
+To reconcile usage, select both period dates and **All assistants**, then enter
+the SoCLaaS portal's input, output and total token figures for the same key,
+environment and exact time boundaries. Select **Record comparison**. The page
+shows signed portal-minus-known-application differences and records the snapshot
+in operational logs without changing original usage. Repeat periodically and
+retain the relevant operational event as evidence. Review missing usage, retries,
+other key consumers and provider reporting delay when totals differ. Matching
+known values alone do not prove complete billing coverage.
+
 `Invalid username or password` intentionally covers an unknown username, wrong
 password and inactive Account. Retry the supplied credentials or contact a
 Facilities Manager; the message does not reveal whether an Account exists. If

@@ -47,11 +47,17 @@ class SecurityIntegrationTest {
     private sg.edu.nus.facilityflow.technician.TechnicianWorkPlanService workPlanService;
 
     private sg.edu.nus.facilityflow.identity.PasswordChangeService passwordChanges;
+    private sg.edu.nus.facilityflow.ai.monitoring.AiMonitoring aiMonitoring;
 
     // MVC uses a command double: PostgreSQL command atomicity/locking is tested
     // separately. This context verifies real routing, security and Thymeleaf.
     @org.springframework.boot.test.context.TestConfiguration(proxyBeanMethods = false)
     static class TechnicianCommandMvcConfiguration {
+        @org.springframework.context.annotation.Bean
+        @org.springframework.context.annotation.Primary
+        sg.edu.nus.facilityflow.ai.monitoring.AiMonitoring monitoringMvcService() {
+            return org.mockito.Mockito.mock(sg.edu.nus.facilityflow.ai.monitoring.AiMonitoring.class);
+        }
         @org.springframework.context.annotation.Bean
         @org.springframework.context.annotation.Primary
         sg.edu.nus.facilityflow.technician.TechnicianCommandService technicianMvcCommands() {
@@ -144,6 +150,7 @@ class SecurityIntegrationTest {
                     minutes INTEGER, created_at TIMESTAMP WITH TIME ZONE)
                 """);
         passwordEncoder = context.getBean(PasswordEncoder.class);
+        aiMonitoring = context.getBean(sg.edu.nus.facilityflow.ai.monitoring.AiMonitoring.class);
         validPasswordHash = passwordEncoder.encode(VALID_PASSWORD);
     }
 
@@ -154,6 +161,7 @@ class SecurityIntegrationTest {
 
     @BeforeEach
     void seedAccounts() {
+        org.mockito.Mockito.reset(aiMonitoring);
         org.mockito.Mockito.reset(commandService);
         org.mockito.Mockito.reset(workPlanService);
         org.mockito.Mockito.reset(passwordChanges);
@@ -173,6 +181,63 @@ class SecurityIntegrationTest {
         insertAccount(TECHNICIAN_ID, "technician1", AccountRole.TECHNICIAN, true);
         insertAccount(MANAGER_ID, "manager1", AccountRole.FACILITIES_MANAGER, true);
         insertAccount(INACTIVE_ID, "inactive1", AccountRole.REQUESTER, false);
+    }
+
+    @Test
+    void reqAi008MonitoringIsManagerOnlyAndReconciliationRequiresCsrf() throws Exception {
+        mockMvc.perform(get("/manager/ai-monitoring")).andExpect(status().is3xxRedirection());
+        for (String role : java.util.List.of("requester1", "technician1")) {
+            String workspace = role.startsWith("requester") ? "/requester" : "/technician";
+            var cookie = login(role, VALID_PASSWORD, workspace);
+            mockMvc.perform(get("/manager/ai-monitoring").cookie(cookie)).andExpect(status().isForbidden());
+        }
+        var manager = login("manager1", VALID_PASSWORD, "/manager");
+        var counts = new sg.edu.nus.facilityflow.ai.monitoring.AiMonitoringReport.Counts(
+                1, 1, 1, 0, 0, 0, null, null, null, 1, 1, 1, 10d, 10d);
+        var report = new sg.edu.nus.facilityflow.ai.monitoring.AiMonitoringReport(counts,
+                java.util.List.of(new sg.edu.nus.facilityflow.ai.monitoring.AiMonitoringReport.Breakdown(
+                        "TRIAGE", "<script>unsafe-model</script>", "v1", counts)), java.util.List.of());
+        var page = new sg.edu.nus.facilityflow.ai.monitoring.AiMonitoring.Page(report, java.util.Map.of(),
+                sg.edu.nus.facilityflow.ai.config.AiProviderLifecycle.State.DISABLED,
+                OffsetDateTime.parse("2026-10-19T12:00:00+08:00"));
+        org.mockito.Mockito.when(aiMonitoring.read(org.mockito.ArgumentMatchers.any())).thenReturn(page);
+        mockMvc.perform(get("/manager/ai-monitoring").cookie(manager))
+                .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("AI monitoring")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("&lt;script&gt;unsafe-model&lt;/script&gt;")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("<script>unsafe-model</script>"))));
+        mockMvc.perform(post("/manager/ai-monitoring/reconcile").cookie(manager)
+                        .param("portalInput", "1").param("portalOutput", "2").param("portalTotal", "3"))
+                .andExpect(status().isForbidden());
+        org.mockito.Mockito.verify(aiMonitoring, org.mockito.Mockito.never())
+                .reconcile(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+        var comparison = new sg.edu.nus.facilityflow.ai.monitoring.AiMonitoring.ComparisonPage(page,
+                java.util.Map.of(), new sg.edu.nus.facilityflow.ai.monitoring.AiUsageComparison.Result(null, null, null, true));
+        org.mockito.Mockito.when(aiMonitoring.reconcile(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(comparison);
+        mockMvc.perform(post("/manager/ai-monitoring/reconcile").cookie(manager).with(csrf())
+                        .param("from", "2026-10-19").param("to", "2026-10-19")
+                        .param("portalInput", "1").param("portalOutput", "2").param("portalTotal", "3"))
+                .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Comparison recorded")));
+    }
+
+    @Test
+    void reqAi008MonitoringRetainsSafeValidationAndStorageErrors() throws Exception {
+        var manager = login("manager1", VALID_PASSWORD, "/manager");
+        var invalid = new sg.edu.nus.facilityflow.ai.monitoring.AiMonitoringFilter("2026-02-30", "", "");
+        org.mockito.Mockito.when(aiMonitoring.read(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new sg.edu.nus.facilityflow.ai.monitoring.AiMonitoring.Page(null, invalid.errors(),
+                        sg.edu.nus.facilityflow.ai.config.AiProviderLifecycle.State.DISABLED, OffsetDateTime.now()));
+        mockMvc.perform(get("/manager/ai-monitoring").cookie(manager).param("from", invalid.from()))
+                .andExpect(status().isBadRequest()).andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Enter a valid date")));
+        org.mockito.Mockito.doThrow(new org.springframework.dao.DataAccessResourceFailureException("private-database-canary"))
+                .when(aiMonitoring).read(org.mockito.ArgumentMatchers.any());
+        mockMvc.perform(get("/manager/ai-monitoring").cookie(manager))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("temporarily unavailable")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("private-database-canary"))));
     }
 
     @Test

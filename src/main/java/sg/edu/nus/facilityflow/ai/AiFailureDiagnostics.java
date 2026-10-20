@@ -13,7 +13,17 @@ public final class AiFailureDiagnostics {
 
     /** Logs only source-controlled feature and enum names; never exception or user content. */
     public static void report(Feature feature, Enum<?> code) {
-        LOGGER.warn("SoCLaaS gateway failure feature={} code={}", feature.name(), code.name());
+        LOGGER.atWarn().addKeyValue("event", "AI_FEATURE_FAILURE")
+                .addKeyValue("feature", feature.name()).addKeyValue("outcome", code.name())
+                .log("SoCLaaS feature failure");
+    }
+
+    public static void persistenceFailed(AiInvocationTelemetry.Invocation invocation) {
+        LOGGER.atWarn().addKeyValue("event", "AI_TELEMETRY_PERSISTENCE_FAILED")
+                .addKeyValue("invocation_id", invocation == null ? null : invocation.id())
+                .addKeyValue("correlation_id", invocation == null
+                        ? sg.edu.nus.facilityflow.operations.RequestCorrelationFilter.currentId() : invocation.correlationId())
+                .log("AI telemetry persistence failed");
     }
 
     public static String message(Enum<?> code) {

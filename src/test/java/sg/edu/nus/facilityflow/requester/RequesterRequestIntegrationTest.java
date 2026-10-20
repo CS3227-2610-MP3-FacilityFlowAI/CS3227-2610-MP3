@@ -844,6 +844,28 @@ class RequesterRequestIntegrationTest {
         assertEquals(0, count("audit_event"));
     }
 
+    @Test
+    void aiSec017MonitoringStartFailurePreventsProviderAndTerminalFailureWithholdsSuggestion() {
+        admin.execute("ALTER TABLE facilityflow.ai_invocation ADD CONSTRAINT reject_started CHECK (status <> 'STARTED') NOT VALID");
+        try {
+            var reply = assistant(OWNER, AccountRole.REQUESTER, 0).suggest(null, null, rough());
+            assertEquals("AI_UNAVAILABLE", reply.status());
+            assertNull(reply.suggestion());
+            assertEquals(0, ai.calls.get());
+            assertEquals(0, count("ai_invocation"));
+        } finally { admin.execute("ALTER TABLE facilityflow.ai_invocation DROP CONSTRAINT reject_started"); }
+        admin.execute("ALTER TABLE facilityflow.ai_invocation ADD CONSTRAINT reject_succeeded CHECK (status <> 'SUCCEEDED') NOT VALID");
+        try {
+            var reply = assistant(OWNER, AccountRole.REQUESTER, 0).suggest(null, null, rough());
+            assertEquals("AI_UNAVAILABLE", reply.status());
+            assertNull(reply.suggestion());
+            assertEquals(1, ai.calls.get());
+            assertEquals("STARTED", app.queryForObject("SELECT status FROM facilityflow.ai_invocation", String.class));
+            assertEquals(0, count("maintenance_request"));
+            assertEquals(0, count("audit_event"));
+        } finally { admin.execute("ALTER TABLE facilityflow.ai_invocation DROP CONSTRAINT reject_succeeded"); }
+    }
+
     private SmartReportService assistant(UUID id, AccountRole role, long version) {
         return assistant(id, role, version, context.getBean(RequesterRequestRepository.class));
     }

@@ -26,19 +26,35 @@ public interface AiInvocationTelemetry {
     final class Invocation {
         private final UUID id;
         private final Instant startedAt;
+        private final StartRequest metadata;
         private int retryCount;
         private Long inputTokens;
         private Long outputTokens;
         private Long totalTokens;
 
         public Invocation(UUID id, Instant startedAt) {
+            this(id, startedAt, null);
+        }
+
+        private Invocation(UUID id, Instant startedAt, StartRequest metadata) {
             this.id = Objects.requireNonNull(id, "id");
             this.startedAt = Objects.requireNonNull(startedAt, "startedAt");
+            this.metadata = metadata;
         }
 
         public UUID id() { return id; }
 
         public Instant startedAt() { return startedAt; }
+
+        public UUID correlationId() { return metadata == null ? null : metadata.correlationId(); }
+        public UUID actorId() { return metadata == null ? null : metadata.actorId(); }
+        public Feature feature() { return metadata == null ? null : metadata.feature(); }
+        public String model() { return metadata == null ? null : metadata.model(); }
+        public String templateVersion() { return metadata == null ? null : metadata.templateVersion(); }
+
+        static Invocation started(UUID id, Instant time, StartRequest request) {
+            return new Invocation(id, time, request);
+        }
 
         public synchronized void recordRetry() {
             if (retryCount >= 1) {
@@ -127,7 +143,7 @@ public interface AiInvocationTelemetry {
             @Override
             public Invocation start(StartRequest request) {
                 Objects.requireNonNull(request, "request");
-                return new Invocation(UUID.randomUUID(), Instant.now());
+                return Invocation.started(UUID.randomUUID(), Instant.now(), request);
             }
 
             @Override
