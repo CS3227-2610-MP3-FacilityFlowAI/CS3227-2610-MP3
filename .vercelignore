@@ -1,0 +1,9 @@
+# NFR-DEP-001: upload only the inputs required by Dockerfile.vercel.
+/*
+!/.dockerignore
+!/Dockerfile.vercel
+!/gradlew
+!/gradle
+!/build.gradle
+!/settings.gradle
+!/src

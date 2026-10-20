@@ -133,6 +133,10 @@ select:focus-visible, textarea:focus-visible, .button:focus-visible {
     outline: 3px solid #205ac5;
     outline-offset: 3px;
 }
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline-width: 2px;
+    outline-offset: 1px;
+}
 [aria-invalid="true"] { border-color: var(--danger) !important; }
 .error, .field-error, [role="alert"] { color: var(--danger); overflow-wrap: anywhere; }
 [role="status"], .alert, .success, .refresh-guidance {
@@ -173,7 +177,7 @@ dd { margin-left: 0; overflow-wrap: anywhere; }
 .skip-link:focus { top: .75rem; }
 .login-page main { max-width: 30rem; padding-top: clamp(2rem, 12vh, 7rem); }
 .login-page h1 { color: var(--brand-dark); }
-.login-page main > p { color: var(--muted); }
+.login-page main > p:not([role="alert"]) { color: var(--muted); }
 .login-page form { display: grid; gap: .5rem; }
 .login-page button { width: 100%; }
 /* Preserve native and script-controlled disclosure/assistant visibility. */

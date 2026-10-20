@@ -49,7 +49,7 @@ fi
 
 dashboard_status="$(curl "${curl_args[@]}" "$base_url/" --cookie "$cookie_jar" \
     --location --output "$dashboard_page" --write-out '%{http_code}')"
-if [[ "$dashboard_status" != "200" ]] || ! grep -Fqi "workspace" "$dashboard_page"; then
+if [[ "$dashboard_status" != "200" ]] || ! grep -Fq 'action="/logout"' "$dashboard_page"; then
     echo "Authenticated safe-read smoke test failed." >&2
     exit 1
 fi

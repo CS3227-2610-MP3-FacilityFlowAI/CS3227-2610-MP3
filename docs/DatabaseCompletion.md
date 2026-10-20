@@ -136,6 +136,12 @@ remain false. Finally run `database-check` with app credentials to verify connec
 
 ## Production initialization, later
 
+Current deployment exception (20 October 2026): ADR-007 reuses the already
+initialized `facilityflow-dev` database and Accounts. Skip this fresh-database
+initialization section for the current deployment; do not reseed or bootstrap it.
+See [Deployment.md](Deployment.md). The section below is the original fresh-project
+procedure, retained for future isolated deployments.
+
 Use a separate production project and secrets. Apply migrations with its migration
 identity, then initialize with its app identity. Leave DEMO_DATA_ENABLED absent/false
 and supply BOOTSTRAP_MANAGER_USERNAME, BOOTSTRAP_MANAGER_DISPLAY_NAME and
@@ -171,7 +177,8 @@ Demo initialization requires both `DEMO_DATA_ENABLED=true` and the explicit
 `development` profile. A `production` or `prod` profile rejects demo seeding even
 when combined with `development`. Production Manager bootstrap continues to use
 only `database-initialize`, without demo mode. Profiles are operator-supplied
-configuration, so keep development and production credentials/projects separate.
+configuration. Under ADR-007's current shared-database exception, retain normal
+web profiles only and never enable either initializer profile on Vercel.
 
 Initialization waits at most five seconds per lock acquisition using transaction-
 local `lock_timeout`. On contention it fails and rolls back; retry after the other

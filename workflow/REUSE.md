@@ -268,3 +268,34 @@ version guard, protected category mapping, migrated tests and guide/evidence
 updates are **adapted** existing MP3 code with **new** integration regressions.
 The duplicate Requester gateway/transport/admission implementation is retired.
 No MP2 source was consulted or copied.
+
+20 October deployment readiness (NFR-DEP-001, NFR-DOC-001): `.vercelignore`,
+local Vercel metadata exclusion, deployment runbook corrections and session/handoff
+records are **new** MP3 configuration/documentation, adapting existing MP3
+container and release conventions. No MP2 source was consulted or copied.
+Hosted deployment acceptance remains pending; see
+`logs/2026-10-20-deployment-readiness.md`.
+The shared deployment smoke correction, synthetic shell regression and CI step
+are also **new** MP3 work adapting the existing MP3 pipeline, with no MP2 source.
+20 October Preview CA continuation: public Supabase CA, container COPY lines and
+runbook/evidence updates are **new** MP3 deployment work, with no MP2 source.
+The certificate is third-party public trust material from Supabase, not a secret;
+source and fingerprint are recorded in `docs/Deployment.md`.
+20 October Vercel upload correction: allowlist directory syntax, actual-inventory
+checker, CI dry-run steps and evidence/runbook updates are **new** MP3 deployment
+work adapting existing MP3 configuration; no MP2 source was consulted or copied.
+20 October login UI polish: tighter input/select/textarea focus rings and login
+alert cascade correction are **new** MP3 styling adapting existing workspace.css;
+no MP2 source consulted or copied. Evidence: logs/2026-10-20-login-ui-polish.md.
+20 October hosted AI connectivity: closed transport diagnostics and redaction
+regression adapt existing MP3 provider code and are **new** MP3 work; no MP2
+source consulted or copied. See logs/2026-10-20-hosted-ai-connectivity.md.
+20 October Production deployment gate: separate opt-in, secret-safe preflight,
+workflow-expression regression and runbook/evidence are **new** MP3 automation
+adapting existing MP3 release workflow; no MP2 source consulted or copied.
+20 October final deployment evidence: verified Preview/AI status and merge/release
+readiness documentation are **new** MP3 records; no MP2 material consulted/copied.
+20 October shared-database Production decision: ADR-007, amended deployment
+requirements, configuration/runbook and evidence updates are **new** MP3 records;
+no MP2 source consulted/copied. Existing schema, data, roles and runtime code
+are retained without modification.

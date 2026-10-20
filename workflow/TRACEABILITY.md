@@ -298,3 +298,53 @@ are historical and superseded by this integration. Form-adapter, role-service,
 repository and Requester HTTP regressions replace duplicate-runtime checks;
 shared provider/core tests remain. Actual execution results and pending live
 verification: `logs/2026-10-19-requester-shared-runtime.md`.
+
+## 20 October deployment readiness
+
+NFR-DEP-001 and NFR-DOC-001: `.vercelignore` restricts CLI source uploads to
+container build inputs; `.gitignore` excludes local Vercel metadata.
+`docs/Deployment.md` records explicit initialization, environment-scoped smoke
+secrets and the protected promotion prerequisite. Evidence and outstanding
+NFR-REL-002/NFR-OPS-001 hosted checks are recorded in
+`logs/2026-10-20-deployment-readiness.md`. These changes do not establish hosted
+release acceptance.
+The shared smoke gate now requires the authenticated logout form instead of the
+word workspace (also present on the login page). A synthetic shell regression
+runs in CI for accepted and rejected authentication outcomes; hosted smoke is
+still pending.
+NFR-DEP-001 / NFR-SEC-002 Preview CA continuation: the provider public root CA is
+packaged at `/app/supabase-root-2021.crt`; JDBC retains verify-full. TLS-only CA and
+hostname verification passed against development with this CA. See deployment
+session log for provider fingerprint, verification limits and hosted status.
+NFR-DEP-001 upload correction: the real Vercel CLI collector reproduced the
+missing gradle/src failure; corrected directory patterns include all tracked
+build inputs. Preview/Production jobs now validate actual dry-run inventory.
+Missing-directory and unexpected local-file regressions passed locally; hosted
+retry remains pending. Earlier Git-ignore-only evidence is superseded for this
+upload behavior. See deployment session log.
+NFR-A11Y-001 / UIX-017-020 login UI polish: input focus remains a visible offset
+outline (2px width, 1px gap); failed-login alert retains existing danger red
+instead of being overridden by muted login text. No auth/template/script changes.
+See logs/2026-10-20-login-ui-polish.md; browser verification pending.
+REQ-AI-004/006, AI-SEC-017/019/020 hosted connectivity diagnosis: runtime readiness
+NETWORK_FAILURE is now accompanied by a closed transport-stage reason without
+raw exception data. Redaction regression covers transport categories/nested
+causes. Hosted connectivity root cause and live AI success remain pending; see
+logs/2026-10-20-hosted-ai-connectivity.md.
+Requester hosted-AI continuation (REQ-RQ-012-017, REQ-AI-004/006): user reported
+suggestions appeared on Preview2699447; exact-deployment recent logs contained
+no gateway failures. This supersedes the pending single-attempt browser result
+only. Earlier network failure root cause and broad release acceptance remain
+unresolved. See logs/2026-10-20-hosted-ai-connectivity.md.
+NFR-DEP-001 / NFR-DOC-001 independent Production gate: master candidate requires
+PRODUCTION_DEPLOY_ENABLED=true as well as the shared deployment switch; missing
+smoke credentials fail preflight before staging. Actual workflow expressions and
+preflight have passing local regressions. See
+logs/2026-10-20-production-deployment-gate.md; new hosted/master checks pending.
+NFR-DEP-001 / AI-SEC-019 amendment (ADR-007, explicit stakeholder decision20Oct):
+current coursework Production reuses facilityflow-dev, Accounts, records and
+server-side configuration. All11 Vercel Production targets verified, including
+production profile/no seeding/secure cookies and existing restricted identity.
+No schema/data migration performed. GitHub Production smoke secrets, human review
+and hosted candidate/promotion remain pending. Shared-data risk and exact scope:
+logs/2026-10-20-shared-production-database.md.

@@ -133,6 +133,27 @@ class ProviderDiagnosticsTest {
         assertEquals(AiProviderLifecycle.State.READY, runtime.state());
     }
 
+    @Test
+    void aiSec017TransportReasonsNeverLogExceptionMessagesOrStacks() {
+        var connection = new java.net.ConnectException(CANARY);
+        connection.initCause(new java.nio.channels.UnresolvedAddressException());
+        var failures = List.of(
+                new javax.net.ssl.SSLHandshakeException(CANARY),
+                new java.net.UnknownHostException(CANARY),
+                connection,
+                new java.net.ConnectException(CANARY),
+                new java.io.IOException(CANARY),
+                new IllegalStateException(CANARY));
+        var reasons = List.of("TLS_FAILURE", "DNS_FAILURE", "DNS_FAILURE",
+                "CONNECTION_FAILURE", "HTTP_IO_FAILURE", "INTERNAL_FAILURE");
+        for (int index = 0; index < failures.size(); index++) {
+            appender.list.clear();
+            ProviderDiagnostics.reportTransportFailure(new CompletionException(failures.get(index)));
+            assertLog("TRANSPORT", reasons.get(index));
+            assertSanitized();
+        }
+    }
+
     private static SmartReportContext context() {
         return new SmartReportContext("Leak report", CANARY, "Block A", null, null, List.of("HVAC"));
     }

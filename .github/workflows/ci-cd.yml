@@ -61,6 +61,11 @@ jobs:
             node "$test_file"
           done < <(find src/test/js -type f -name '*.test.cjs' -print 2>/dev/null | sort)
 
+      - name: Verify deployment gates and smoke authentication
+        run: |
+          node .github/scripts/deployment-gates.test.cjs
+          bash .github/scripts/smoke-test.test.sh
+
       - name: Install checksum-verified Grype
         shell: bash
         run: |
@@ -171,6 +176,11 @@ jobs:
       - name: Link Preview environment
         run: npx --yes vercel@${VERCEL_CLI_VERSION} pull --yes --environment=preview --token="$VERCEL_TOKEN"
 
+      - name: Verify Preview source upload
+        run: >-
+          npx --yes vercel@${VERCEL_CLI_VERSION} deploy --dry --json --token="$VERCEL_TOKEN"
+          | node .github/scripts/check-vercel-inputs.cjs
+
       - name: Deploy Preview container
         id: deploy
         shell: bash
@@ -206,7 +216,8 @@ jobs:
     if: >-
       github.event_name == 'push' &&
       github.ref == 'refs/heads/master' &&
-      vars.VERCEL_DEPLOY_ENABLED == 'true'
+      vars.VERCEL_DEPLOY_ENABLED == 'true' &&
+      vars.PRODUCTION_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     environment:
@@ -227,8 +238,23 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Validate Production smoke credentials
+        env:
+          SMOKE_USERNAME: ${{ secrets.SMOKE_USERNAME }}
+          SMOKE_PASSWORD: ${{ secrets.SMOKE_PASSWORD }}
+        run: |
+          if [[ -z "$SMOKE_USERNAME" || -z "$SMOKE_PASSWORD" ]]; then
+            echo "Configure production-candidate environment SMOKE_USERNAME and SMOKE_PASSWORD before enabling Production deployment." >&2
+            exit 1
+          fi
+
       - name: Link Production environment
         run: npx --yes vercel@${VERCEL_CLI_VERSION} pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Verify Production source upload
+        run: >-
+          npx --yes vercel@${VERCEL_CLI_VERSION} deploy --dry --json --prod --token="$VERCEL_TOKEN"
+          | node .github/scripts/check-vercel-inputs.cjs
 
       - name: Deploy staged Production candidate
         id: deploy
