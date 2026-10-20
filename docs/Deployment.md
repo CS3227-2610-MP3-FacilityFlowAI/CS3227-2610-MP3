@@ -2,7 +2,8 @@
 
 This runbook implements the approved `NFR-DEP-001` and Technical Specification
 deployment flow. It configures automation; it does not claim that a hosted
-deployment, backup restore or external monitor has already been verified.
+Production deployment, backup restore or external monitor has already been verified.
+Hosted Preview deployment and smoke evidence is recorded below.
 
 ## What runs automatically
 
@@ -173,8 +174,8 @@ on 20 October 2026. Its DER SHA-256 is
 expiry is 26 April 2031. It contains no private key. Recheck the provider CA and
 connection when Supabase rotates certificates; retain JDBC `sslmode=verify-full`.
 The development pooler passed CA and hostname verification using this CA and
-failed against a Mozilla public trust bundle. The deployed image still needs
-its hosted health/smoke checks.
+failed against a Mozilla public trust bundle. The hosted Preview container
+passed health/login/authenticated-read smoke checks with the packaged CA.
 
 Platform references checked 20 October 2026:
 [container deployment support](https://vercel.com/kb/guide/does-vercel-support-docker-deployments),
@@ -182,9 +183,20 @@ Platform references checked 20 October 2026:
 [CLI deploy flags](https://vercel.com/docs/cli/deploy).
 Documentation support does not establish a successful hosted deployment.
 
+## Verified Preview evidence
+
+Revision `7a05add` passed test/package, secret scan, image build, and Preview
+deployment with health/login/authenticated-read smoke in
+[CI run 39385940814](https://github.com/CS3227-2610-MP3-FacilityFlowAI/CS3227-2610-MP3/actions/runs/39385940814).
+Production jobs were skipped. The user reported Requester AI suggestions appeared
+on revision `2699447`'s Preview; this is one browser invocation, not a reliability
+or output-quality assessment. Detailed results and limitations are in
+[the deployment log](../logs/2026-10-20-deployment-readiness.md) and
+[the hosted AI log](../logs/2026-10-20-hosted-ai-connectivity.md).
+
 ## Still requiring hosted evidence
 
-- first Vercel Preview and Production-candidate builds;
+- first Production-candidate build and smoke;
 - protected no-rebuild promotion and rollback rehearsal;
 - separate Preview/Production database and SoCLaaS-key inspection;
 - five-minute external monitoring and alert exercise;

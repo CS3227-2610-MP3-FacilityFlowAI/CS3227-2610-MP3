@@ -285,3 +285,5 @@ source consulted or copied. See logs/2026-10-20-hosted-ai-connectivity.md.
 20 October Production deployment gate: separate opt-in, secret-safe preflight,
 workflow-expression regression and runbook/evidence are **new** MP3 automation
 adapting existing MP3 release workflow; no MP2 source consulted or copied.
+20 October final deployment evidence: verified Preview/AI status and merge/release
+readiness documentation are **new** MP3 records; no MP2 material consulted/copied.

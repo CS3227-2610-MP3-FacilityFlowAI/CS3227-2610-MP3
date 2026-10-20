@@ -126,3 +126,25 @@ VERCEL_DEPLOY_ENABLED variable false until Production configuration is approved.
 This preserves the already-created Preview deployment while preventing the
 master push from staging an unconfigured Production candidate. No merge or
 production promotion performed. This evidence update has not been pushed.
+
+## Commit/push and merge-readiness review
+
+User requested remaining relevant changes committed/pushed and readiness assessed.
+GitHub API confirmed implementation revision7a05add passes CI run39385940814:
+test/package, secret scan, container and Preview smoke all succeeded; Production
+jobs skipped. PR16 is open, draft, mergeable and has no teammate review records.
+These observations apply before the follow-up documentation/evidence commit.
+
+Updated runbook to distinguish verified Preview from pending Production/operations
+acceptance; included successful Requester AI browser evidence. Removed redundant
+CLI-added .gitignore lines because existing rules already ignore .env.local and
+.vercel/ while preserving .env.example. Assertions verified local config stays
+ignored and example config stays trackable; whitespace passed. No source code
+changed or Java tests repeated for this evidence-only update.
+
+Readiness: suitable for teammate review after latest CI; not human-approved to
+merge and not Production release acceptance. Remaining Production work includes
+separate database/environment secrets, protected human promotion, candidate smoke,
+rollback, restore and monitoring/alert evidence. Credential exposed in IDE context
+must be rotated before release; no credential value recorded here. No merge,
+production settings change or promotion performed.

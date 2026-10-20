@@ -163,3 +163,18 @@ regressions/whitespace independently passed. Preserve existing Preview while
 Production opt-in remains false/unset. Correction is proposed via PR16, not a
 merge or production promotion. Historical master run remains failed until a
 new revision supersedes it. See production-deployment-gate log.
+
+## Final evidence commit and review handoff
+
+User authorized commit/push of remaining relevant work. Source Codex -> teammate
+reviewer / next release session. Requirements NFR-DEP-001, NFR-DOC-001, NFR-REL-002,
+NFR-OPS-001/002. Revision7a05add has successful hosted CI/Preview smoke; PR16 remains
+draft and has no human approvals. Runbook and hosted-AI evidence updated; redundant
+CLI ignore additions removed while verifying secret exclusions. Current evidence
+commit requires latest CI before merge; human teammate approval remains required.
+No production acceptance, merge or promotion claimed. Separate Production setup,
+protected promotion, rollback/restore/alert evidence and exposed-key rotation remain.
+Use logs/2026-10-20-deployment-readiness.md, hosted-ai-connectivity log and
+production-deployment-gate log for exact evidence/limits. Suggested skills:
+FacilityFlow handoff for transition, Supabase for DB setup, Ponytail for code.
+No broader permissions granted. Temporary handoff refreshed from this record.
