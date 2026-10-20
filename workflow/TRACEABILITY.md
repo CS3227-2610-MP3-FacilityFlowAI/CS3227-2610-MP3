@@ -298,3 +298,17 @@ are historical and superseded by this integration. Form-adapter, role-service,
 repository and Requester HTTP regressions replace duplicate-runtime checks;
 shared provider/core tests remain. Actual execution results and pending live
 verification: `logs/2026-10-19-requester-shared-runtime.md`.
+
+## 20 October deployment readiness
+
+NFR-DEP-001 and NFR-DOC-001: `.vercelignore` restricts CLI source uploads to
+container build inputs; `.gitignore` excludes local Vercel metadata.
+`docs/Deployment.md` records explicit initialization, environment-scoped smoke
+secrets and the protected promotion prerequisite. Evidence and outstanding
+NFR-REL-002/NFR-OPS-001 hosted checks are recorded in
+`logs/2026-10-20-deployment-readiness.md`. These changes do not establish hosted
+release acceptance.
+The shared smoke gate now requires the authenticated logout form instead of the
+word workspace (also present on the login page). A synthetic shell regression
+runs in CI for accepted and rejected authentication outcomes; hosted smoke is
+still pending.

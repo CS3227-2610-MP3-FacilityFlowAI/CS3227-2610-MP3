@@ -12,6 +12,7 @@ out/
 .idea/
 *.iml
 .vscode/
+.vercel/
 .DS_Store
 
 # Local configuration and secrets

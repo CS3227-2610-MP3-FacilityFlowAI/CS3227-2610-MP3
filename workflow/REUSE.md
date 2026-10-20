@@ -260,3 +260,12 @@ version guard, protected category mapping, migrated tests and guide/evidence
 updates are **adapted** existing MP3 code with **new** integration regressions.
 The duplicate Requester gateway/transport/admission implementation is retired.
 No MP2 source was consulted or copied.
+
+20 October deployment readiness (NFR-DEP-001, NFR-DOC-001): `.vercelignore`,
+local Vercel metadata exclusion, deployment runbook corrections and session/handoff
+records are **new** MP3 configuration/documentation, adapting existing MP3
+container and release conventions. No MP2 source was consulted or copied.
+Hosted deployment acceptance remains pending; see
+`logs/2026-10-20-deployment-readiness.md`.
+The shared deployment smoke correction, synthetic shell regression and CI step
+are also **new** MP3 work adapting the existing MP3 pipeline, with no MP2 source.

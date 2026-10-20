@@ -16,6 +16,9 @@ Every pull request runs these required checks from `.github/workflows/ci-cd.yml`
 4. When deployment is enabled, an internal-branch Preview deployment followed
    by health, login and authenticated safe-read smoke checks.
 
+The safe-read check requires the authenticated logout form. A login-page response
+cannot satisfy it; a dependency-free shell regression runs in CI.
+
 After an approved merge to `master`, the workflow builds a Production candidate
 with `vercel deploy --prod --skip-domain`. It smoke-tests the candidate before a
 separate `production` job may promote that exact deployment without rebuilding.
@@ -51,6 +54,13 @@ Create GitHub environments named `preview`, `production-candidate` and
 `production`. Branch protection on `master` must require this PR's test,
 secret-scan and container checks plus one approving teammate review.
 
+Store `SMOKE_USERNAME`, `SMOKE_PASSWORD` and, when needed, `SMOKE_BYPASS_SECRET`
+as **environment secrets**: Preview credentials in `preview`, Production
+credentials in `production-candidate`. Do not use repository-wide smoke
+credentials for both databases. Never enable promotion before verifying the
+required-reviewer gate; if the repository plan cannot enforce it, keep
+`PRODUCTION_PROMOTION_ENABLED=false` until an approved alternative is agreed.
+
 Do not allow Vercel Git integration to auto-assign the Production domain. The
 workflow's staged candidate and protected promotion are the only Production
 path. Preview Git integration may also be disabled to avoid duplicate builds.
@@ -71,9 +81,26 @@ Required application variables in both environments are:
 - `AI_ENABLED`, `SOCLAAS_BASE_URL`, `SOCLAAS_API_KEY` and `SOCLAAS_MODEL`;
 - `SPRING_PROFILES_ACTIVE=production` for Production;
 - `DEMO_DATA_ENABLED=false` for Production;
-- `BOOTSTRAP_MANAGER_USERNAME`, `BOOTSTRAP_MANAGER_DISPLAY_NAME` and
-  `BOOTSTRAP_MANAGER_PASSWORD` only for the first empty Production database
-  initialization described in `DatabaseCompletion.md`.
+
+Provision and migrate each database separately using the restricted migration
+identity and the explicit `database-migrate` profile described in
+[DatabaseCompletion.md](DatabaseCompletion.md). Check existing migration history
+first using [DeveloperGuide.md](DeveloperGuide.md); do not repair or reseed it to
+make deployment pass. Ordinary web startup does not migrate or initialize data.
+
+Initialize a new Production database once, from the built release JAR in a
+trusted operator environment, using the application database identity,
+`DEMO_DATA_ENABLED=false`, and temporary `BOOTSTRAP_MANAGER_USERNAME`,
+`BOOTSTRAP_MANAGER_DISPLAY_NAME` and `BOOTSTRAP_MANAGER_PASSWORD` secrets:
+
+```text
+java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --spring.profiles.active=database-initialize,production
+```
+
+Remove the bootstrap secrets after success. The web deployment uses only
+`SPRING_PROFILES_ACTIVE=production`; never enable `database-initialize` or
+`database-migrate` on Vercel. Create the synthetic smoke Account through the
+normal authorized Manager workflow before enabling authenticated smoke checks.
 
 The workflow supplies `APP_VERSION` as the immutable Git commit SHA. Vercel
 supplies `PORT`; `application.yml` binds it and enables graceful shutdown behind
@@ -86,8 +113,10 @@ cookie and response files on exit.
 
 ## First enablement and release
 
-1. Create the Vercel project and add `Dockerfile.vercel` as the project root
-   container entrypoint.
+1. Create the Vercel project with the repository root as its root directory.
+   Vercel auto-detects `Dockerfile.vercel`; no `vercel.json` is required for this
+   single HTTP service. Verify container availability and limits for the actual
+   account during the deployment spike.
 2. Add separate Preview and Production application values in Vercel.
 3. Add the GitHub variables, secrets and protected environments above.
 4. Open a test pull request with `VERCEL_DEPLOY_ENABLED=true`; retain the Preview
@@ -102,16 +131,28 @@ cookie and response files on exit.
 
 ## Local verification
 
+The committed `.vercelignore` allowlists only container build inputs for CLI
+source uploads, excluding local configuration, data, logs and reference files.
+Keep this list aligned with `COPY` inputs when changing `Dockerfile.vercel`.
+`.vercel/` contains local project/environment metadata and is Git-ignored.
+
 Run the same application checks and image build without deployment credentials:
 
 ```text
 ./gradlew clean check bootJar --no-daemon
+bash .github/scripts/smoke-test.test.sh
 docker build --file Dockerfile.vercel --tag facilityflow:local .
 ```
 
 The public `GET /health` endpoint returns only `{"status":"UP"}` when both the
 application and database are reachable, or `{"status":"DOWN"}` with HTTP 503.
 Provider, credential and connection details are never returned.
+
+Platform references checked 20 October 2026:
+[container deployment support](https://vercel.com/kb/guide/does-vercel-support-docker-deployments),
+[source upload exclusions](https://vercel.com/docs/deployments/vercel-ignore), and
+[CLI deploy flags](https://vercel.com/docs/cli/deploy).
+Documentation support does not establish a successful hosted deployment.
 
 ## Still requiring hosted evidence
 

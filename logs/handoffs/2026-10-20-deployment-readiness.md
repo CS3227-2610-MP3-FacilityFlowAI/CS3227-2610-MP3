@@ -1,0 +1,41 @@
+# Deployment continuation handoff
+
+- Source agent: Codex deployment preparation session.
+- Destination agent: next deployment session / release verifier.
+- Task/goal: deploy FacilityFlow through approved Vercel/GitHub release flow.
+- Approved requirement IDs: NFR-DEP-001, NFR-DOC-001; NFR-OPS-001/002, NFR-REL-002 release evidence outstanding.
+- Approved specification revision/evidence: technical specification v0.1; user requested a separate deployment branch.
+- Authorized scope/permissions: deployment preparation on `chore/deployment-readiness`, baseline `15736f8`; preserve unrelated work. No expanded promotion, data mutation or merge permission.
+- Inputs: `docs/Deployment.md`, `.github/workflows/ci-cd.yml`, `.github/workflows/rollback.yml`, `workflow/specs/TECHNICAL-SPEC.md`, `logs/2026-10-20-deployment-readiness.md`.
+- Assumptions: approved Vercel container direction retained; actual account support still requires a spike.
+- Unresolved: target Vercel project/account and deployment access; named separate Preview/Production database targets and required hosted evidence.
+- Files changed: see session log; configuration/docs/evidence only.
+- Commands/tools/results: see session log; Gradle `check bootJar --no-daemon` passed, 726 tests/59 suites, no failures/errors/skips, plus JaCoCo and JAR. Five JavaScript checks and synthetic smoke regression passed; container execution and hosted checks not run.
+- Security considerations: no secrets recorded or hosted writes performed; runtime must use restricted identity and no initialization/migration profile. Source upload restricted to build inputs.
+- Suggestions accepted/rejected: existing container/CI retained; no provider switch or speculative automation rewrite.
+- Human approval required and reason: teammate review before non-trivial merge; human Production promotion gate mandated by `workflow/agents/README.md` and NFR-DEP-001.
+- Human reviewer/outcome/evidence: pending.
+- Next authorized action: validate current branch/log state, obtain target and deployment access without sharing secrets in chat, inspect GitHub/Vercel environment configuration, run Preview spike and smoke checks. Do not promote or merge without required human gates.
+- Suggested skills: Context7 for Vercel CLI, Supabase for hosted database tasks, supabase-postgres-best-practices before any database/schema changes, FacilityFlow handoff for transition.
+- Status: deployment awaiting access; local preparation review pending.
+
+## Fresh verifier dispatch
+
+A release-gate finding was reproduced by inspecting the actual login page: its
+text includes workspace, so the old safe-read check accepted an unauthenticated
+response. `.github/scripts/smoke-test.sh` now requires the authenticated logout
+form. `.github/scripts/smoke-test.test.sh` exercises rejected and accepted login
+outcomes with synthetic curl responses; it passed locally with Git Bash. CI runs
+this regression. Fresh verifier scope is read-only inspection and rerunning this
+check plus whitespace/container/upload checks as needed. No hosting, merge,
+secret access or Production permissions are delegated. Review the actual header
+and login templates and all smoke callers. Record findings in a message; parent
+owns evidence updates. Suggested skill: Ponytail review.
+
+## Fresh verifier return
+
+Fresh verifier `deployment_verifier` reported no blockers after independently
+rerunning the synthetic smoke regression, Bash syntax, whitespace and Dockerfile
+equality checks, and inspecting callers/templates/upload list/runbook. See session
+log. Hosted evidence and human teammate approval remain pending. Receiving
+session must verify access and release gates before any hosted mutation.
