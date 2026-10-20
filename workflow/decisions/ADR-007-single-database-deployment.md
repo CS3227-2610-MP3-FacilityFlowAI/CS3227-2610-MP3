@@ -1,5 +1,9 @@
 # ADR-007: reuse the existing database for the coursework deployment
 
+The shared-database exception below is superseded by the subsequent explicit
+stakeholder decision in [ADR-008](ADR-008-separate-production-database.md).
+Retained as historical context; do not apply it to new database configuration.
+
 - Date: 20 October 2026 (Asia/Singapore).
 - Status: stakeholder-approved configuration/specification change; teammate
   implementation review remains pending.

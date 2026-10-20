@@ -22,6 +22,23 @@ env:
   GRYPE_LINUX_X64_SHA256: 0a9ee97ef5ae2ee953b0a80098105052e846cdbe319a57d808b519c33cd1343d
 
 jobs:
+  operations-backup-rehearsal:
+    if: github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/production-backup.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      issues: write
+
+  operations-alert-rehearsal:
+    if: github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/production-monitor.yml
+    with:
+      exercise: true
+    permissions:
+      contents: read
+      issues: write
+
   verify:
     name: Test and package
     runs-on: ubuntu-latest
@@ -65,6 +82,11 @@ jobs:
         run: |
           node .github/scripts/deployment-gates.test.cjs
           bash .github/scripts/smoke-test.test.sh
+
+      - name: Verify operations monitoring
+        run: |
+          python3 -m unittest discover -s .github/scripts -p '*_test.py'
+          bash -n .github/scripts/production-backup.sh
 
       - name: Install checksum-verified Grype
         shell: bash

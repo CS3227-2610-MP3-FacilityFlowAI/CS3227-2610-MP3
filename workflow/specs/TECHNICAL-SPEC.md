@@ -123,11 +123,11 @@ Required environment groups are:
 - SoCLaaS and AI limits from INTEGRATION-SPEC;
 - deployment: APP_BASE_URL, APP_VERSION and health/monitoring settings.
 
-For the current coursework deployment, the stakeholder-approved
-[ADR-007](../decisions/ADR-007-single-database-deployment.md) permits reusing the
-existing development database, Accounts and credentials in Production. Vercel
-environment targets remain explicit; Production uses the production profile,
-secure cookies and disabled demo initialization. Startup validates non-secret
+Under stakeholder-approved [ADR-008](../decisions/ADR-008-separate-production-database.md),
+local/Preview retain the existing development database; Production uses a separate
+fresh database and independent database credentials. Vercel environment targets
+remain explicit; Production uses the production profile, secure cookies and
+disabled demo initialization. Startup validates non-secret
 configuration and fails safely for unusable database/security configuration.
 Missing AI configuration degrades only AI readiness.
 
@@ -176,12 +176,14 @@ confirmed in a deployment spike before implementation claims immutable promotion
 If Hobby cannot satisfy this flow, the specification must be revised and approved;
 do not silently deploy a different artifact.
 
-The current single-database coursework deployment follows ADR-007: Preview/local
-and Production share database records and may reuse server-side credentials.
-Preview/local writes therefore affect Production data. No new schema, reseeding
-or automatic initialization is required. Other deployments retain environment
-separation. Deployment is team-managed through GitHub Actions, never through an
-AI build-and-host environment.
+ADR-008 supersedes the earlier shared-database exception. Provision the fresh
+Production database using existing migrations and one-time Manager bootstrap;
+create its smoke Requester through normal authorized account management. Do not
+copy development data or enable migration/initialization profiles on Vercel.
+Verify a staged candidate against the new database before protected promotion;
+old artifacts still reference development and are not isolated rollback targets.
+Deployment is team-managed through GitHub Actions, never through an AI build-and-host
+environment. Hosted database separation remains unverified until cutover checks pass.
 
 ## Operations
 

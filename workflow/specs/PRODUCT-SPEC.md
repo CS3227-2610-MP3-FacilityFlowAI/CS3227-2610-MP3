@@ -3,8 +3,8 @@
 Status: approved v0.1, 12 October 2026. Owner: team. Approval by each role
 owner and at least one teammate has been confirmed.
 
-Deployment amendment, 20 October 2026: stakeholder-authorized ADR-007 changes
-NFR-DEP-001 for this coursework deployment; teammate implementation review pending.
+Deployment amendment: the latest stakeholder decision in ADR-008 supersedes
+ADR-007's shared-database exception; implementation and hosted isolation verification pending.
 
 Sources: stakeholder decisions through 12 October 2026; binding group-planning
 document; MP2 behavior at commit
@@ -191,15 +191,14 @@ CLOSED reopen operation.
 - **NFR-OPS-002:** Structured logs include correlation ID, time, severity,
   deployment version and safe event/error type, but exclude credentials, password
   material, raw AI prompts/outputs and full Request descriptions.
-- **NFR-DEP-001:** For the current coursework deployment, Development/Preview
-  and Production may reuse the existing `facilityflow-dev` PostgreSQL database,
-  Accounts, records and server-side credentials under
-  [ADR-007](../decisions/ADR-007-single-database-deployment.md), authorized by the
-  stakeholder on 20 October 2026. Environment configuration and hostnames remain
-  explicit, automated tests remain isolated, and no reseeding or destructive
-  migration is implied. Users must be told that writes affect shared data.
-  Production deployment still requires an approved pull request and human
-  promotion. Other deployments retain separate databases and credentials.
+- **NFR-DEP-001:** Development/Preview and Production use separate PostgreSQL
+  databases and independent database credentials under
+  [ADR-008](../decisions/ADR-008-separate-production-database.md). Retain
+  `facilityflow-dev` for development and create fresh `facilityflow_prod` in the same Supabase project with
+  required accounts only. Do not copy development records or sessions. Environment
+  configuration and hostnames remain explicit; automated tests remain isolated.
+  Production deployment requires an approved pull request, successful candidate
+  smoke checks and human promotion. Separation remains pending until verified.
 - **NFR-DOC-001:** User/Developer guides, MP2 reuse ledger, traceability, sanitized
   multi-agent handoffs and individual reflections remain current. Planned tests
   or controls are never described as executed.

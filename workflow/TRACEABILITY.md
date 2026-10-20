@@ -348,3 +348,36 @@ production profile/no seeding/secure cookies and existing restricted identity.
 No schema/data migration performed. GitHub Production smoke secrets, human review
 and hosted candidate/promotion remain pending. Shared-data risk and exact scope:
 logs/2026-10-20-shared-production-database.md.
+
+Subsequent stakeholder decision (ADR-008) supersedes the shared-database exception
+for NFR-DEP-001: retain facilityflow-dev for development/Preview and provision fresh
+facilityflow_prod in the same Supabase project with independent database credentials, one Manager and a
+synthetic smoke Requester. No development records/sessions are copied. Procedure:
+docs/ProductionDatabaseSetup.md. Existing migrations V1-V6 and runtime code are
+reused unchanged. New hosted provisioning, migration, bootstrap, staged smoke,
+protected promotion and isolation checks remain pending; the live deployment
+continues to use the shared database until cutover. AI-SEC-019 provider-key
+configuration is not expanded by this database-only decision.
+
+The user's subsequent single-project choice retains database `postgres` for
+development and adds `facilityflow_prod` with distinct Production migrator/runtime
+roles. Production-only bootstrap and permission scripts preserve V1-V6 checksums;
+ProductionDatabaseIsolationTest passes on disposable PostgreSQL 17.7, verifying
+separate data, denied cross-environment runtime access and runtime restrictions.
+Hosted pooler connectivity, provisioning and cutover remain unverified.
+
+21 October superseding verification: user-provided hosted migration/init evidence
+and successful staging/authenticated smoke/protected promotion establish the
+Production cutover. Live domain/candidate mapping, health/login/signed-out redirects
+verified independently; user confirmed live Manager/Requester/AI functionality.
+Preview configuration was found still shared with Production, then restored to
+postgres/facilityflow_app while Production retains facilityflow_prod/
+facilityflow_prod_app. No new Preview deployment smoke or recovery/rollback
+exercise claimed. Evidence: logs/2026-10-21-production-database-cutover.md.
+
+NFR-REL-002 / NFR-OPS-001 operational completion: added scheduled encrypted backup
+and isolated restore, restricted read-only backup identity, persistent external
+health/issue alerts and synthetic alert exercise. Unit/role tests cover security
+boundaries and failures. docs/Operations.md describes activation, evidence and
+schedule limitations. Actual hosted backup, notification and rollback results must
+be recorded separately; automation alone does not satisfy acceptance.

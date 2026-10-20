@@ -299,3 +299,22 @@ readiness documentation are **new** MP3 records; no MP2 material consulted/copie
 requirements, configuration/runbook and evidence updates are **new** MP3 records;
 no MP2 source consulted/copied. Existing schema, data, roles and runtime code
 are retained without modification.
+
+Subsequent separate-database decision: ADR-008, ProductionDatabaseSetup and updated
+deployment/specification/traceability records are **new** MP3 material. No MP2
+source consulted/copied. Existing role provisioning, migrations V1-V6, initializer,
+application and deployment workflows are reused unchanged; hosted execution is
+pending.
+
+Single-project follow-up: Production database bootstrap, post-migration runtime
+permission mapping and ProductionDatabaseIsolationTest are **new** MP3 material;
+no MP2 source consulted. Permission mapping derives from current MP3 migration
+ACLs/policies. Existing V1-V6 migrations and application code remain unchanged.
+
+21 October cutover verification log/handoff and corrected hosted-configuration
+evidence are **new** MP3 records; no MP2 material consulted or copied.
+
+21 October operational completion: backup-role SQL, encrypted backup/restore
+script, health monitor, workflows, regression tests and Operations guide are
+**new** MP3 material; existing MP3 deployment workflow is **adapted**. No MP2
+source consulted/copied. PostgreSQL/GitHub documentation supplies platform usage.

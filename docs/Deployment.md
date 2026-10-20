@@ -1,5 +1,8 @@
 # CI/CD and Vercel deployment
 
+Backup/restore, health/alert exercises and final rollback procedure:
+[Operations.md](Operations.md). Execution evidence is required in addition to setup.
+
 This runbook implements the approved `NFR-DEP-001` and Technical Specification
 deployment flow. It configures automation; it does not claim that a hosted
 Production deployment, backup restore or external monitor has already been verified.
@@ -59,9 +62,9 @@ secret-scan and container checks plus one approving teammate review.
 
 Store `SMOKE_USERNAME`, `SMOKE_PASSWORD` and, when needed, `SMOKE_BYPASS_SECRET`
 as **environment secrets**: Preview credentials in `preview`, Production
-credentials in `production-candidate`. For the ADR-007 shared database, reuse the
-same synthetic Requester credentials in both GitHub environments; environment
-secrets are not shared automatically. Never enable promotion before verifying the
+credentials in `production-candidate`. Under ADR-008, use the new Production
+Requester's credentials there and retain development credentials in `preview`;
+environment secrets are not shared automatically. Never enable promotion before verifying the
 required-reviewer gate; if the repository plan cannot enforce it, keep
 `PRODUCTION_PROMOTION_ENABLED=false` until an approved alternative is agreed.
 
@@ -77,19 +80,15 @@ Do not allow Vercel Git integration to auto-assign the Production domain. The
 workflow's staged candidate and protected promotion are the only Production
 path. Preview Git integration may also be disabled to avoid duplicate builds.
 
-## Current single-database configuration
+## Separate database configuration
 
-The user authorized [ADR-007](../workflow/decisions/ADR-007-single-database-deployment.md)
-on 20 October 2026: reuse `facilityflow-dev`, existing runtime credentials,
-Accounts and records for this coursework deployment. Apply existing Preview
-variables to the Vercel Production target and add the Production profile below.
-No new database, data copy, reseeding or initialization is needed.
-
-Preview/local and Production share data, sessions and AI limits: changes from any
-of them affect the same database. Keep the dataset synthetic and use isolated
-databases for automated tests. Distinct Vercel hostnames/environment targets,
-server-side authorization and human release gates remain in place. Known exposed
-credentials must be rotated rather than treated as safe by this exception.
+The latest stakeholder decision, [ADR-008](../workflow/decisions/ADR-008-separate-production-database.md),
+supersedes ADR-007's shared-database exception. Retain `facilityflow-dev` for local
+and Preview; create fresh `facilityflow_prod` in the same Supabase project with independent database credentials
+and only required accounts. Follow [ProductionDatabaseSetup](ProductionDatabaseSetup.md)
+for provisioning, migration, Manager bootstrap, smoke account creation and cutover.
+Production cutover was verified on 21 October 2026; see
+[the evidence and limits](../logs/2026-10-21-production-database-cutover.md).
 
 Required application variables in both environments are:
 
@@ -102,29 +101,15 @@ Required application variables in both environments are:
 - `SPRING_PROFILES_ACTIVE=production` for Production;
 - `DEMO_DATA_ENABLED=false` for Production;
 
-For this existing initialized database, retain its current schema and Accounts;
-do not rerun provisioning, migrations or bootstrap merely to change deployment
-targets. Ordinary web startup validates readiness without schema writes.
-
-For a future fresh database, provision and migrate using the restricted migration
-identity and the explicit `database-migrate` profile described in
-[DatabaseCompletion.md](DatabaseCompletion.md). Check existing migration history
-first using [DeveloperGuide.md](DeveloperGuide.md); do not repair or reseed it to
-make deployment pass. Ordinary web startup does not migrate or initialize data.
-
-Only for a future empty Production database, initialize once from the release JAR in a
-trusted operator environment, using the application database identity,
-`DEMO_DATA_ENABLED=false`, and temporary `BOOTSTRAP_MANAGER_USERNAME`,
-`BOOTSTRAP_MANAGER_DISPLAY_NAME` and `BOOTSTRAP_MANAGER_PASSWORD` secrets:
-
-```text
-java -jar build/libs/facilityflow-ai-0.1.0-SNAPSHOT.jar --spring.main.web-application-type=none --spring.profiles.active=database-initialize,production
-```
-
-Remove the bootstrap secrets after success. The web deployment uses only
-`SPRING_PROFILES_ACTIVE=production`; never enable `database-initialize` or
-`database-migrate` on Vercel. Create the synthetic smoke Account through the
-normal authorized Manager workflow before enabling authenticated smoke checks.
+Use existing migrations and the explicit `database-migrate` profile with the new
+Production migration identity, then bootstrap one Manager with demo mode disabled
+in a trusted operator environment. Follow the full fresh-database procedure in
+[ProductionDatabaseSetup](ProductionDatabaseSetup.md); do not initialize or migrate
+the existing development database as part of this cutover. Never enable either
+operator profile on Vercel. Normal web startup validates schema readiness without
+schema writes. Create the synthetic Production Requester via the normal Manager
+workflow and update GitHub `production-candidate` smoke credentials before
+requiring its authenticated checks to pass.
 
 The workflow supplies `APP_VERSION` as the immutable Git commit SHA. Vercel
 supplies `PORT`; `application.yml` binds it and enables graceful shutdown behind
@@ -141,8 +126,8 @@ cookie and response files on exit.
    Vercel auto-detects `Dockerfile.vercel`; no `vercel.json` is required for this
    single HTTP service. Verify container availability and limits for the actual
    account during the deployment spike.
-2. Apply the existing database/application values to Preview and Production in
-   Vercel under ADR-007; add the Production profile and keep demo seeding disabled.
+2. Configure separate databases and independent database credentials under ADR-008;
+   follow ProductionDatabaseSetup.md and keep demo seeding disabled.
 3. Add the GitHub variables, secrets and protected environments above.
 4. Open a test pull request with `VERCEL_DEPLOY_ENABLED=true`; retain the Preview
    URL and smoke result in the GitHub job summary.
@@ -210,8 +195,14 @@ or output-quality assessment. Detailed results and limitations are in
 
 ## Still requiring hosted evidence
 
-- first Production-candidate build and smoke;
-- protected no-rebuild promotion and rollback rehearsal;
-- verify the intentional shared database/credential targets against ADR-007;
+- a new Preview deployment smoke after correcting Preview's database configuration;
+- rollback rehearsal using an artifact configured for the isolated Production database;
 - five-minute external monitoring and alert exercise;
 - provider backup verification and database restore rehearsal.
+
+Production staging, authenticated smoke and protected promotion passed in
+[CI39437565941 attempt7](https://github.com/CS3227-2610-MP3-FacilityFlowAI/CS3227-2610-MP3/actions/runs/39437565941).
+The live domain maps to the promoted candidate. Automated public checks and
+Production/Preview configuration reads passed; the user confirmed live Manager,
+Requester and AI functionality. These checks do not establish recovery or load
+acceptance. See the 21 October evidence linked above.

@@ -1,0 +1,37 @@
+name: Production health monitor
+on:
+  schedule:
+    - cron: '2-57/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      exercise:
+        description: Exercise three synthetic failures and recovery without touching live monitor state
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      exercise:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: production-health-monitor
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check health or exercise alerts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXERCISE: ${{ inputs.exercise }}
+        run: |
+          if [[ "$EXERCISE" == 'true' ]]; then
+            python3 .github/scripts/health_monitor.py --exercise
+          else
+            python3 .github/scripts/health_monitor.py
+          fi
