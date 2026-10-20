@@ -61,3 +61,24 @@ https://github.com/CS3227-2610-MP3-FacilityFlowAI/CS3227-2610-MP3/actions/runs/3
   final post-promotion checks still pending; this log does not claim all deployment
   requirements complete. Recovered rehearsal time is evidence for this dataset,
   not a guarantee of future incident recovery duration or GitHub schedule uptime.
+
+## Notification receipt and pre-release baseline
+
+User confirmed receipt of alert23 notification through GitHub/email. Full manual
+rehearsal run39464057541 passed test/package, secret scan, container build,
+backup/restore and alert exercise; deployment jobs intentionally skipped.
+Live alias independently rechecked: facilityflow-3vhxmdjas-yooplo.vercel.app,
+id dpl_8MmfcCaFSfsCoVmgWJGsVzkMG1sQ, READY Production, source313ca61d,
+health HTTP200/statusUP. This is the isolated known-good baseline for the later
+protected rollback rehearsal; no rollback has yet been executed.
+
+User will arrange teammate review. PR17 remains open; no human review/merge
+observed. AGENTS.md and workflow/agents/README.md require teammate review and
+protected Production approval. Next after approved merge: verify default-branch
+schedules; remove temporary chore/separate-production-database permission from
+production-backup; verify staged candidate and human-approved promotion; rehearse
+protected application rollback to the recorded isolated baseline, then restore
+the desired release and verify alias/health/authentication. Do not restore a live
+database or use the pre-isolation development-connected artifact. No authorization
+to bypass human gates is implied by this handoff. Suggested skills: facilityflow
+handoff, Supabase/Postgres best practices and Ponytail. See Operations.md.
