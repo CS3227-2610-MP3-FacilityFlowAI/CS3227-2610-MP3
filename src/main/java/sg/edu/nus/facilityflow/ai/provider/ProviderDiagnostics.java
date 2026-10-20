@@ -20,7 +20,7 @@ final class ProviderDiagnostics {
         CONNECTION_FAILURE, HTTP_IO_FAILURE }
 
     static void report(Stage stage, Reason reason) {
-        LOGGER.warn("SoCLaaS gateway stage={} reason={}", stage.name(), reason.name());
+        reportCode(stage, reason.name());
     }
 
     static void reportTransportFailure(Throwable failure) {
@@ -51,9 +51,15 @@ final class ProviderDiagnostics {
             cause = cause.getCause();
         }
         if (cause instanceof ProviderFailure providerFailure) {
-            LOGGER.warn("SoCLaaS gateway stage={} reason={}", stage.name(), providerFailure.code().name());
+            reportCode(stage, providerFailure.code().name());
         } else {
             report(stage, Reason.INTERNAL_FAILURE);
         }
+    }
+
+    private static void reportCode(Stage stage, String code) {
+        LOGGER.atWarn().addKeyValue("event", "AI_PROVIDER_FAILURE")
+                .addKeyValue("stage", stage.name()).addKeyValue("reason", code)
+                .log("SoCLaaS gateway stage={} reason={}", stage.name(), code);
     }
 }

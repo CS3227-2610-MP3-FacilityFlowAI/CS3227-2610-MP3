@@ -4,11 +4,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import sg.edu.nus.facilityflow.ai.AiAccessGuard;
@@ -30,7 +27,6 @@ import sg.edu.nus.facilityflow.identity.IdentityAuthorization;
 @Service
 public final class ManagerTriageService {
     private static final String TEMPLATE_VERSION = "triage-v2";
-    private static final Logger LOGGER = LoggerFactory.getLogger(ManagerTriageService.class);
 
     private final IdentityAuthorization authorization;
     private final AiAccessGuard accessGuard;
@@ -144,7 +140,7 @@ public final class ManagerTriageService {
         AiInvocationTelemetry.Invocation invocation;
         try {
             invocation = telemetry.start(new AiInvocationTelemetry.StartRequest(
-                    manager.id(), UUID.randomUUID(), AiInvocationTelemetry.Feature.TRIAGE,
+                    manager.id(), sg.edu.nus.facilityflow.operations.RequestCorrelationFilter.currentId(), AiInvocationTelemetry.Feature.TRIAGE,
                     model, TEMPLATE_VERSION));
         } catch (RuntimeException telemetryFailure) {
             permit.get().release();
@@ -264,7 +260,7 @@ public final class ManagerTriageService {
                     status(response), latencyMs, invocation.retryCount(), invocation.inputTokens(),
                     invocation.outputTokens(), invocation.totalTokens()));
         } catch (RuntimeException telemetryFailure) {
-            LOGGER.warn("AI terminal telemetry persistence failed for invocation {}", invocation.id());
+            sg.edu.nus.facilityflow.ai.AiFailureDiagnostics.persistenceFailed(invocation);
             terminalResponse = ManagerTriageResponse.failure(TriageFailureCode.AI_UNAVAILABLE);
         } finally {
             permit.release();

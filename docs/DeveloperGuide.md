@@ -552,6 +552,56 @@ checks and remaining limits.
 
 ## SDD workflow
 
+### AI observability implementation
+
+REQ-AI-007–009 and NFR-OPS-002 use the existing V3/V5 invocation schema; no new
+migration is needed. All role services, including the older form-based Smart
+Report path, use `AiInvocationTelemetry`/`JdbcAiInvocationTelemetry`: insert
+STARTED before context/provider work and compare-and-set exactly one terminal
+outcome. Start failure prevents inference; terminal failure withholds suggestions
+and preserves unresolved STARTED evidence. Pre-admission failures go to safe
+diagnostics instead of inflating the new admitted-invocation totals. Historical
+records retain their original semantics.
+
+`AiMonitoring` is the single aggregation module: it checks persisted active
+Manager role and session version and queries PostgreSQL directly in a read-only,
+repeatable-read transaction. The controller only maps page requests and responses.
+There is no separate monitoring repository or forwarding service. Page projections contain counts, model/template
+labels and outcomes, never invocation/account/Request identifiers. Filters use
+inclusive Singapore dates and an exclusive next-day boundary. Finished outcomes
+determine median/p95 end-to-end duration and success-rate denominator. Unknown
+usage remains null; per-field missing counts expose partial sums. Unfinished
+records over one minute are flagged without mutating their status.
+
+`GET /manager/ai-monitoring` and CSRF-protected
+`POST /manager/ai-monitoring/reconcile` are Manager-only, no-store routes.
+Reconciliation accepts bounded non-negative independent portal counts for an
+explicit all-assistant date period, then emits `AI_USAGE_RECONCILED` with known
+application totals, portal totals, signed differences and missing coverage.
+Original invocations and business Audit Events are unchanged. Operators compare
+periodically and retain operational evidence; no scheduled provider calls or
+portal scraping are configured.
+
+Console logs use Spring Boot's structured Logstash JSON with `deployment_version`
+from `APP_VERSION` (local by default). `RequestCorrelationFilter` creates a UUID
+per request, ignores supplied correlation headers and restores thread context
+after dispatch. The UUID survives async redispatch; invocation handles capture
+their metadata explicitly so terminal events correlate without relying on an
+async worker's MDC. Safe request events contain no URL, query, body, credential
+or user-controlled header. AI lifecycle diagnostics contain typed metadata only.
+The returned X-Correlation-ID can be supplied when reporting an issue. Existing
+rate limits, manual workflows and maintenance write authorization remain intact.
+
+Focused tests cover real PostgreSQL aggregates, date boundaries, missing usage,
+persisted authorization, reconciliation immutability and exactly-once terminal
+updates; Requester regressions inject start/finish storage failures. MVC/security
+tests exercise Manager-only access, CSRF, no-store and escaped page rendering.
+The database tests also check metadata-only diagnostic output across async
+completion. The correlation filter tests cover async propagation and rejection
+of caller-supplied identifiers. Lifecycle logs are emitted by the existing JDBC
+telemetry class; failure logs use the existing AI failure diagnostics. See the implementation session log for executed results;
+these test descriptions alone do not claim browser or live-provider acceptance.
+
 Use ../workflow/README.md: specify, approve, design, secure, implement, verify,
 review. Stable IDs/traceability are required; material TBDs block coding.
 
