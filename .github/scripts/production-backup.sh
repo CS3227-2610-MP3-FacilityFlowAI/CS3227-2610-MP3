@@ -82,7 +82,7 @@ fi
      END \$verify\$;" > "$work/private-check.txt" 2>&1
 elapsed="$(( $(date +%s) - started ))"
 if (( elapsed > 14400 )); then echo 'Restore exceeded the four-hour RTO target.' >&2; exit 1; fi
-sha256sum "$output" > "$output.sha256"
+(cd "$(dirname "$output")" && sha256sum "$(basename "$output")") > "$output.sha256"
 {
     echo '### NFR-REL-002 encrypted backup and isolated restore'
     echo '- Database: facilityflow_prod; schema: facilityflow'

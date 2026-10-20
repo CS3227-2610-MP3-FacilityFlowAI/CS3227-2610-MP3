@@ -381,3 +381,10 @@ health/issue alerts and synthetic alert exercise. Unit/role tests cover security
 boundaries and failures. docs/Operations.md describes activation, evidence and
 schedule limitations. Actual hosted backup, notification and rollback results must
 be recorded separately; automation alone does not satisfy acceptance.
+
+PR17 review follow-up (NFR-SEC-001 / NFR-REL-002 / NFR-DOC-001): backup-role
+validation rejects unrelated relation/column SELECT, schema/function grants and
+other-database ACLs; ProductionDatabaseIsolationTest covers each. Artifact sidecar
+uses basename; health_monitor_test verifies sha256sum -c after relocation. Product
+specification amendment now distinguishes verified isolation/operations evidence
+from pending release gates. No live configuration change is implied by this fix.

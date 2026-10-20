@@ -77,6 +77,28 @@ class ProductionDatabaseIsolationTest {
             productionOwner.execute("REVOKE UPDATE ON SEQUENCE facilityflow.request_display_number_seq FROM facilityflow_prod_backup");
             productionOwner.execute(backupSetup);
 
+            productionOwner.execute("CREATE SCHEMA unrelated");
+            productionOwner.execute("CREATE TABLE unrelated.sensitive (secret text)");
+            productionOwner.execute("CREATE SEQUENCE unrelated.counter");
+            productionOwner.execute("CREATE FUNCTION unrelated.helper() RETURNS int LANGUAGE sql AS 'SELECT 1'");
+            for (var grant : new String[]{
+                    "SELECT ON TABLE unrelated.sensitive",
+                    "SELECT (secret) ON TABLE unrelated.sensitive",
+                    "SELECT ON SEQUENCE unrelated.counter",
+                    "USAGE ON SCHEMA unrelated",
+                    "EXECUTE ON FUNCTION unrelated.helper()",
+                    "CONNECT ON DATABASE postgres"}) {
+                productionOwner.execute("GRANT " + grant + " TO facilityflow_prod_backup");
+                assertThrows(DataAccessException.class, () -> productionOwner.execute(backupSetup), grant);
+                productionOwner.execute("REVOKE " + grant + " FROM facilityflow_prod_backup");
+                productionOwner.execute(backupSetup);
+            }
+            // Shared ACL dependencies also expose grants in another database.
+            admin.execute("GRANT SELECT ON facilityflow.user_account TO facilityflow_prod_backup");
+            assertThrows(DataAccessException.class, () -> productionOwner.execute(backupSetup));
+            admin.execute("REVOKE SELECT ON facilityflow.user_account FROM facilityflow_prod_backup");
+            productionOwner.execute(backupSetup);
+
             // A later migration's revocations must remove stale Production grants.
             migrator.execute("REVOKE UPDATE (display_name) ON facilityflow.user_account FROM facilityflow_app");
             migrator.execute("REVOKE DELETE ON facilityflow.spring_session_attributes FROM facilityflow_app");

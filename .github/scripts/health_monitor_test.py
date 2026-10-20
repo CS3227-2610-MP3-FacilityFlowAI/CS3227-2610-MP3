@@ -185,6 +185,36 @@ class HealthMonitorTest(unittest.TestCase):
         self.assertNotIn('private-error-canary', result.stdout + result.stderr)
         self.assertNotIn('private-password-canary', result.stdout + result.stderr)
 
+    def test_encrypted_backup_checksum_verifies_after_relocation(self):
+        bash = (r'C:/Program Files/Git/bin/bash.exe' if os.name == 'nt' else shutil.which('bash'))
+        script = Path(__file__).with_name('production-backup.sh').resolve().as_posix()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            # Isolate the archive boundary; real checksum tools verify the moved files.
+            result = subprocess.run([bash, '-c',
+                'docker() { if [[ "$*" == *pg_dump* ]]; then printf synthetic-dump; fi; }; '
+                'gpg() { local output last; while (($#)); do case "$1" in '
+                '--output) output="$2"; shift 2;; --decrypt) cat "$2"; return;; '
+                '*) last="$1"; shift;; esac; done; cat "$last" > "$output"; }; '
+                'export -f docker gpg; bash "$1"', 'test', script],
+                env={**os.environ, 'PGDATABASE': 'facilityflow_prod',
+                     'PGUSER': 'facilityflow_prod_backup.synthetic', 'PGSSLMODE': 'verify-full',
+                     'PG_CONTAINER': 'a' * 64, 'PGPASSWORD': 'synthetic-only',
+                     'BACKUP_ENCRYPTION_PASSPHRASE': 'synthetic-encryption-passphrase-' * 2,
+                     'RESTORE_PASSWORD': 'disposable-restore-only', 'RUNNER_TEMP': root.as_posix(),
+                     'GITHUB_STEP_SUMMARY': (root / 'summary').as_posix(),
+                     'GITHUB_RUN_ID': 'synthetic', 'GITHUB_RUN_ATTEMPT': '1'},
+                capture_output=True, text=True)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            destination = root / 'downloaded'
+            destination.mkdir()
+            for artifact in root.glob('*.gpg*'):
+                shutil.copy2(artifact, destination)
+            verified = subprocess.run([bash, '-c',
+                'sha256sum -c facilityflow-production-synthetic-1.dump.gpg.sha256'],
+                cwd=destination, capture_output=True, text=True)
+            self.assertEqual(0, verified.returncode, verified.stdout + verified.stderr)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -4,7 +4,11 @@ Status: approved v0.1, 12 October 2026. Owner: team. Approval by each role
 owner and at least one teammate has been confirmed.
 
 Deployment amendment: the latest stakeholder decision in ADR-008 supersedes
-ADR-007's shared-database exception; implementation and hosted isolation verification pending.
+ADR-007's shared-database exception. Database isolation and the live cutover are
+verified in [cutover evidence](../../logs/2026-10-21-production-database-cutover.md).
+Fresh Preview smoke, encrypted backup/restore and alert delivery are verified in
+[operations evidence](../../logs/2026-10-21-operations-completion.md). Reviewed
+merge, schedule activation and the protected rollback rehearsal remain pending.
 
 Sources: stakeholder decisions through 12 October 2026; binding group-planning
 document; MP2 behavior at commit
@@ -198,7 +202,8 @@ CLOSED reopen operation.
   required accounts only. Do not copy development records or sessions. Environment
   configuration and hostnames remain explicit; automated tests remain isolated.
   Production deployment requires an approved pull request, successful candidate
-  smoke checks and human promotion. Separation remains pending until verified.
+  smoke checks and human promotion. Completed isolation/cutover evidence and
+  outstanding release checks are distinguished in the deployment amendment above.
 - **NFR-DOC-001:** User/Developer guides, MP2 reuse ledger, traceability, sanitized
   multi-agent handoffs and individual reflections remain current. Planned tests
   or controls are never described as executed.

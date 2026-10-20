@@ -82,3 +82,15 @@ the desired release and verify alias/health/authentication. Do not restore a liv
 database or use the pre-isolation development-connected artifact. No authorization
 to bypass human gates is implied by this handoff. Suggested skills: facilityflow
 handoff, Supabase/Postgres best practices and Ponytail. See Operations.md.
+
+## PR17 review corrections
+
+Confirmed and corrected three review findings: rejected out-of-scope direct ACLs
+for backup identity (including unrelated SELECT and other databases/object types),
+made SHA256 sidecar portable after download, and corrected stale Product Spec
+pending isolation status. Targeted database regressions passed46s;13Python tests
+passed including real checksum verification from relocated artifact files. New
+checksum test stubs Docker/GPG; prior hosted encryption/restore evidence remains
+valid for its original run. Source role checks changed without executing live SQL.
+Existing checksum sidecars from earlier artifacts still contain original runner
+paths; their encrypted-file digests were verified programmatically as recorded.

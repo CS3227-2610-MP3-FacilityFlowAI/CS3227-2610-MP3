@@ -81,3 +81,23 @@ the desired release and verify alias/health/authentication. Do not restore a liv
 database or use the pre-isolation development-connected artifact. No authorization
 to bypass human gates is implied by this handoff. Suggested skills: facilityflow
 handoff, Supabase/Postgres best practices and Ponytail. See Operations.md.
+
+## PR17 reviewer findings follow-up
+
+User supplied bot review at c73a70d: backup role accepted unrelated SELECT ACLs,
+checksum sidecar contained absolute runner path, PRODUCT-SPEC had stale pending
+isolation claims. Confirmed all three against current files.
+Fixes: schema/object-type allowlist for relation/column ACLs, facilityflow USAGE
+and prod CONNECT only, pg_shdepend rejects other object/database ACLs and ownership;
+checksum names basename from output directory; spec links verified cutover and
+operations evidence and retains pending release gates. V1-V6 unchanged.
+Focused ProductionDatabaseIsolationTest passed46s;13Python tests passed, including
+actual checksum relocation (Docker/GPG boundaries stubbed; hosted crypto/restore
+proof remains run39464057541). Initial Windows real-GPG unit harness failed;
+portable checksum test now isolates only the checksum contract. No live DB calls.
+Fresh deployment_verifier requested for scoped read-only review before push.
+Permission boundary: no merge, no live SQL, no production promotion without gates.
+Suggested skills: facilityflow-handoff, Supabase/Postgres, Ponytail review.
+
+Fresh verifier result: no blockers; independently passed all13Python tests and
+inspected database XML (1test,0failures/errors/skips). No live SQL/cloud mutation.

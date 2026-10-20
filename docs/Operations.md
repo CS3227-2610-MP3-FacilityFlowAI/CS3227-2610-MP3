@@ -33,7 +33,7 @@ cadence is required, use a dedicated external scheduler/monitor.
 2. Run [production-backup-role.sql](../workflow/database/production-backup-role.sql)
    as a complete script. It creates/revalidates a restricted backup role, grants
    read-only schema/table/sequence access and explicit SELECT RLS policies.
-   Unexpected membership, writes or ownership cause rollback; inspect rather
+   Unexpected membership, out-of-scope direct grants, writes or ownership cause rollback; inspect rather
    than granting bypass/superuser. Reapply after future schema migrations.
 3. Privately assign a new strong backup-role password and enable LOGIN. Use
    `\password facilityflow_prod_backup` in psql, or privately replace a password

@@ -22,12 +22,31 @@ BEGIN
        OR EXISTS (SELECT 1 FROM pg_namespace WHERE nspowner = 'facilityflow_prod_backup'::regrole)
        OR EXISTS (SELECT 1 FROM pg_class WHERE relowner = 'facilityflow_prod_backup'::regrole)
        OR EXISTS (SELECT 1 FROM pg_proc WHERE proowner = 'facilityflow_prod_backup'::regrole)
-       OR EXISTS (SELECT 1 FROM pg_class c CROSS JOIN LATERAL aclexplode(c.relacl) a
+       OR EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                  CROSS JOIN LATERAL aclexplode(c.relacl) a
                   WHERE a.grantee = 'facilityflow_prod_backup'::regrole
-                    AND (a.privilege_type <> 'SELECT' OR a.is_grantable))
-       OR EXISTS (SELECT 1 FROM pg_attribute col CROSS JOIN LATERAL aclexplode(col.attacl) a
+                    AND (n.nspname <> 'facilityflow' OR c.relkind NOT IN ('r', 'p', 'v', 'm', 'S')
+                         OR a.privilege_type <> 'SELECT' OR a.is_grantable))
+       OR EXISTS (SELECT 1 FROM pg_attribute col JOIN pg_class c ON c.oid = col.attrelid
+                  JOIN pg_namespace n ON n.oid = c.relnamespace
+                  CROSS JOIN LATERAL aclexplode(col.attacl) a
                   WHERE a.grantee = 'facilityflow_prod_backup'::regrole
-                    AND (a.privilege_type <> 'SELECT' OR a.is_grantable)) THEN
+                    AND (n.nspname <> 'facilityflow' OR c.relkind NOT IN ('r', 'p', 'v', 'm')
+                         OR a.privilege_type <> 'SELECT' OR a.is_grantable))
+       OR EXISTS (SELECT 1 FROM pg_namespace n CROSS JOIN LATERAL aclexplode(n.nspacl) a
+                  WHERE a.grantee = 'facilityflow_prod_backup'::regrole
+                    AND (n.nspname <> 'facilityflow' OR a.privilege_type <> 'USAGE' OR a.is_grantable))
+       OR EXISTS (SELECT 1 FROM pg_database d CROSS JOIN LATERAL aclexplode(d.datacl) a
+                  WHERE a.grantee = 'facilityflow_prod_backup'::regrole
+                    AND (d.datname <> 'facilityflow_prod' OR a.privilege_type <> 'CONNECT' OR a.is_grantable))
+       -- Reject direct ACLs on other object types/databases and any ownership.
+       OR EXISTS (SELECT 1 FROM pg_shdepend d
+                  WHERE d.refclassid = 'pg_authid'::regclass
+                    AND d.refobjid = 'facilityflow_prod_backup'::regrole
+                    AND (d.deptype IN ('o', 'i') OR (d.deptype = 'a' AND NOT (
+                        (d.dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
+                         AND d.classid IN ('pg_class'::regclass, 'pg_namespace'::regclass))
+                        OR (d.dbid = 0 AND d.classid = 'pg_database'::regclass))))) THEN
         RAISE EXCEPTION 'Backup role has unexpected privileges or ownership; inspect before setup';
     END IF;
     GRANT CONNECT ON DATABASE facilityflow_prod TO facilityflow_prod_backup;
