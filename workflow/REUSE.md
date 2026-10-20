@@ -276,3 +276,6 @@ source and fingerprint are recorded in `docs/Deployment.md`.
 20 October Vercel upload correction: allowlist directory syntax, actual-inventory
 checker, CI dry-run steps and evidence/runbook updates are **new** MP3 deployment
 work adapting existing MP3 configuration; no MP2 source was consulted or copied.
+20 October login UI polish: tighter input/select/textarea focus rings and login
+alert cascade correction are **new** MP3 styling adapting existing workspace.css;
+no MP2 source consulted or copied. Evidence: logs/2026-10-20-login-ui-polish.md.

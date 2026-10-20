@@ -81,3 +81,28 @@ missing-gradle, missing-src and injected .env.local inventories rejected; both
 pre-deployment dry-run pipelines/JSON shape reviewed and whitespace passed.
 Next authorized action: push correction to PR16 and verify new hosted CI/Preview
 result. Do not merge or promote Production. User's .gitignore edits preserved.
+
+## Verified Preview return
+
+Authoritative candidate 8a91d1d01cbde65db42da1993c18ff119720d7fe passed GitHub
+run 39380229676 attempt 2 (test/package, secret scan, image build, Preview deploy
+and health/login/authenticated-read smoke). Production jobs skipped. Deployment
+7193242122 succeeded at https://facilityflow-qg57qryyc-yooplo.vercel.app . See
+session log for evidence URLs. Earlier pending Preview annotations are superseded
+for this narrow hosted smoke scope. Browser/AI/full-role/operations/Production
+acceptance remains pending. Next user action: browser login/manual workflow checks
+on development Preview; disable shared deploy flag before merge until Production
+is configured and reviewed. Human review/merge/promotion gates remain unchanged.
+Evidence updates are local, not pushed; preserve user CLI .gitignore edits.
+
+## Login UI polish continuation
+
+User requested tighter input focus ring and red failed-login text. NFR-A11Y-001 /
+UIX-017-020 apply. workspace.css now uses a 2px ring/1px offset for input/select/
+textarea, while muted login paragraph styling excludes role=alert. No behavioral
+or schema change. Source agent Codex; next receiver visual reviewer/user.
+See logs/2026-10-20-login-ui-polish.md for scope, checks and limitations.
+CSS cascade/load order inspected and whitespace passed; browser/hosted visual
+verification and human teammate review pending. Preserve existing unrelated
+.gitignore and deployment evidence edits. No new merge/promotion permissions.
+Suggested skills: Ponytail for any follow-up styling; FacilityFlow handoff.

@@ -322,3 +322,7 @@ build inputs. Preview/Production jobs now validate actual dry-run inventory.
 Missing-directory and unexpected local-file regressions passed locally; hosted
 retry remains pending. Earlier Git-ignore-only evidence is superseded for this
 upload behavior. See deployment session log.
+NFR-A11Y-001 / UIX-017-020 login UI polish: input focus remains a visible offset
+outline (2px width, 1px gap); failed-login alert retains existing danger red
+instead of being overridden by muted login text. No auth/template/script changes.
+See logs/2026-10-20-login-ui-polish.md; browser verification pending.

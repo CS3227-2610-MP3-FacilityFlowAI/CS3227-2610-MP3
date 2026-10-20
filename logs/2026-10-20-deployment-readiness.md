@@ -102,3 +102,27 @@ Fresh verifier independently repeated actual CLI inventory validation (262 entri
 260 tracked inputs), separate missing-gradle/missing-src rejections and injected
 .env.local rejection; reviewed both dry-run callers/JSON shape/ordering and
 whitespace. No blockers. No secrets or hosted operations accessed by verifier.
+
+## Verified Preview deployment
+
+GitHub API independently confirmed run 39380229676, attempt 2, completed success
+for revision 8a91d1d01cbde65db42da1993c18ff119720d7fe. Test/package, secret scan,
+container build and Deploy Preview and smoke test all succeeded. Production
+candidate and promotion were skipped. Preview deployment 7193242122 succeeded:
+https://facilityflow-qg57qryyc-yooplo.vercel.app
+Run evidence:
+https://github.com/CS3227-2610-MP3-FacilityFlowAI/CS3227-2610-MP3/actions/runs/39380229676
+Preview job:
+https://github.com/CS3227-2610-MP3-FacilityFlowAI/CS3227-2610-MP3/actions/runs/39380229676/job/118490640430
+
+The earlier deployment reached Vercel but its unauthenticated health request
+redirected to Vercel login. After automation-bypass setup and rerun, the workflow's
+health/login/authenticated-read smoke succeeded. This is hosted Preview evidence,
+not Production acceptance or full browser acceptance. AI remains disabled under
+the user-reported Preview configuration. Production separation, promotion,
+rollback, monitoring, restore and human teammate review remain pending.
+Before any merge, keep production promotion disabled and set the shared
+VERCEL_DEPLOY_ENABLED variable false until Production configuration is approved.
+This preserves the already-created Preview deployment while preventing the
+master push from staging an unconfigured Production candidate. No merge or
+production promotion performed. This evidence update has not been pushed.
