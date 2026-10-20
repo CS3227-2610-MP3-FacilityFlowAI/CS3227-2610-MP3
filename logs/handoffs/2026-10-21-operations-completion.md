@@ -48,3 +48,15 @@ Hosted rehearsal follow-up: run39462731538 created duplicate exercise state issu
 reuse and known-alert GET reconciliation for issue-list lag; 11 regression tests
 cover this transport behavior. Backup secret was not yet present; user correcting.
 Fresh verifier to review this fix before accepting rerun.
+
+Latest hosted status: corrected run39463571383 actually created/recovered alert23;
+notification receipt pending. Fresh Preview run39462104875 passed authenticated
+smoke. Backup failed AUTHENTICATION_FAILED before dump completion; user password
+reset/secret correction required. Both secret names present. No backup artifact or
+restore success claimed. See logs/2026-10-21-operations-completion.md for URLs.
+
+Credential correction accepted: backup job118771107050 in run39464057541 passed
+actual encrypted backup/restore in20s; artifact12283374254 downloaded encrypted to
+ignored local-data/backups and checksum verified. Failure issues21/24 closed.
+Notification receipt, reviewed merge/schedule activation, protected rollback and
+final post-promotion remain pending. No passphrase read or live restore performed.
