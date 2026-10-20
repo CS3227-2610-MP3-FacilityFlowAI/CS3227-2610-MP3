@@ -341,3 +341,10 @@ PRODUCTION_DEPLOY_ENABLED=true as well as the shared deployment switch; missing
 smoke credentials fail preflight before staging. Actual workflow expressions and
 preflight have passing local regressions. See
 logs/2026-10-20-production-deployment-gate.md; new hosted/master checks pending.
+NFR-DEP-001 / AI-SEC-019 amendment (ADR-007, explicit stakeholder decision20Oct):
+current coursework Production reuses facilityflow-dev, Accounts, records and
+server-side configuration. All11 Vercel Production targets verified, including
+production profile/no seeding/secure cookies and existing restricted identity.
+No schema/data migration performed. GitHub Production smoke secrets, human review
+and hosted candidate/promotion remain pending. Shared-data risk and exact scope:
+logs/2026-10-20-shared-production-database.md.

@@ -178,3 +178,25 @@ Use logs/2026-10-20-deployment-readiness.md, hosted-ai-connectivity log and
 production-deployment-gate log for exact evidence/limits. Suggested skills:
 FacilityFlow handoff for transition, Supabase for DB setup, Ponytail for code.
 No broader permissions granted. Temporary handoff refreshed from this record.
+
+## Single-database Production exception: fresh verifier dispatch
+
+Source Codex -> fresh deployment verifier. Latest explicit user decision overrides
+prior separation requirement: reuse one existing DB for Production with minimal
+changes. ADR-007 scopes synthetic coursework use and amends NFR-DEP-001/AI-SEC-019.
+Existing ten Preview variables now also target Vercel Production, with original
+values/types and Preview scopes preserved. Production profile added. Parent
+verified eleven targets and privately checked production profile, disabled demo
+seeding, secure cookies, packaged CA and unchanged DB/runtime identity; no SQL,
+account/data/schema mutation or deployment. User still needs GitHub production-
+candidate smoke secrets; same known synthetic Requester and project bypass can
+be used. Review current docs/spec/ADR/evidence for consistency and gates/risk
+preservation; read-only, no secrets, network/DB/config edits or deployment. Run
+existing gate regression if useful. Suggested Ponytail review, Supabase and
+FacilityFlow handoff. Parent owns evidence. No merge/promotion delegated.
+Fresh single-DB reviewer returned no blockers; independently checked docs/specs,
+gate regression and whitespace. Remote settings evidence belongs to parent.
+Next user action: add same known SMOKE_USERNAME/SMOKE_PASSWORD/project bypass
+value to GitHub production-candidate environment. Keep Production deployment and
+promotion opt-ins false until secrets/review/protected gate are ready. No new
+project, database migration or bootstrap needed. Credential rotation remains.

@@ -295,3 +295,7 @@ workflow-expression regression and runbook/evidence are **new** MP3 automation
 adapting existing MP3 release workflow; no MP2 source consulted or copied.
 20 October final deployment evidence: verified Preview/AI status and merge/release
 readiness documentation are **new** MP3 records; no MP2 material consulted/copied.
+20 October shared-database Production decision: ADR-007, amended deployment
+requirements, configuration/runbook and evidence updates are **new** MP3 records;
+no MP2 source consulted/copied. Existing schema, data, roles and runtime code
+are retained without modification.

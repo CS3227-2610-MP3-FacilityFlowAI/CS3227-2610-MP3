@@ -1,5 +1,11 @@
 # Supabase PostgreSQL setup
 
+Current coursework deployment exception (20 October 2026):
+[ADR-007](../workflow/decisions/ADR-007-single-database-deployment.md) authorizes
+reusing the existing database for Vercel Production. The separate-project steps
+below describe the original baseline; do not reprovision/reseed the existing
+database for the deployment-target change. Follow [Deployment.md](Deployment.md).
+
 Part 2a, 14 October 2026. Supabase JDBC configuration is implemented;
 project provisioning and a live connection check are pending user setup.
 Update: the user reported the connection succeeded. Part 2b adds the tested

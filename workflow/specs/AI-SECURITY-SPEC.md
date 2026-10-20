@@ -217,7 +217,9 @@ may select a feature, actor, template, parser, model or arbitrary context map.
   estimated as actual usage.
 - **AI-SEC-019:** SoCLaaS base URL, key and model are server-only configuration.
   The key is never sent to the browser. Development and Production use separate
-  keys where the provider permits. `AI_ENABLED` defaults to false. Enabled
+  keys where the provider permits, except for the stakeholder-authorized current
+  coursework deployment in ADR-007, which may reuse existing server-side keys.
+  `AI_ENABLED` defaults to false. Enabled
   configuration requires a non-placeholder key/model and the exact canonical
   `https://soclaas-api.comp.nus.edu.sg/v1` origin/path, permitting only a
   normalized trailing slash. Reject user information, non-default port, query,

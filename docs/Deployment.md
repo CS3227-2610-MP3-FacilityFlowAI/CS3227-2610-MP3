@@ -40,7 +40,7 @@ Create these GitHub repository variables:
 | `VERCEL_ORG_ID` | Vercel account/team identifier for the linked project |
 | `VERCEL_PROJECT_ID` | Vercel project identifier |
 | `VERCEL_DEPLOY_ENABLED` | Shared deployment switch; set to `true` after Preview setup to enable PR deployments |
-| `PRODUCTION_DEPLOY_ENABLED` | Leave unset or `false` until separate Production configuration and smoke credentials are complete; must also be `true` to stage a candidate on `master` |
+| `PRODUCTION_DEPLOY_ENABLED` | Leave unset or `false` until Production configuration and smoke credentials are complete; must also be `true` to stage a candidate on `master` |
 | `PRODUCTION_PROMOTION_ENABLED` | Set to `true` only after the protected Production environment is configured |
 
 Create these GitHub secrets; never put their values in source, logs or PR text:
@@ -59,8 +59,9 @@ secret-scan and container checks plus one approving teammate review.
 
 Store `SMOKE_USERNAME`, `SMOKE_PASSWORD` and, when needed, `SMOKE_BYPASS_SECRET`
 as **environment secrets**: Preview credentials in `preview`, Production
-credentials in `production-candidate`. Do not use repository-wide smoke
-credentials for both databases. Never enable promotion before verifying the
+credentials in `production-candidate`. For the ADR-007 shared database, reuse the
+same synthetic Requester credentials in both GitHub environments; environment
+secrets are not shared automatically. Never enable promotion before verifying the
 required-reviewer gate; if the repository plan cannot enforce it, keep
 `PRODUCTION_PROMOTION_ENABLED=false` until an approved alternative is agreed.
 
@@ -69,18 +70,26 @@ For Preview-only operation, keep `VERCEL_DEPLOY_ENABLED=true`,
 Missing `production-candidate` credentials do not affect Preview. When staging
 is enabled, a preflight requires `SMOKE_USERNAME` and `SMOKE_PASSWORD` before
 creating a Production deployment. Also set `SMOKE_BYPASS_SECRET` in that GitHub
-environment when Vercel Deployment Protection applies. These credentials must
-belong to the separate Production database; do not copy the development account.
+environment when Vercel Deployment Protection applies. The bypass secret can be
+reused because Preview and Production belong to the same Vercel project.
 
 Do not allow Vercel Git integration to auto-assign the Production domain. The
 workflow's staged candidate and protected promotion are the only Production
 path. Preview Git integration may also be disabled to avoid duplicate builds.
 
-## Vercel environment separation
+## Current single-database configuration
 
-Create one Vercel project and configure distinct Preview and Production values.
-The values must point to separate databases, Accounts, SoCLaaS keys and
-hostnames. Do not copy Production secrets into Preview.
+The user authorized [ADR-007](../workflow/decisions/ADR-007-single-database-deployment.md)
+on 20 October 2026: reuse `facilityflow-dev`, existing runtime credentials,
+Accounts and records for this coursework deployment. Apply existing Preview
+variables to the Vercel Production target and add the Production profile below.
+No new database, data copy, reseeding or initialization is needed.
+
+Preview/local and Production share data, sessions and AI limits: changes from any
+of them affect the same database. Keep the dataset synthetic and use isolated
+databases for automated tests. Distinct Vercel hostnames/environment targets,
+server-side authorization and human release gates remain in place. Known exposed
+credentials must be rotated rather than treated as safe by this exception.
 
 Required application variables in both environments are:
 
@@ -93,13 +102,17 @@ Required application variables in both environments are:
 - `SPRING_PROFILES_ACTIVE=production` for Production;
 - `DEMO_DATA_ENABLED=false` for Production;
 
-Provision and migrate each database separately using the restricted migration
+For this existing initialized database, retain its current schema and Accounts;
+do not rerun provisioning, migrations or bootstrap merely to change deployment
+targets. Ordinary web startup validates readiness without schema writes.
+
+For a future fresh database, provision and migrate using the restricted migration
 identity and the explicit `database-migrate` profile described in
 [DatabaseCompletion.md](DatabaseCompletion.md). Check existing migration history
 first using [DeveloperGuide.md](DeveloperGuide.md); do not repair or reseed it to
 make deployment pass. Ordinary web startup does not migrate or initialize data.
 
-Initialize a new Production database once, from the built release JAR in a
+Only for a future empty Production database, initialize once from the release JAR in a
 trusted operator environment, using the application database identity,
 `DEMO_DATA_ENABLED=false`, and temporary `BOOTSTRAP_MANAGER_USERNAME`,
 `BOOTSTRAP_MANAGER_DISPLAY_NAME` and `BOOTSTRAP_MANAGER_PASSWORD` secrets:
@@ -128,12 +141,13 @@ cookie and response files on exit.
    Vercel auto-detects `Dockerfile.vercel`; no `vercel.json` is required for this
    single HTTP service. Verify container availability and limits for the actual
    account during the deployment spike.
-2. Add separate Preview and Production application values in Vercel.
+2. Apply the existing database/application values to Preview and Production in
+   Vercel under ADR-007; add the Production profile and keep demo seeding disabled.
 3. Add the GitHub variables, secrets and protected environments above.
 4. Open a test pull request with `VERCEL_DEPLOY_ENABLED=true`; retain the Preview
    URL and smoke result in the GitHub job summary.
 5. Merge only after the required checks and teammate approval. For a Production
-   release, finish the separate Production setup and smoke-account configuration,
+   release, finish Production setup and the environment-scoped smoke secrets,
    then explicitly set `PRODUCTION_DEPLOY_ENABLED=true` before the approved
    `master` push. Otherwise Production staging is skipped.
 6. Confirm the Production candidate smoke result, then approve the protected
@@ -198,6 +212,6 @@ or output-quality assessment. Detailed results and limitations are in
 
 - first Production-candidate build and smoke;
 - protected no-rebuild promotion and rollback rehearsal;
-- separate Preview/Production database and SoCLaaS-key inspection;
+- verify the intentional shared database/credential targets against ADR-007;
 - five-minute external monitoring and alert exercise;
 - provider backup verification and database restore rehearsal.

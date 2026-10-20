@@ -3,6 +3,9 @@
 Status: approved v0.1, 12 October 2026. Owner: team. Approval by each role
 owner and at least one teammate has been confirmed.
 
+Deployment amendment, 20 October 2026: stakeholder-authorized ADR-007 changes
+NFR-DEP-001 for this coursework deployment; teammate implementation review pending.
+
 Sources: stakeholder decisions through 12 October 2026; binding group-planning
 document; MP2 behavior at commit
 9819b857d880134c1fc1ffef8a8bcd5d6e536f43. This document intentionally adapts
@@ -17,8 +20,9 @@ AI is disabled, unavailable, rate-limited, or rejected.
 
 The release succeeds when all three roles complete the lifecycle using separate
 authorized views, representative forbidden actions are blocked server-side,
-data survives restart/deployment, AI remains advisory, development and
-production are separated, and every approved requirement has test evidence.
+data survives restart/deployment, AI remains advisory, deployment configuration
+follows NFR-DEP-001 (including its coursework exception), and every approved
+requirement has test evidence.
 
 ## Shared data
 
@@ -187,9 +191,15 @@ CLOSED reopen operation.
 - **NFR-OPS-002:** Structured logs include correlation ID, time, severity,
   deployment version and safe event/error type, but exclude credentials, password
   material, raw AI prompts/outputs and full Request descriptions.
-- **NFR-DEP-001:** Development/Preview and Production have separate PostgreSQL
-  databases, secrets, SoCLaaS keys, configuration and hostnames. Production
-  deployment requires an approved pull request and human promotion.
+- **NFR-DEP-001:** For the current coursework deployment, Development/Preview
+  and Production may reuse the existing `facilityflow-dev` PostgreSQL database,
+  Accounts, records and server-side credentials under
+  [ADR-007](../decisions/ADR-007-single-database-deployment.md), authorized by the
+  stakeholder on 20 October 2026. Environment configuration and hostnames remain
+  explicit, automated tests remain isolated, and no reseeding or destructive
+  migration is implied. Users must be told that writes affect shared data.
+  Production deployment still requires an approved pull request and human
+  promotion. Other deployments retain separate databases and credentials.
 - **NFR-DOC-001:** User/Developer guides, MP2 reuse ledger, traceability, sanitized
   multi-agent handoffs and individual reflections remain current. Planned tests
   or controls are never described as executed.

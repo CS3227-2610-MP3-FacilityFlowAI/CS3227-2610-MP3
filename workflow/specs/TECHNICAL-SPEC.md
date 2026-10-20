@@ -123,7 +123,11 @@ Required environment groups are:
 - SoCLaaS and AI limits from INTEGRATION-SPEC;
 - deployment: APP_BASE_URL, APP_VERSION and health/monitoring settings.
 
-Development and Production values are distinct. Startup validates non-secret
+For the current coursework deployment, the stakeholder-approved
+[ADR-007](../decisions/ADR-007-single-database-deployment.md) permits reusing the
+existing development database, Accounts and credentials in Production. Vercel
+environment targets remain explicit; Production uses the production profile,
+secure cookies and disabled demo initialization. Startup validates non-secret
 configuration and fails safely for unusable database/security configuration.
 Missing AI configuration degrades only AI readiness.
 
@@ -172,8 +176,11 @@ confirmed in a deployment spike before implementation claims immutable promotion
 If Hobby cannot satisfy this flow, the specification must be revised and approved;
 do not silently deploy a different artifact.
 
-Application/database/AI secrets and data remain separate between Preview and
-Production. Deployment is team-managed through GitHub Actions, never through an
+The current single-database coursework deployment follows ADR-007: Preview/local
+and Production share database records and may reuse server-side credentials.
+Preview/local writes therefore affect Production data. No new schema, reseeding
+or automatic initialization is required. Other deployments retain environment
+separation. Deployment is team-managed through GitHub Actions, never through an
 AI build-and-host environment.
 
 ## Operations
