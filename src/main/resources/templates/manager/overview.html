@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Manager overview · FacilityFlow AI</title>
+    <link rel="stylesheet" th:href="@{/css/workspace.css}">
 </head>
 <body>
 <header>
@@ -34,10 +35,10 @@
     <section aria-labelledby="workload-heading">
         <h2 id="workload-heading">Active Technician workload</h2>
         <p th:if="${#lists.isEmpty(overview.technicianWorkloads)}">No active Technicians.</p>
-        <table th:unless="${#lists.isEmpty(overview.technicianWorkloads)}">
+        <div class="table-scroll"><table th:unless="${#lists.isEmpty(overview.technicianWorkloads)}">
             <thead><tr><th scope="col">Technician</th><th scope="col">Assigned and in progress</th></tr></thead>
             <tbody><tr th:each="item : ${overview.technicianWorkloads}"><td th:text="${item.displayName + ' (' + item.username + ')'}">Technician</td><td th:text="${item.activeRequests}">0</td></tr></tbody>
-        </table>
+        </table></div>
     </section>
 </main>
 </body>

@@ -106,6 +106,14 @@ class JdbcRequesterSmartReportRepositoryTest {
         jdbc.update(sql, java.util.Map.of("id", id));
     }
 
+    @Test void formCategoryIdResolvesToActiveLabelBeforeProviderContext() {
+        var eligibility = repository.probeCreate(snapshot(REQUESTER_ID, 7)).orElseThrow();
+        var context = repository.loadContext(eligibility, new RequesterSmartReportInput(
+                "Flickering light", null, null, ELECTRICAL_ID.toString(), "Normal"));
+        assertEquals("Electrical", context.assistantContext().selectedCategory());
+        assertFalse(context.assistantContext().toString().contains(ELECTRICAL_ID.toString()));
+    }
+
     private void insertCategory(UUID id, String name, long version) {
         jdbc.update("INSERT INTO facilityflow.category VALUES (:id, :name, true, :version)",
                 new MapSqlParameterSource().addValue("id", id)

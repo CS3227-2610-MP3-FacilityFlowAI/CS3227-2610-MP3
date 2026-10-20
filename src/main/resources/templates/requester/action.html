@@ -5,6 +5,7 @@
     <title th:text="${operation == 'cancel' ? 'Cancel request' : 'Add Requester Update'} + ' · FacilityFlow AI'"></title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <script defer th:src="@{/js/request-form.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/workspace.css}">
 </head>
 <body>
 <header th:replace="~{fragments/authenticated-header :: header(${username}, ${displayName}, ${role})}"></header>

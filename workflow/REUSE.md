@@ -1,5 +1,10 @@
 # MP2 Reuse Ledger
 
+20 October PR error-association correction: Manager template ARIA/error IDs,
+failed-action scoping, browser validation regressions and acceptance/evidence
+updates are **new** MP3 work adapting existing MP3 templates and tests. No further
+MP2 source was copied. See `logs/2026-10-20-manager-field-error-accessibility.md`.
+
 19 October AI observability: the aggregate filter/report and single AiMonitoring
 module, Manager controller/view/styles, portal comparison, correlation filter,
 and focused tests are new MP3 work. Existing MP3 invocation and diagnostic logging,
@@ -7,6 +12,17 @@ role-service, navigation, configuration and guide code is adapted. No MP2 source
 was consulted or copied (zero copied MP2 lines). The implementation uses existing
 Spring Boot, SLF4J/Logback, PostgreSQL and JUnit dependencies; no new dependency.
 See logs/2026-10-19-ai-observability.md for executed checks and scope.
+
+19 October adaptive UI revision: `workflow/specs/user-interface.md` is **adapted**
+from the user-supplied MP2 `user-interface.md` Draft v0.2 (12 September 2026).
+Role separation/navigation, forms/feedback, lists/empty states, accessibility/
+layout, and role inventory sections retain UIX provenance while mapping to MP3
+web requirements. MP2 desktop dialogs, account menu, dash-only filters and
+split-pane assumptions are **concept-only**, explicitly superseded by existing
+MP3 web behavior. The visual CSS, stylesheet links, browser checks and scoped
+guide/traceability/session/handoff additions are **new** MP3 work adapting existing
+MP3 assets; no MP2 application code is copied. See
+`logs/2026-10-19-responsive-ui.md` for executed results and review status.
 
 16 October Requester step 7: the Node/CDP browser/load runner, opt-in Gradle
 task, graceful application/session restart regression, versioned 12-case AI
@@ -246,3 +262,9 @@ records above remain authoritative for their original role slices.
 member and exact-payload assertion adapt the existing MP3 shared gateway contract;
 the live evidence and guide updates are **new** MP3 work. No MP2 source consulted
 or copied; existing role reuse provenance remains unchanged.
+
+20 October shared Requester runtime consolidation: form adapter, shared service
+version guard, protected category mapping, migrated tests and guide/evidence
+updates are **adapted** existing MP3 code with **new** integration regressions.
+The duplicate Requester gateway/transport/admission implementation is retired.
+No MP2 source was consulted or copied.

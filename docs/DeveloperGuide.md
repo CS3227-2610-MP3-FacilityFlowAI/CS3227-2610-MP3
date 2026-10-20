@@ -18,6 +18,17 @@ query was performed.
 
 ## Local scaffold (Part 1)
 
+The shared presentation layer is `src/main/resources/static/css/workspace.css`,
+loaded after each full page's existing role stylesheet. Keep semantic controls,
+Thymeleaf authorization, form/CSRF/version fields and JavaScript hooks intact
+when editing layout. `[hidden]` regions must stay hidden until existing scripts
+open them. UI requirements and MP2 adaptation are in
+[user-interface.md](../workflow/specs/user-interface.md). Run the existing
+`requesterVerification` Gradle task for disposable PostgreSQL/desktop Chrome
+layout and workflow checks; it requires Node and Chrome. Screenshots and measured
+results are generated under `build/verification/requester/`. This is separate
+from hosted acceptance and full accessibility review.
+
 Install JDK 25 and run the committed Gradle wrapper from the repository root.
 The first build requires network access to obtain Gradle and Maven dependencies;
 automated tests need no real database or SoCLaaS credentials. Running the
@@ -489,124 +500,55 @@ corpus, hosted application verification and final Security Reviewer/teammate
 verification remain pending. See
 AI-SECURITY-SPEC.md and ../workflow/SECURITY.md.
 
-### Smart Report service (Requester step 5)
+### Requester Smart Report: shared runtime
 
-`ai/SmartReportService` calls the role-owned read repository, `AiGateway` and
-`AiOperations` persistence seams. POST `/requester/requests/assistant` accepts
-`SmartReportInput`; POST `/requester/requests/{displayId}/assistant` also requires
-the ordinary Request version. Existing role filters and CSRF protect both. They
-return no-store JSON with a typed suggestion or stable failure category and safe
-guidance. The step 6 review UI is described below. Service code
-never calls a Request mutation or business-audit operation.
+REQ-RQ-012-017, REQ-SH-018 and REQ-AI-001-006: the browser form endpoints
+`/requester/requests/assistant` and `/requester/requests/{displayId}/assistant`
+use `ai.SmartReportService` only to adapt form input and the existing JSON reply.
+It delegates to `requester.RequesterSmartReportService`, the same service used by
+the typed Smart Report endpoints. The adapter's preliminary account/version reads
+retain a five-second transaction timeout; inference runs outside that transaction. There is no separate Requester gateway,
+transport, admission backend or provider lifecycle.
 
-The input permits incomplete current fields within their normal maxima. Actor,
-object/version checks, input bounds and database admission precede category
-loading/provider use. Context includes only current rough/form text, selected
-category label/urgency and active category labels. No saved Request description,
-Account/display/internal IDs, history or unrelated records enter the prompt.
-Fixed field rules live in source-controlled `SmartReportSchema` template
-`smart-report-v1`. Jackson 3 serializes one provenance-labelled data object;
-untrusted strings never extend the fixed system instructions.
+The shared service owns account/session authorization, eligibility, expected
+edit-version checks, `AiInvocationCoordinator` admission, protected context
+loading, readiness, the typed `SmartReportAssistant`, final freshness checks and
+`AiInvocationTelemetry`. Category IDs from the form become active category labels
+only during protected context loading after admission; IDs never enter provider
+context. Different rough text and current description are joined with two
+newlines; their combined bound is 2,000 Unicode code points. Oversize input is
+rejected without truncation. No assistant path writes maintenance records.
 
-`ValidatedAiGateway` bounds aggregate system/data JSON to 12,000 UTF-16 units
-(conservative for Unicode), output to 800 tokens and deadline to 30 seconds.
-It has five worker slots without a waiting queue, cancels/ignores late responses,
-and retries network/503 once or 429 once only for Retry-After up to two seconds
-inside the original deadline. Other failures never retry. The strict parser
-rejects duplicate/unknown fields, trailing JSON, wrong types, invalid enum/category,
-empty optional strings, schema lengths and missing required structure. Plain-text
-validation rejects active markup/links, unsafe control/format characters, identifiers,
-prompt markers, known secrets and adapter-provided disclosure canaries. This
-bounded detector is not proof against every semantic or obfuscated disclosure.
+Production wiring in `ai/config/AiProviderLifecycleConfiguration` uses the shared
+`SocLlmProviderRuntimeFactory` and `SocLlmSmartReportAssistant`. Provider payload,
+readiness, deadlines, retry, validation and disclosure rules are owned by the
+shared runtime described above. `AI_ENABLED=true`, `SOCLAAS_API_KEY` and
+`SOCLAAS_MODEL` configure that runtime; keys remain server-only. The retired
+`ValidatedAiGateway`, `SoClaasTransport` and `JdbcAiOperations` are removed.
 
-`JdbcAiOperations` uses the existing V3 tables: a locked per-Account rolling
-timestamp array (five/minute, 30/hour) plus five global expiring slot leases
-claimed with FOR UPDATE SKIP LOCKED. Versioned release cannot clear a newer
-lease. Short transactions end before inference. Limits survive service instances;
-each invocation reserves one quota unit, including its permitted retry. Leases
-last the configured provider deadline plus 15 seconds for local processing.
-Adapters must honor remaining deadlines/interruption; bounded workers also
-prevent ignored cancellation from creating an unbounded local call queue.
+The existing form endpoints retain no-store JSON with `status`, `suggestion`
+and safe `message` fields. A shared freshness discard maps to HTTP 409. Role
+filters, CSRF and ordinary create/edit authorization remain in force.
 
-Telemetry stores actor/correlation IDs, feature, configured model/template,
-status/latency/retry and provider usage, retaining known counts even when a
-freshness check discards output. Missing usage remains null. No prompt, provider
-error body, free-text input/output or business Audit Event is recorded. A metadata
-storage failure cannot return a successful suggestion.
+### Requester review UI
 
-Runtime `AiConfiguration` now installs `SoClaasTransport`; `FakeAiTransport`
-exists only under tests. Missing/invalid configuration leaves AI unavailable.
-Manager monitoring now provides period totals and a CSRF-protected manual portal
-comparison. Actual portal reconciliation still requires an operator-supplied
-snapshot for the matching key/environment/period.
-`AI_ENABLED` defaults false. `AI_TIMEOUT_SECONDS`, `AI_MAX_OUTPUT_TOKENS`,
-`AI_MAX_IN_FLIGHT`, `AI_RATE_PER_MINUTE` and `AI_RATE_PER_HOUR` may reduce defaults;
-values are clamped to 1 through their approved maximum. `SOCLAAS_API_KEY` is a
-server-only bearer credential and forbidden output value. No dependency or
-migration was added. Tests use synthetic values and no external provider.
+`requester/create.html` places Smart Report outside the ordinary create/edit
+form. `smart-report.js` posts allowlisted current fields, rough text, expected
+edit version and CSRF. Suggestions render as text, with explicit per-field
+acceptance. Accepted fields remain editable; only ordinary Submit request or
+Save changes writes a report. Discard, changed input and navigation invalidate
+pending suggestions. The manual workflow remains available during AI failures
+and without JavaScript.
 
-### Review UI and SoCLaaS adapter (Requester step 6)
-
-`requester/create.html` embeds an optional, separately labelled review section
-outside the ordinary create/edit form. `smart-report.js` sends only current
-allowlisted fields, rough text, expected edit version and CSRF to the same-origin
-POST endpoint. It renders with textContent, never HTML/Markdown. Explicit per-field
-buttons map active category labels to current form option IDs and urgency labels
-to the ordinary enum. Accepted fields remain editable. There is no AI submit or
-save operation, acceptance flag or result ID that can authorize a write.
-
-While awaiting a response, manual fields remain usable. Changed input discards
-late output; a field changed after review cannot be overwritten by its old
-suggestion. Discard, ordinary submission and page navigation abort/ignore pending
-browser results and remove transient suggestion nodes. No chat/localStorage or
-other suggestion persistence. Browser cancellation is best effort; the server
-invocation remains bounded by its deadline/quotas. A no-JavaScript manual path
-remains available. Framework page/JSON escaping plus DOM textContent protect
-display; no raw provider body is sent to the browser.
-
-`SoClaasTransport` uses one JDK HttpClient, default certificate validation and no
-redirects. Runtime accepts only the approved HTTPS SoCLaaS `/v1` origin; it never
-sends credentials to configurable arbitrary hosts or an HTTP URL. The
-adapter also rejects a model setting containing the configured key, preventing
-that misconfiguration from reaching model metadata. The
-package-private injected client/base constructor is for loopback contract tests,
-with no runtime insecure flag. Configuration uses `AI_ENABLED=true`,
-`SOCLAAS_BASE_URL` (default `https://soclaas-api.comp.nus.edu.sg/v1`), a server-only
-`SOCLAAS_API_KEY` and `SOCLAAS_MODEL`. No model is hard-coded. Configure separate
-non-production/production keys where supported, outside tracked files.
-
-Startup and `available()` never contact the provider. After ordinary admission,
-first use checks GET `/models` within two seconds and the invocation's remaining
-deadline. One probe per process runs at a time; success caches five minutes,
-failure cools down 60 seconds. Generation uses POST `/chat/completions` with model,
-stream=false, reasoning_effort=none, max_tokens and exactly system/user messages.
-No tools, history or response ID. Credentials stay in the Authorization header. Generation and probe
-share the original deadline; future cancellation closes the HTTP exchange.
-
-Response bodies are capped at 64 KiB with a typed overflow error so oversized or
-malformed output never becomes a network retry. The adapter requires exactly one
-completed assistant-text choice and rejects tool/refusal/truncated responses;
-the existing strict Smart Report parser then validates content. Numeric non-negative
-usage is extracted without estimating missing values. Status/Retry-After map into
-the existing one-retry gateway policy; redirects never forward bearer headers.
-No prompt/output/provider-error body is logged or persisted.
-
-`SoClaasTransportTest` exercises the real HTTP adapter against a loopback provider.
-PostgreSQL integration tests cover rendered create/edit routes and explicit
-ordinary submission after review, including stale state and forged AI flags.
-Run `node src/test/js/smart-report.test.cjs` plus the existing request-form self-
-check for explicit acceptance/discard/stale/cancel/error/escaping behavior.
-These DOM checks do not replace real-browser accessibility/viewport verification.
-The 19 October non-production live smoke initially found Requester truncation
-failures. After aligning the transport with reasoning_effort=none, 19 focused
-tests passed and ordinary, missing-detail and instruction-injection synthetic
-live gateway cases all returned valid suggestions without retries. A subsequent
-authenticated create-assistant endpoint smoke passed all three cases with real
-security/JDBC sessions and disposable PostgreSQL; access/CSRF checks passed and
-no maintenance records changed. Live browser interaction, owned-edit/other-role
-checks and broader quality/security review remain pending.
-See [live evidence](../logs/2026-10-19-requester-live-ai-smoke.md). JDK reference:
-[HttpClient](https://docs.oracle.com/en/java/javase/25/docs/api/java.net.http/java/net/http/HttpClient.html).
+`SmartReportFormAdapterTest`, `RequesterSmartReportServiceTest`,
+`JdbcRequesterSmartReportRepositoryTest` and `RequesterRequestIntegrationTest`
+cover form compatibility, shared execution, authorization, freshness, admission
+and absence of AI business writes. Shared provider/core contract tests remain.
+JavaScript and Requester browser checks cover review behavior. The earlier
+19 October live smoke tested the now-retired duplicate gateway; it is historical
+evidence, not verification of this shared-runtime integration. See
+[consolidation evidence](../logs/2026-10-19-requester-shared-runtime.md) for current
+checks and remaining limits.
 
 ## SDD workflow
 
