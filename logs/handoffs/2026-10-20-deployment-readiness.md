@@ -125,3 +125,41 @@ Fresh provider verifier returned no blockers; focused 30-test/two-suite build
 passed with no failures/errors/skips. User confirmed READINESS/NETWORK_FAILURE.
 Proceed through existing Preview CI only, then inspect TRANSPORT reason. No
 Production promotion/merge or raw diagnostic content authorized.
+Diagnostic revision 2699447 Preview passed hosted CI/smoke at
+https://facilityflow-bo1pgnpy4-yooplo.vercel.app (run39384235933, deployment7193762173).
+Await user-authenticated AI attempt to capture TRANSPORT reason; no AI fix claimed.
+Use Vercel logs --since 5m, not 1h (Hobby retention rejected old query). Emit only
+closed gateway enum codes. No need to access credentials, weaken CSP/TLS or
+repeat untrusted provider payloads. Detailed evidence in hosted-AI session log.
+
+## Successful Requester AI retry return
+
+User reported suggestions appeared on diagnostic Preview 2699447 at
+https://facilityflow-bo1pgnpy4-yooplo.vercel.app . Exact-deployment five-minute
+runtime query returned zero gateway failure codes (CLI exit0). This supports one
+user-reported successful browser invocation; no response content was collected.
+Previous NETWORK_FAILURE cause is unconfirmed; diagnostic logging is not a
+claimed connectivity fix. No further change needed for this attempt. Preserve
+Production/human review gates and user's .gitignore edits. Evidence remains local;
+see hosted-AI log. Next authorized work: review/record evidence or investigate
+with closed diagnostics if a failure recurs, without broadening permissions.
+
+## Production gating correction: fresh verifier dispatch
+
+Source Codex -> fresh deployment verifier. User reported master Production
+candidate failed for missing production-candidate environment smoke secrets.
+Remote run39382394925 confirms staged smoke failed; promotion skipped. Master
+9151650 includes original shared-gate workflow; PR16 remains open. Proposed fix
+on deployment branch adds separate PRODUCTION_DEPLOY_ENABLED opt-in and smoke
+credential preflight before Production linking/deployment. No secret copies or
+API-setting changes. Requirements NFR-DEP-001/DOC-001. Inspect changed workflow,
+new deployment-gates.test.cjs and runbook; rerun focused test with Git Bash in PATH
+and existing smoke regression, no Java/network/secret/DB calls. Read-only, no edits,
+merges or promotion. Tests currently pass actual conditions/preflight fixtures.
+See logs/2026-10-20-production-deployment-gate.md. Parent owns final evidence.
+Suggested skills Ponytail review, FacilityFlow handoff. Preserve unrelated edits.
+Fresh Production verifier returned no blockers; gate/preflight and smoke
+regressions/whitespace independently passed. Preserve existing Preview while
+Production opt-in remains false/unset. Correction is proposed via PR16, not a
+merge or production promotion. Historical master run remains failed until a
+new revision supersedes it. See production-deployment-gate log.

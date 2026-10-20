@@ -331,3 +331,13 @@ NETWORK_FAILURE is now accompanied by a closed transport-stage reason without
 raw exception data. Redaction regression covers transport categories/nested
 causes. Hosted connectivity root cause and live AI success remain pending; see
 logs/2026-10-20-hosted-ai-connectivity.md.
+Requester hosted-AI continuation (REQ-RQ-012-017, REQ-AI-004/006): user reported
+suggestions appeared on Preview2699447; exact-deployment recent logs contained
+no gateway failures. This supersedes the pending single-attempt browser result
+only. Earlier network failure root cause and broad release acceptance remain
+unresolved. See logs/2026-10-20-hosted-ai-connectivity.md.
+NFR-DEP-001 / NFR-DOC-001 independent Production gate: master candidate requires
+PRODUCTION_DEPLOY_ENABLED=true as well as the shared deployment switch; missing
+smoke credentials fail preflight before staging. Actual workflow expressions and
+preflight have passing local regressions. See
+logs/2026-10-20-production-deployment-gate.md; new hosted/master checks pending.

@@ -19,8 +19,9 @@ Every pull request runs these required checks from `.github/workflows/ci-cd.yml`
 The safe-read check requires the authenticated logout form. A login-page response
 cannot satisfy it; a dependency-free shell regression runs in CI.
 
-After an approved merge to `master`, the workflow builds a Production candidate
-with `vercel deploy --prod --skip-domain`. It smoke-tests the candidate before a
+After an approved merge to `master` and explicit Production enablement, the
+workflow builds a Production candidate with `vercel deploy --prod --skip-domain`.
+It smoke-tests the candidate before a
 separate `production` job may promote that exact deployment without rebuilding.
 The `production` GitHub environment must require a human reviewer before the
 promotion variable is enabled.
@@ -37,7 +38,8 @@ Create these GitHub repository variables:
 | --- | --- |
 | `VERCEL_ORG_ID` | Vercel account/team identifier for the linked project |
 | `VERCEL_PROJECT_ID` | Vercel project identifier |
-| `VERCEL_DEPLOY_ENABLED` | Set to `true` only after Preview and Production values are complete |
+| `VERCEL_DEPLOY_ENABLED` | Shared deployment switch; set to `true` after Preview setup to enable PR deployments |
+| `PRODUCTION_DEPLOY_ENABLED` | Leave unset or `false` until separate Production configuration and smoke credentials are complete; must also be `true` to stage a candidate on `master` |
 | `PRODUCTION_PROMOTION_ENABLED` | Set to `true` only after the protected Production environment is configured |
 
 Create these GitHub secrets; never put their values in source, logs or PR text:
@@ -60,6 +62,14 @@ credentials in `production-candidate`. Do not use repository-wide smoke
 credentials for both databases. Never enable promotion before verifying the
 required-reviewer gate; if the repository plan cannot enforce it, keep
 `PRODUCTION_PROMOTION_ENABLED=false` until an approved alternative is agreed.
+
+For Preview-only operation, keep `VERCEL_DEPLOY_ENABLED=true`,
+`PRODUCTION_DEPLOY_ENABLED=false` and `PRODUCTION_PROMOTION_ENABLED=false`.
+Missing `production-candidate` credentials do not affect Preview. When staging
+is enabled, a preflight requires `SMOKE_USERNAME` and `SMOKE_PASSWORD` before
+creating a Production deployment. Also set `SMOKE_BYPASS_SECRET` in that GitHub
+environment when Vercel Deployment Protection applies. These credentials must
+belong to the separate Production database; do not copy the development account.
 
 Do not allow Vercel Git integration to auto-assign the Production domain. The
 workflow's staged candidate and protected promotion are the only Production
@@ -121,7 +131,10 @@ cookie and response files on exit.
 3. Add the GitHub variables, secrets and protected environments above.
 4. Open a test pull request with `VERCEL_DEPLOY_ENABLED=true`; retain the Preview
    URL and smoke result in the GitHub job summary.
-5. Merge only after the required checks and teammate approval.
+5. Merge only after the required checks and teammate approval. For a Production
+   release, finish the separate Production setup and smoke-account configuration,
+   then explicitly set `PRODUCTION_DEPLOY_ENABLED=true` before the approved
+   `master` push. Otherwise Production staging is skipped.
 6. Confirm the Production candidate smoke result, then approve the protected
    `production` job. Verify that promotion used the same candidate URL.
 7. Record the deployment URL/ID and sanitized result under `logs/`; never copy
