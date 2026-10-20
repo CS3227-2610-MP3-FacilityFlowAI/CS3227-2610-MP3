@@ -316,3 +316,9 @@ NFR-DEP-001 / NFR-SEC-002 Preview CA continuation: the provider public root CA i
 packaged at `/app/supabase-root-2021.crt`; JDBC retains verify-full. TLS-only CA and
 hostname verification passed against development with this CA. See deployment
 session log for provider fingerprint, verification limits and hosted status.
+NFR-DEP-001 upload correction: the real Vercel CLI collector reproduced the
+missing gradle/src failure; corrected directory patterns include all tracked
+build inputs. Preview/Production jobs now validate actual dry-run inventory.
+Missing-directory and unexpected local-file regressions passed locally; hosted
+retry remains pending. Earlier Git-ignore-only evidence is superseded for this
+upload behavior. See deployment session log.

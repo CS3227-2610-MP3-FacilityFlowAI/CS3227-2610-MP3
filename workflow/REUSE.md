@@ -273,3 +273,6 @@ are also **new** MP3 work adapting the existing MP3 pipeline, with no MP2 source
 runbook/evidence updates are **new** MP3 deployment work, with no MP2 source.
 The certificate is third-party public trust material from Supabase, not a secret;
 source and fingerprint are recorded in `docs/Deployment.md`.
+20 October Vercel upload correction: allowlist directory syntax, actual-inventory
+checker, CI dry-run steps and evidence/runbook updates are **new** MP3 deployment
+work adapting existing MP3 configuration; no MP2 source was consulted or copied.

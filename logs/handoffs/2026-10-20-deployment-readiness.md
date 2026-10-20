@@ -60,3 +60,24 @@ mutation performed. Next user step: set Preview SUPABASE_SSL_ROOT_CERT to
 Fresh CA verifier returned no blockers after independently checking official CA
 provenance, expiry/public-only content, Dockerfile parity, upload inclusion,
 runbook path and retained verify-full. Human review/hosted checks remain pending.
+
+## Vercel upload failure: fresh verifier dispatch
+
+Screenshot CI run 39378714664 job 118485945317 failed COPY gradle gradle.
+Actual installed Vercel CLI 64.5.0 inspectDeploymentFiles reproduced old
+.vercelignore inventory of five root files; !/gradle/ and !/src/ prevented descent.
+Changed patterns to !/gradle and !/src; real inventory now includes 262 files,
+all 260 tracked build inputs. New .github/scripts/check-vercel-inputs.cjs validates
+inventory from both deployment jobs' vercel deploy --dry --json steps. Missing
+src/gradle and injected .env.local regressions pass (rejected appropriately).
+Fresh verifier: read-only inspect correction and both callers; independently run
+actual installed CLI collector/checker and negative regressions. Cached CLI:
+C:/Users/jjwr2/AppData/Local/npm-cache/_npx/4926d0e14b8422cc/node_modules/vercel/dist/chunks/chunk-WN7EJWN4.js
+exports require_dist(); use inspectDeploymentFiles({path:process.cwd()}) offline.
+Do not access ignored secrets, query hosted DB, deploy or edit. Parent owns logs.
+No merge/promotion permission. Suggested skill Ponytail review; handoff as usual.
+Fresh upload verifier returned no blockers: actual CLI collector -> checker passed;
+missing-gradle, missing-src and injected .env.local inventories rejected; both
+pre-deployment dry-run pipelines/JSON shape reviewed and whitespace passed.
+Next authorized action: push correction to PR16 and verify new hosted CI/Preview
+result. Do not merge or promote Production. User's .gitignore edits preserved.

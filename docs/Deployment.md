@@ -135,6 +135,11 @@ The committed `.vercelignore` allowlists only container build inputs for CLI
 source uploads, excluding local configuration, data, logs and reference files.
 Keep this list aligned with `COPY` inputs when changing `Dockerfile.vercel`.
 `.vercel/` contains local project/environment metadata and is Git-ignored.
+Directory allowlist entries must omit trailing slashes (`!/gradle`, `!/src`):
+Vercel CLI 64.5.0 omits their contents when the entries end in `/`.
+Both hosted deployment jobs inspect `vercel deploy --dry --json` and reject an
+upload missing tracked build inputs or containing paths outside the allowlist.
+Git ignore checks alone do not validate Vercel's directory traversal.
 
 Run the same application checks and image build without deployment credentials:
 

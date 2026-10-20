@@ -72,3 +72,33 @@ Fresh CA verifier returned no blockers: independently downloaded provider CA and
 confirmed DER equality/fingerprint/expiry, public-only PEM, Dockerfile parity,
 source upload inclusion, documented path and unchanged verify-full. No hosted DB
 calls or ignored secret reads by verifier. Human teammate review remains pending.
+
+## Preview upload failure correction
+
+User screenshot of CI run 39378714664 / job 118485945317 shows Vercel build failed
+at COPY gradle gradle: /gradle did not exist. Root cause reproduced with the
+installed Vercel CLI 64.5.0 collector (inspectDeploymentFiles): old .vercelignore
+selected only .dockerignore, Dockerfile.vercel, gradlew, build.gradle,
+settings.gradle (five files). Git ignore assertions did not capture Vercel's
+actual directory traversal, so the earlier upload-pattern evidence was inadequate.
+
+Removing trailing slashes from !/gradle and !/src made the same collector select
+262 files, including all 260 tracked Docker build inputs. A new dependency-free
+check-vercel-inputs.cjs checks actual CLI inventory for all tracked build inputs
+and rejects unexpected paths. Preview and Production-candidate jobs now pipe
+vercel deploy --dry --json into that shared check before deployment.
+
+Executed: actual CLI collector -> checker passed; missing-directory inventory
+regression rejected; injected .env.local path regression rejected; git diff
+--check passed. npx help and top-level dry-run could not complete inside the
+network sandbox; installed CLI code/collector was used offline, without auth or
+uploads. The actual flags and JSON shape were checked in CLI 64.5.0 help/source.
+No Java/application behavior changed; full Java suite not repeated. Hosted retry
+and fresh verifier result pending. User's .gitignore edits preserved.
+Additional targeted verification: node --check for the new inventory checker and
+existing smoke-test.test.sh passed. Current changes affect source selection and
+pre-deploy checks only; Java unit/integration checks will rerun in PR CI.
+Fresh verifier independently repeated actual CLI inventory validation (262 entries,
+260 tracked inputs), separate missing-gradle/missing-src rejections and injected
+.env.local rejection; reviewed both dry-run callers/JSON shape/ordering and
+whitespace. No blockers. No secrets or hosted operations accessed by verifier.

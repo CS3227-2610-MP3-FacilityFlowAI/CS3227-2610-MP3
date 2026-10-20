@@ -3,7 +3,7 @@
 !/.dockerignore
 !/Dockerfile.vercel
 !/gradlew
-!/gradle/
+!/gradle
 !/build.gradle
 !/settings.gradle
-!/src/
+!/src

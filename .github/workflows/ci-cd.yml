@@ -174,6 +174,11 @@ jobs:
       - name: Link Preview environment
         run: npx --yes vercel@${VERCEL_CLI_VERSION} pull --yes --environment=preview --token="$VERCEL_TOKEN"
 
+      - name: Verify Preview source upload
+        run: >-
+          npx --yes vercel@${VERCEL_CLI_VERSION} deploy --dry --json --token="$VERCEL_TOKEN"
+          | node .github/scripts/check-vercel-inputs.cjs
+
       - name: Deploy Preview container
         id: deploy
         shell: bash
@@ -232,6 +237,11 @@ jobs:
 
       - name: Link Production environment
         run: npx --yes vercel@${VERCEL_CLI_VERSION} pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Verify Production source upload
+        run: >-
+          npx --yes vercel@${VERCEL_CLI_VERSION} deploy --dry --json --prod --token="$VERCEL_TOKEN"
+          | node .github/scripts/check-vercel-inputs.cjs
 
       - name: Deploy staged Production candidate
         id: deploy
