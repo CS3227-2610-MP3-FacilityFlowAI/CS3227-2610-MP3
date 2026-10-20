@@ -75,8 +75,8 @@ Required application variables in both environments are:
 
 - `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` and
   `SPRING_DATASOURCE_PASSWORD`;
-- `SUPABASE_SSL_ROOT_CERT=/etc/ssl/certs/ca-certificates.crt` when the Supabase
-  certificate chain validates against the container trust bundle;
+- `SUPABASE_SSL_ROOT_CERT=/app/supabase-root-2021.crt`; both images include the
+  provider's public CA from `src/main/resources/certs/supabase-root-2021.crt`;
 - `SESSION_COOKIE_SECURE=true`;
 - `AI_ENABLED`, `SOCLAAS_BASE_URL`, `SOCLAAS_API_KEY` and `SOCLAAS_MODEL`;
 - `SPRING_PROFILES_ACTIVE=production` for Production;
@@ -147,6 +147,16 @@ docker build --file Dockerfile.vercel --tag facilityflow:local .
 The public `GET /health` endpoint returns only `{"status":"UP"}` when both the
 application and database are reachable, or `{"status":"DOWN"}` with HTTP 503.
 Provider, credential and connection details are never returned.
+
+The bundled public certificate was checked against the
+[provider download](https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt)
+on 20 October 2026. Its DER SHA-256 is
+`807025ad50d4ed219d2c9c7d299c004f824eb00cf7f65afef607d07b72e6cafa`;
+expiry is 26 April 2031. It contains no private key. Recheck the provider CA and
+connection when Supabase rotates certificates; retain JDBC `sslmode=verify-full`.
+The development pooler passed CA and hostname verification using this CA and
+failed against a Mozilla public trust bundle. The deployed image still needs
+its hosted health/smoke checks.
 
 Platform references checked 20 October 2026:
 [container deployment support](https://vercel.com/kb/guide/does-vercel-support-docker-deployments),

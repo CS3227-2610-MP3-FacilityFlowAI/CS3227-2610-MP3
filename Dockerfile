@@ -13,6 +13,8 @@ FROM eclipse-temurin:25-jre-noble
 
 WORKDIR /app
 COPY --from=build /workspace/build/libs/*.jar /app/facilityflow.jar
+# NFR-DEP-001: the Supabase pooler uses its own public CA.
+COPY --from=build /workspace/src/main/resources/certs/supabase-root-2021.crt /app/supabase-root-2021.crt
 
 ENV PORT=8080
 EXPOSE 8080

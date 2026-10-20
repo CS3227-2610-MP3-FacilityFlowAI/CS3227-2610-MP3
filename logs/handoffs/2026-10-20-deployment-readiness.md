@@ -39,3 +39,24 @@ rerunning the synthetic smoke regression, Bash syntax, whitespace and Dockerfile
 equality checks, and inspecting callers/templates/upload list/runbook. See session
 log. Hosted evidence and human teammate approval remain pending. Receiving
 session must verify access and release gates before any hosted mutation.
+
+## Preview CA continuation: fresh verifier scope
+
+User selected existing development Supabase for Preview and reported saving
+Vercel database variables. TLS probe required the provider-specific public CA;
+public Mozilla CA bundle failed. Local CA matches official Supabase download
+fingerprint recorded in Deployment.md. Public cert now lives under
+src/main/resources/certs/ and both Dockerfiles copy it to /app/supabase-root-2021.crt.
+Verify certificate provenance/expiry/public-only content, identical container
+COPY inputs, allowlist compatibility and runbook path; read-only review only.
+Do not read ignored secrets or query/mutate hosted state. Parent is running the
+existing database-check SELECT 1 profile; do not duplicate network/database
+checks. No merge/promotion permissions granted. Record findings to parent.
+Suggested skills: Ponytail review, Supabase, FacilityFlow handoff.
+Parent verified actual JDBC SELECT 1 with packaged CA file, certificate assertions,
+22-second bootJar rebuild and certificate content inside the JAR. No database
+mutation performed. Next user step: set Preview SUPABASE_SSL_ROOT_CERT to
+/app/supabase-root-2021.crt; actual container/hosted smoke remains required.
+Fresh CA verifier returned no blockers after independently checking official CA
+provenance, expiry/public-only content, Dockerfile parity, upload inclusion,
+runbook path and retained verify-full. Human review/hosted checks remain pending.

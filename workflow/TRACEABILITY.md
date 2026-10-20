@@ -312,3 +312,7 @@ The shared smoke gate now requires the authenticated logout form instead of the
 word workspace (also present on the login page). A synthetic shell regression
 runs in CI for accepted and rejected authentication outcomes; hosted smoke is
 still pending.
+NFR-DEP-001 / NFR-SEC-002 Preview CA continuation: the provider public root CA is
+packaged at `/app/supabase-root-2021.crt`; JDBC retains verify-full. TLS-only CA and
+hostname verification passed against development with this CA. See deployment
+session log for provider fingerprint, verification limits and hosted status.

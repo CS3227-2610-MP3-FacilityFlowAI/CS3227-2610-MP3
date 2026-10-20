@@ -269,3 +269,7 @@ Hosted deployment acceptance remains pending; see
 `logs/2026-10-20-deployment-readiness.md`.
 The shared deployment smoke correction, synthetic shell regression and CI step
 are also **new** MP3 work adapting the existing MP3 pipeline, with no MP2 source.
+20 October Preview CA continuation: public Supabase CA, container COPY lines and
+runbook/evidence updates are **new** MP3 deployment work, with no MP2 source.
+The certificate is third-party public trust material from Supabase, not a secret;
+source and fingerprint are recorded in `docs/Deployment.md`.

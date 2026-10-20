@@ -36,3 +36,39 @@ comparison; inspected both smoke callers, all role landing templates, source
 upload allowlist, initialization command and CI wiring. Hosted execution and
 account/environment settings remain unverified. This agent review does not
 replace required human teammate approval.
+
+## Preview setup and CA verification continuation
+
+User confirmed the existing Supabase development database is the Preview target
+and reported saving the three application database variables in Vercel. Local
+project metadata identifies facilityflow-ai under yooplo; Preview/Production
+remain separate requirements. Secret values were not printed or copied.
+
+TLS-only checks against the configured development session pooler found:
+- Mozilla public CA bundle failed with an untrusted self-signed chain.
+- Existing Supabase CA passed CA and hostname verification using TLS 1.3.
+- Python 3.13's extra strict CA-extension check initially rejected the provider
+  root's missing key-usage extension. Repeating with the standard TLS client
+  context retained mandatory certificate and hostname checks; no application
+  SSL policy was weakened.
+- The local CA exactly matches the provider public download. DER SHA-256:
+  807025ad50d4ed219d2c9c7d299c004f824eb00cf7f65afef607d07b72e6cafa.
+
+Added the public CA at `src/main/resources/certs/supabase-root-2021.crt` and copied
+it to `/app/supabase-root-2021.crt` in both container definitions. Updated runbook
+path/provenance/expiry guidance. No private key or credential is packaged.
+Application read-only JDBC connection check passed: existing built application
+loaded local settings privately with `database-check`, no web server, and
+`SUPABASE_SSL_ROOT_CERT=src/main/resources/certs/supabase-root-2021.crt`; its
+SELECT 1 succeeded. Certificate fingerprint/expiry/public-only assertions and
+identical Dockerfile checks passed. Hosted image
+execution and Vercel variable values remain unverified. The user's CLI-added
+`.gitignore` changes are unrelated to this continuation and will be preserved.
+The follow-up `gradlew.bat bootJar --no-daemon` passed in 22s. ZIP inspection
+confirmed the verified certificate under BOOT-INF/classes/certs/ in the release
+JAR. Full application tests were not rerun for this public resource/COPY change;
+the prior 726-test result remains scoped to commit 0ac2859's application code.
+Fresh CA verifier returned no blockers: independently downloaded provider CA and
+confirmed DER equality/fingerprint/expiry, public-only PEM, Dockerfile parity,
+source upload inclusion, documented path and unchanged verify-full. No hosted DB
+calls or ignored secret reads by verifier. Human teammate review remains pending.
