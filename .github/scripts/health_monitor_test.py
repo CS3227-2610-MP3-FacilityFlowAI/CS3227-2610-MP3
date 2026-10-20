@@ -29,7 +29,7 @@ class FakeGitHub:
         self.events.append((method, path, data))
         if path == 'issues':
             number = len(self.alerts) + 2
-            self.alerts.append({'number': number, 'user': {'login': 'github-actions[bot]'}, **data})
+            self.alerts.append({'number': number, 'state': 'open', 'user': {'login': 'github-actions[bot]'}, **data})
             return {'number': number}
         if path == 'issues/1':
             self.issue.update(data)
@@ -109,6 +109,26 @@ class HealthMonitorTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             monitor.check(github, True)
         self.assertFalse(any(method in ('POST', 'PATCH') for method, _, _ in github.events))
+
+    def test_issue_list_lag_does_not_recreate_state_within_invocation(self):
+        github = monitor.GitHub.__new__(monitor.GitHub)
+        github.state_numbers = {}
+        issue = {'number': 42, 'body': monitor.STATE_PREFIX + '{"failures": 0, "alert": null}'}
+        with patch.object(github, 'find_issue', return_value=None) as find:
+            with patch.object(github, 'request', return_value=issue) as request:
+                github.state_issue('synthetic')
+                github.state_issue('synthetic')
+                self.assertEqual(1, find.call_count)
+                self.assertEqual('POST', request.call_args_list[0].args[0])
+                self.assertEqual(('GET', 'issues/42'), request.call_args_list[1].args)
+
+    def test_issue_list_lag_still_recovers_known_open_alert(self):
+        github = FakeGitHub()
+        for _ in range(3):
+            monitor.check(github, False)
+        with patch.object(github, 'find_issue', return_value=None):
+            monitor.check(github, True)
+        self.assertEqual('closed', github.alerts[0]['state'])
 
     def test_invalid_persistent_state_is_not_overwritten(self):
         github = FakeGitHub()

@@ -42,3 +42,9 @@
 - User confirmed BACKUP_ENCRYPTION_PASSPHRASE saved. Backup role/password setup
   guidance delivered; BACKUP_DATABASE_PASSWORD and hosted rehearsals pending.
 - No hosted backup, notification receipt or rollback rehearsal is claimed yet.
+
+Hosted rehearsal follow-up: run39462731538 created duplicate exercise state issues
+18-20; no actual alert evidence accepted. Added per-invocation state issue identity
+reuse and known-alert GET reconciliation for issue-list lag; 11 regression tests
+cover this transport behavior. Backup secret was not yet present; user correcting.
+Fresh verifier to review this fix before accepting rerun.

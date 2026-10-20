@@ -27,6 +27,7 @@ class GitHub:
         if not re.fullmatch(r'[\w.-]+/[\w.-]+', self.repository):
             raise ValueError('Invalid repository')
         self.token = os.environ['GH_TOKEN']
+        self.state_numbers = {}
 
     def request(self, method, path, data=None):
         request = urllib.request.Request(
@@ -53,8 +54,13 @@ class GitHub:
         raise ValueError('Monitor state search exceeded limit')
 
     def state_issue(self, title):
-        return self.find_issue(title, STATE_PREFIX) or self.request('POST', 'issues', {
+        if title in self.state_numbers:
+            return self.request('GET', f'issues/{self.state_numbers[title]}')
+        issue = self.find_issue(title, STATE_PREFIX) or self.request('POST', 'issues', {
             'title': title, 'body': STATE_PREFIX + json.dumps({'failures': 0, 'alert': None})})
+        # Issue lists can lag creation; reuse the identity during this invocation.
+        self.state_numbers[title] = issue['number']
+        return issue
 
 
 def check(github, healthy, exercise=False):
@@ -77,10 +83,11 @@ def check(github, healthy, exercise=False):
                 or previous.get('user', {}).get('login') != 'github-actions[bot]'
                 or not isinstance(previous.get('body'), str)
                 or not previous['body'].startswith(ALERT_PREFIX)
-                or previous.get('state') != 'closed'):
+                or previous.get('state') not in ('open', 'closed')):
             raise ValueError('Invalid persisted alert reference')
         # Recovery closed the alert before its state write succeeded.
-        alert, failures = None, 0
+        if previous['state'] == 'closed':
+            alert, failures = None, 0
     failures = 0 if healthy else min(failures + 1, 3)
     if failures == 3 and alert is None:
         alert = github.request('POST', 'issues', {
