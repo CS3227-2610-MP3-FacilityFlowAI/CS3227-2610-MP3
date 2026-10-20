@@ -326,3 +326,8 @@ NFR-A11Y-001 / UIX-017-020 login UI polish: input focus remains a visible offset
 outline (2px width, 1px gap); failed-login alert retains existing danger red
 instead of being overridden by muted login text. No auth/template/script changes.
 See logs/2026-10-20-login-ui-polish.md; browser verification pending.
+REQ-AI-004/006, AI-SEC-017/019/020 hosted connectivity diagnosis: runtime readiness
+NETWORK_FAILURE is now accompanied by a closed transport-stage reason without
+raw exception data. Redaction regression covers transport categories/nested
+causes. Hosted connectivity root cause and live AI success remain pending; see
+logs/2026-10-20-hosted-ai-connectivity.md.

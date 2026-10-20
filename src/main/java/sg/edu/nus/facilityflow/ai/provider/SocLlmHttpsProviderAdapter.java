@@ -128,7 +128,8 @@ final class SocLlmHttpsProviderAdapter implements SocLlmProviderPort {
         CompletableFuture<HttpResponse<InputStream>> stage;
         try {
             stage = transport.send(request);
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException failure) {
+            ProviderDiagnostics.reportTransportFailure(failure);
             result.completeExceptionally(new ProviderFailure(ProviderFailure.Code.NETWORK_FAILURE));
             return result;
         }
@@ -297,6 +298,7 @@ final class SocLlmHttpsProviderAdapter implements SocLlmProviderPort {
         if (current instanceof TimeoutException || current instanceof java.net.http.HttpTimeoutException) {
             return new ProviderFailure(ProviderFailure.Code.TIMEOUT);
         }
+        ProviderDiagnostics.reportTransportFailure(current);
         return new ProviderFailure(ProviderFailure.Code.NETWORK_FAILURE);
     }
 

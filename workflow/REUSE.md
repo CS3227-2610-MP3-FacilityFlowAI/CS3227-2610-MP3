@@ -279,3 +279,6 @@ work adapting existing MP3 configuration; no MP2 source was consulted or copied.
 20 October login UI polish: tighter input/select/textarea focus rings and login
 alert cascade correction are **new** MP3 styling adapting existing workspace.css;
 no MP2 source consulted or copied. Evidence: logs/2026-10-20-login-ui-polish.md.
+20 October hosted AI connectivity: closed transport diagnostics and redaction
+regression adapt existing MP3 provider code and are **new** MP3 work; no MP2
+source consulted or copied. See logs/2026-10-20-hosted-ai-connectivity.md.

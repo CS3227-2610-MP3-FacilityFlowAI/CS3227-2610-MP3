@@ -106,3 +106,22 @@ CSS cascade/load order inspected and whitespace passed; browser/hosted visual
 verification and human teammate review pending. Preserve existing unrelated
 .gitignore and deployment evidence edits. No new merge/promotion permissions.
 Suggested skills: Ponytail for any follow-up styling; FacilityFlow handoff.
+
+## Hosted AI transport diagnostics verifier dispatch
+
+Source Codex -> fresh provider verifier. User reports Requester AI 503 in newer
+Preview. Runtime safe logs confirmed READINESS/NETWORK_FAILURE. Enabled flag and
+endpoint checked privately; model/key variables present. Local credential-free
+Python and Java probes reached models endpoint (401). Vercel root cause unknown.
+Inspect ProviderDiagnostics.java, SocLlmHttpsProviderAdapter.java and new test
+in ProviderDiagnosticsTest.java: added closed transport classifier before cause
+is discarded, bounded eight causes, no messages/stacks/raw content. Preserve
+failure mapping, timeout/cancel semantics and TLS. Exact requirements/evidence in
+logs/2026-10-20-hosted-ai-connectivity.md. Parent running focused test/build; do
+not duplicate full suite or read ignored config. Read-only review, no deployments,
+queries, edits or expanded merge/promotion permission. Suggested Ponytail review
+and FacilityFlow handoff skills. Report findings to parent, parent owns records.
+Fresh provider verifier returned no blockers; focused 30-test/two-suite build
+passed with no failures/errors/skips. User confirmed READINESS/NETWORK_FAILURE.
+Proceed through existing Preview CI only, then inspect TRANSPORT reason. No
+Production promotion/merge or raw diagnostic content authorized.
