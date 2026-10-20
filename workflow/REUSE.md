@@ -254,3 +254,9 @@ records above remain authoritative for their original role slices.
 member and exact-payload assertion adapt the existing MP3 shared gateway contract;
 the live evidence and guide updates are **new** MP3 work. No MP2 source consulted
 or copied; existing role reuse provenance remains unchanged.
+
+20 October shared Requester runtime consolidation: form adapter, shared service
+version guard, protected category mapping, migrated tests and guide/evidence
+updates are **adapted** existing MP3 code with **new** integration regressions.
+The duplicate Requester gateway/transport/admission implementation is retired.
+No MP2 source was consulted or copied.

@@ -102,7 +102,7 @@ public final class RequesterSmartReportService {
     }
 
     public CompletionStage<SmartReportResponse> requestCreate(RequesterSmartReportInput input) {
-        return request(null, input);
+        return request(null, input, null);
     }
 
     public CompletionStage<SmartReportResponse> requestEdit(
@@ -110,11 +110,20 @@ public final class RequesterSmartReportService {
         if (displayId == null || !displayId.matches("FF-[0-9]{6}")) {
             return completedFailure(SmartReportFailureCode.AI_INVALID_REQUEST);
         }
-        return request(displayId, input);
+        return request(displayId, input, null);
+    }
+
+    /** REQ-RQ-017: retain the version from the ordinary edit form before admission. */
+    public CompletionStage<SmartReportResponse> requestEdit(
+            String displayId, RequesterSmartReportInput input, Long expectedVersion) {
+        if (displayId == null || !displayId.matches("FF-[0-9]{6}") || expectedVersion == null || expectedVersion < 0) {
+            return completedFailure(SmartReportFailureCode.AI_INVALID_REQUEST);
+        }
+        return request(displayId, input, expectedVersion);
     }
 
     private CompletionStage<SmartReportResponse> request(
-            String displayId, RequesterSmartReportInput input) {
+            String displayId, RequesterSmartReportInput input, Long expectedVersion) {
         try {
             if (input == null) {
                 return completedFailure(SmartReportFailureCode.AI_INVALID_REQUEST);
@@ -147,6 +156,9 @@ public final class RequesterSmartReportService {
         }
         if (eligibility.isEmpty()) {
             return completedFailure(SmartReportFailureCode.AI_UNAVAILABLE);
+        }
+        if (expectedVersion != null && !expectedVersion.equals(eligibility.get().requestVersion())) {
+            return completedFailure(SmartReportFailureCode.DISCARDED_ACCESS_CHANGED);
         }
 
         Optional<AiInvocationCoordinator.Permit> permit;

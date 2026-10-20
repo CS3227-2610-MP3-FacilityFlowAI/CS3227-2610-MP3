@@ -285,3 +285,16 @@ no-store and invocation metadata verified, zero maintenance/submission/update/lo
 mutations. This supersedes authenticated endpoint deferral only; live browser,
 owned-edit/other-role and broader quality/security checks remain pending. Exact
 metrics and provenance are in the live evidence record above.
+
+## 20 October Requester shared-runtime consolidation
+
+REQ-RQ-012-017, REQ-SH-018, REQ-AI-001-006 and
+AI-SEC-001/008/017/021/028-030: browser form routes now adapt through
+`ai.SmartReportService` into `requester.RequesterSmartReportService` and the
+shared lifecycle/coordinator/typed assistant/telemetry. Duplicate Requester
+gateway, transport and admission classes and their standalone tests are retired.
+Earlier sections describing those classes and 19 October live gateway evidence
+are historical and superseded by this integration. Form-adapter, role-service,
+repository and Requester HTTP regressions replace duplicate-runtime checks;
+shared provider/core tests remain. Actual execution results and pending live
+verification: `logs/2026-10-19-requester-shared-runtime.md`.

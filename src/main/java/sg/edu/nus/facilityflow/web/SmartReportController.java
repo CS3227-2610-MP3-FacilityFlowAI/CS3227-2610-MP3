@@ -5,7 +5,6 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
-import sg.edu.nus.facilityflow.ai.AiGateway;
 import sg.edu.nus.facilityflow.ai.SmartReportInput;
 import sg.edu.nus.facilityflow.ai.SmartReportService;
 import sg.edu.nus.facilityflow.requester.*;
@@ -29,11 +28,12 @@ public class SmartReportController {
 
     private static ResponseEntity<SmartReportService.Reply> response(SmartReportService.Reply reply) {
         int status = switch (reply.status()) {
-            case SUCCEEDED -> 200;
-            case AI_INVALID_REQUEST -> 422;
-            case AI_LIMITED -> 429;
-            case AI_TIMEOUT -> 504;
-            case AI_INVALID_OUTPUT -> 502;
+            case "SUCCEEDED" -> 200;
+            case "AI_INVALID_REQUEST" -> 422;
+            case "AI_LIMITED" -> 429;
+            case "AI_TIMEOUT" -> 504;
+            case "AI_INVALID_OUTPUT" -> 502;
+            case "DISCARDED_ACCESS_CHANGED" -> 409;
             default -> 503;
         };
         return ResponseEntity.status(status).cacheControl(CacheControl.noStore()).body(reply);
@@ -44,6 +44,6 @@ public class SmartReportController {
         int status = exception instanceof AccessDeniedException ? 403 : exception instanceof RequestUnavailableException ? 404
                 : exception instanceof StaleRequestException ? 409 : 503;
         return ResponseEntity.status(status).cacheControl(CacheControl.noStore()).body(new SmartReportService.Reply(
-                AiGateway.Status.AI_UNAVAILABLE, null, "AI suggestions are unavailable. Keep your manual input; reload or sign in again if your access changed."));
+                "AI_UNAVAILABLE", null, "AI suggestions are unavailable. Keep your manual input; reload or sign in again if your access changed."));
     }
 }
