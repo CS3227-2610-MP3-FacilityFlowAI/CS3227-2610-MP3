@@ -29,7 +29,20 @@ if ! docker exec --env PGHOST --env PGPORT --env PGDATABASE --env PGUSER \
     --env PGPASSWORD --env PGSSLMODE --env PGSSLROOTCERT "$PG_CONTAINER" \
     pg_dump --format=custom --enable-row-security --schema=facilityflow \
     > "$work/database.dump" 2> "$work/private-error.txt"; then
-    echo 'Production dump failed; verify backup role grants, pooler and TLS.' >&2
+    reason=UNCLASSIFIED
+    while IFS='|' read -r pattern code; do
+        if grep -Eiq -- "$pattern" "$work/private-error.txt"; then reason="$code"; break; fi
+    done <<'DIAGNOSTICS'
+password authentication failed|AUTHENTICATION_FAILED
+Tenant or user not found|POOLER_IDENTITY_NOT_FOUND
+permission denied|PERMISSION_DENIED
+row.level security|ROW_SECURITY
+certificate|TLS_CERTIFICATE
+server version mismatch|CLIENT_VERSION_MISMATCH
+could not translate host name|DNS_FAILURE
+connection.*timed out|CONNECTION_TIMEOUT
+DIAGNOSTICS
+    echo "Production dump failed: reason=$reason (no raw provider error retained)." >&2
     exit 1
 fi
 printf '%s' "$BACKUP_ENCRYPTION_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \

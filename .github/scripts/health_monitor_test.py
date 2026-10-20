@@ -5,6 +5,7 @@ import unittest
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -163,6 +164,26 @@ class HealthMonitorTest(unittest.TestCase):
                 self.assertEqual(2, result.returncode)
                 self.assertNotIn('private-password-canary', result.stdout + result.stderr)
                 self.assertNotIn('private-encryption-canary', result.stdout + result.stderr)
+
+    def test_backup_failure_reports_only_allowlisted_reason(self):
+        bash = (r'C:/Program Files/Git/bin/bash.exe' if os.name == 'nt' else shutil.which('bash'))
+        script = Path(__file__).with_name('production-backup.sh').resolve().as_posix()
+        with tempfile.TemporaryDirectory() as temp:
+            result = subprocess.run([bash, '-c',
+                'docker() { if [[ "$1" == cp ]]; then return 0; fi; '
+                'echo "permission denied private-error-canary" >&2; return 1; }; '
+                'export -f docker; bash "$1"', 'test', script],
+                env={**os.environ, 'PGDATABASE': 'facilityflow_prod',
+                     'PGUSER': 'facilityflow_prod_backup.synthetic', 'PGSSLMODE': 'verify-full',
+                     'PG_CONTAINER': 'a' * 64, 'PGPASSWORD': 'private-password-canary',
+                     'BACKUP_ENCRYPTION_PASSPHRASE': 'private-encryption-canary-' * 2,
+                     'RESTORE_PASSWORD': 'disposable-restore-only', 'RUNNER_TEMP': temp,
+                     'GITHUB_RUN_ID': 'synthetic', 'GITHUB_RUN_ATTEMPT': '1'},
+                capture_output=True, text=True)
+        self.assertEqual(1, result.returncode)
+        self.assertIn('reason=PERMISSION_DENIED', result.stderr)
+        self.assertNotIn('private-error-canary', result.stdout + result.stderr)
+        self.assertNotIn('private-password-canary', result.stdout + result.stderr)
 
 
 if __name__ == '__main__':
