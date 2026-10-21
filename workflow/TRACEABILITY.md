@@ -53,7 +53,7 @@ review evidence.
 | NFR-PERF-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | opt-in requesterVerification with 50 distinct authenticated users, 400 non-AI GETs | 20 Oct PR correction rerun: p95 1,018.64 ms, pool 2, zero errors; [correction log](../logs/2026-10-20-manager-field-error-accessibility.md). Historical 19 Oct merged run: 567.09 ms in logs/2026-10-19-requester-technician-master-merge.md; other attempts retained | latest local gate FAIL against 1,000 ms; server-only/deployed evidence pending |
 | NFR-A11Y-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements), [MP3 UI spec](specs/user-interface.md) | shared workspace palette, focus and hidden-state rules; Manager field-error IDs and conditional ARIA associations scoped to the failed action | scoped security/controller and Node regressions; rendered Chrome palette/label/focus evidence in [UI refresh log](../logs/2026-10-19-responsive-ui.md); invalid-control/error association regressions in [PR correction log](../logs/2026-10-20-manager-field-error-accessibility.md) | local results recorded in linked logs; full accessibility and teammate review pending |
 | NFR-A11Y-002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements), [MP3 adaptive presentation](specs/user-interface.md#adaptive-presentation) | workspace.css on all full pages; wrapping navigation, filter grids, stacked forms and table scroll containers | four-width Chrome layout/input-preservation checks in requesterVerification; [UI refresh log](../logs/2026-10-19-responsive-ui.md) | browser result tracked in UI log; hosted/mobile acceptance not claimed |
-| NFR-REL-001, NFR-REL-002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | deterministic fallback, JDBC storage and encrypted 12-hour backup/isolated restore workflow | local fallback tests; hosted restore run39464057541 (20s), merged backup run39537377934/artifact12318247050; [acceptance](../logs/2026-10-21-post-merge-acceptance.md) | backup/restore verified for tested dataset; schedule enabled; future RPO/RTO not guaranteed |
+| NFR-REL-001, NFR-REL-002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | deterministic fallback, JDBC storage and encrypted 12-hour backup/isolated restore workflow | local fallback tests; hosted restore run39464057541 (20s), merged backup run39537377934/artifact12318247050; [acceptance](../logs/2026-10-21-post-merge-acceptance.md) | manual backup/restore verified for tested dataset; schedule enabled, but daily-backup acceptance pending until a timer-triggered backup succeeds; future RPO/RTO not guaranteed |
 | NFR-OPS-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | public health probe, five-minute GitHub workflow, persistent third-failure alerts and recovery | monitor regression tests; live monitor39537535771; synthetic alert23 created/recovered and notification user-confirmed; [acceptance](../logs/2026-10-21-post-merge-acceptance.md) | external check/alert delivery verified; schedule enabled, first automatic execution not yet observed; GitHub cadence best-effort |
 | NFR-OPS-002 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | Logstash JSON with deployment version; server-issued request correlation; captured async invocation metadata and safe lifecycle/provider diagnostics | RequestCorrelationFilterTest, AiMonitoringTest, ProviderDiagnosticsTest and startup JSON inspection; 19 October AI observability log | locally implemented; hosted log inspection and human review pending |
 | NFR-DEP-001 | [Product quality](specs/PRODUCT-SPEC.md#quality-requirements) | isolated dev/Production databases, CI, candidate smoke, protected no-rebuild promotion and rollback | isolation regressions, approved PR17, release39537286873 attempts1/2, rollback39538161985, alias/health/access checks and user final role/AI confirmation; [acceptance](../logs/2026-10-21-post-merge-acceptance.md) | reviewed implementation and operational acceptance verified; no live database restore |
@@ -389,12 +389,13 @@ uses basename; health_monitor_test verifies sha256sum -c after relocation. Produ
 specification amendment now distinguishes verified isolation/operations evidence
 from pending release gates. No live configuration change is implied by this fix.
 
-21 October final deployment and recovery acceptance supersedes the earlier
-historical pending notes for NFR-DEP-001 and NFR-REL-002. NFR-OPS-001 retains a
-pending qualification until a timer-triggered five-minute monitor run is observed.
-See post-merge acceptance for source distinctions, approved release/rollback
-results and scheduling limitations. Unrelated role, security-quality and load
-acceptance claims remain unchanged.
+21 October final deployment acceptance supersedes the earlier historical pending
+notes for NFR-DEP-001. The manual backup/restore exercise verifies recovery for the
+tested dataset, but NFR-REL-002 retains a pending qualification until a scheduled
+backup succeeds. NFR-OPS-001 likewise remains pending until a timer-triggered
+five-minute monitor run is observed. See post-merge acceptance for source
+distinctions, approved release/rollback results and scheduling limitations.
+Unrelated role, security-quality and load acceptance claims remain unchanged.
 
 NFR-DOC-001 review-tool migration: replace API-backed PR Agent with
 Codex GitHub integration and AGENTS.md review rules. See docs/CodeReview.md and
