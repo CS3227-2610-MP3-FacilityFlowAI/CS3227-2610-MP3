@@ -318,3 +318,7 @@ evidence are **new** MP3 records; no MP2 material consulted or copied.
 script, health monitor, workflows, regression tests and Operations guide are
 **new** MP3 material; existing MP3 deployment workflow is **adapted**. No MP2
 source consulted/copied. PostgreSQL/GitHub documentation supplies platform usage.
+
+Post-merge deployment acceptance record and current deployment/status documentation
+are new MP3 evidence derived from executed workflows and user confirmation; no MP2
+source copied. Existing MP3 deployment guide/traceability sections are adapted.

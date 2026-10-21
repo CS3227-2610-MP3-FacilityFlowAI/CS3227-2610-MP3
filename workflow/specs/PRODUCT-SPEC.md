@@ -8,7 +8,10 @@ ADR-007's shared-database exception. Database isolation and the live cutover are
 verified in [cutover evidence](../../logs/2026-10-21-production-database-cutover.md).
 Fresh Preview smoke, encrypted backup/restore and alert delivery are verified in
 [operations evidence](../../logs/2026-10-21-operations-completion.md). Reviewed
-merge, schedule activation and the protected rollback rehearsal remain pending.
+merge, enabled schedules, protected rollback/restoration and final live checks are
+recorded in [post-merge acceptance](../../logs/2026-10-21-post-merge-acceptance.md).
+Scheduled workflows are enabled; their first automatic executions were not yet
+observed when this acceptance record was written.
 
 Sources: stakeholder decisions through 12 October 2026; binding group-planning
 document; MP2 behavior at commit
