@@ -1,10 +1,10 @@
 # Supabase PostgreSQL setup
 
-Current coursework deployment exception (20 October 2026):
-[ADR-007](../workflow/decisions/ADR-007-single-database-deployment.md) authorizes
-reusing the existing database for Vercel Production. The separate-project steps
-below describe the original baseline; do not reprovision/reseed the existing
-database for the deployment-target change. Follow [Deployment.md](Deployment.md).
+The latest decision, [ADR-008](../workflow/decisions/ADR-008-separate-production-database.md),
+requires separate databases. Keep the existing `facilityflow-dev` for development
+and Preview; create fresh `facilityflow_prod` in the same Supabase project using
+[ProductionDatabaseSetup](ProductionDatabaseSetup.md). Do not reprovision or reseed
+the existing development database. Hosted isolation remains pending cutover.
 
 Part 2a, 14 October 2026. Supabase JDBC configuration is implemented;
 project provisioning and a live connection check are pending user setup.
@@ -22,7 +22,7 @@ named `facilityflow-dev`. Choose a region near the team (Singapore if available)
 and save a strong database password in your password manager. Wait for readiness.
 This project will hold synthetic development data only.
 
-Before release, create a separate `facilityflow-prod` project with different
+Before release, create a separate `facilityflow_prod` database in the same project with different
 credentials. Preview/local configuration must never point to production
 (NFR-DEP-001). Do not provision production access for development agents.
 

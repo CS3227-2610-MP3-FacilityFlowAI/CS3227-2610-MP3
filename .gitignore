@@ -29,6 +29,7 @@ application-local.yaml
 *.db
 *.sqlite
 coverage/
+__pycache__/
 test-results/
 
 # Frontend dependencies if introduced

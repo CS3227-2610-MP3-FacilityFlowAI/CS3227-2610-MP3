@@ -200,3 +200,31 @@ Next user action: add same known SMOKE_USERNAME/SMOKE_PASSWORD/project bypass
 value to GitHub production-candidate environment. Keep Production deployment and
 promotion opt-ins false until secrets/review/protected gate are ready. No new
 project, database migration or bootstrap needed. Credential rotation remains.
+
+## Approved merge and verified Production candidate
+
+User reported approval/merge; GitHub API independently confirmed PR16 approved by
+ngkhengyang and merged as313ca61d24b694ba47589e1cd615b99362cef384. CI39437565941
+completed success, including candidate smoke. Deployment7202220659 succeeded:
+https://facilityflow-qqhsys68l-yooplo.vercel.app . Promotion skipped. Source Codex
+-> release-readiness reviewer/next session; requirements NFR-DEP-001/ADR-007 and
+NFR-REL-002/NFR-OPS-001 remain. Exact evidence/limitations in
+logs/2026-10-20-production-candidate.md. Next authorized action: verify remaining
+backup/restore, monitoring/alert and exposed-key rotation evidence, then obtain
+explicit human promotion approval. No release gate waived; no promotion or
+schema/data mutation authorized by this handoff. Suggested skills: Supabase,
+Postgres best practices before database operations, FacilityFlow handoff.
+New evidence is local only; do not push extra work into the merged branch blindly.
+
+## Current release status after promotion and key rotation
+
+Supersedes earlier pending-promotion and pending-provider-key-rotation entries:
+the protected Production promotion succeeded in CI39437565941 attempt5 for
+313ca61d24b694ba47589e1cd615b99362cef384. Public Production health returned UP
+with HTTP200 and the login form loaded with HTTP200 at
+https://facilityflow-ai.vercel.app. The user subsequently confirmed provider-key
+rotation completed; no key values inspected or recorded and no independent
+revocation/configuration verification claimed. Exact evidence and limits:
+logs/2026-10-20-production-candidate.md. Remaining: backup/restore and monitoring/
+alert evidence, plus verification of live sign-in/AI after rotation. Evidence
+remains local; no additional deployment, commit or push performed.

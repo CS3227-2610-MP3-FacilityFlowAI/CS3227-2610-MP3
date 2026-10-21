@@ -1,0 +1,53 @@
+name: Production encrypted backup and restore
+on:
+  schedule:
+    - cron: '17 */12 * * *'
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: production-backup
+  cancel-in-progress: false
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: production-backup
+    services:
+      restore:
+        image: postgres:17.11
+        env:
+          POSTGRES_PASSWORD: disposable-restore-only
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Export, encrypt and rehearse isolated restore
+        env:
+          PG_CONTAINER: ${{ job.services.restore.id }}
+          PGHOST: aws-0-ap-northeast-2.pooler.supabase.com
+          PGPORT: '5432'
+          PGDATABASE: facilityflow_prod
+          PGUSER: facilityflow_prod_backup.sypuzofalrtccyuefhsl
+          PGPASSWORD: ${{ secrets.BACKUP_DATABASE_PASSWORD }}
+          PGSSLMODE: verify-full
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+          RESTORE_PASSWORD: disposable-restore-only
+        run: bash .github/scripts/production-backup.sh
+      - name: Retain encrypted backup only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: production-backup-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/facilityflow-production-*.dump.gpg
+            ${{ runner.temp }}/facilityflow-production-*.dump.gpg.sha256
+      - name: Alert on backup or restore failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/health_monitor.py --backup-failure
