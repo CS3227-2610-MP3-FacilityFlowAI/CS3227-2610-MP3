@@ -389,7 +389,8 @@ uses basename; health_monitor_test verifies sha256sum -c after relocation. Produ
 specification amendment now distinguishes verified isolation/operations evidence
 from pending release gates. No live configuration change is implied by this fix.
 
-NFR-DOC-001 / NFR-SEC-001 review-tool migration: replace API-backed PR Agent with
+NFR-DOC-001 review-tool migration: replace API-backed PR Agent with
 Codex GitHub integration and AGENTS.md review rules. See docs/CodeReview.md and
-logs/2026-10-21-codex-review.md. Repository migration checks passed; actual hosted
-connection, review activation and teammate-approved merge remain pending.
+logs/2026-10-21-codex-review.md. Repository migration checks passed; actual hosted review5595582707 on PR29
+verified connection and review activation. Follow-up review and teammate-approved
+merge remain pending.

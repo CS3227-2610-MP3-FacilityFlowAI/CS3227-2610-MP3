@@ -1,6 +1,6 @@
 # Codex pull-request review
 
-NFR-DOC-001 / NFR-SEC-001: use the hosted Codex GitHub integration for advisory
+NFR-DOC-001: use the hosted Codex GitHub integration for advisory
 reviews. Teammate approval and deterministic CI remain required by AGENTS.md.
 No new GitHub Actions review workflow or OpenAI API secret is needed for this
 integration. It uses the connected account's available Codex review allowance.
