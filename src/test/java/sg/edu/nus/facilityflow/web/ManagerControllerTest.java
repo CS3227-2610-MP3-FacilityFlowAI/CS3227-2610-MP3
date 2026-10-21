@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +26,21 @@ import sg.edu.nus.facilityflow.manager.ManagerValidationException;
 import sg.edu.nus.facilityflow.manager.ManagerViews;
 
 class ManagerControllerTest {
+    @Test
+    @DisplayName("REQ-SH-012: Manager overview keeps shared and role navigation")
+    void overviewTemplateKeepsSharedAndManagerNavigation() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/manager/overview.html"));
+
+        for (String target : List.of("@{/manager}", "@{/manager/overview}", "@{/manager/requests}",
+                "@{/manager/requests/new}", "@{/manager/accounts}", "@{/manager/categories}",
+                "@{/manager/skills}", "@{/manager/audit}", "@{/manager/ai-monitoring}",
+                "@{/account/password}", "@{/about}", "@{/logout}")) {
+            assertTrue(html.contains(target), () -> "Missing Manager navigation target " + target);
+        }
+        assertTrue(html.contains("href=\"#main-content\""));
+        assertTrue(html.contains("id=\"main-content\""));
+    }
+
     @Test
     @DisplayName("REQ-MGR-003 / REQ-SH-010: validation failure retains the complete on-behalf draft")
     void retainsDraftAfterValidationFailure() {

@@ -8,9 +8,11 @@
 </head>
 <body>
 <header>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <strong th:text="${displayName}">Manager</strong>
     <span th:text="${username}">username</span>
     <nav aria-label="Manager navigation">
+        <a th:href="@{/manager}">My workspace</a>
         <a th:href="@{/manager/overview}" aria-current="page">Overview</a>
         <a th:href="@{/manager/requests}">Requests</a>
         <a th:href="@{/manager/requests/new}">Record request</a>
@@ -19,10 +21,12 @@
         <a th:href="@{/manager/skills}">Skills</a>
         <a th:href="@{/manager/audit}">Audit</a>
         <a th:href="@{/manager/ai-monitoring}">AI monitoring</a>
+        <a th:href="@{/account/password}">Change password</a>
+        <a th:href="@{/about}">About</a>
     </nav>
     <form method="post" th:action="@{/logout}"><button type="submit">Sign out</button></form>
 </header>
-<main>
+<main id="main-content">
     <h1>Operational overview</h1>
     <section aria-labelledby="status-heading">
         <h2 id="status-heading">Requests by status</h2>
