@@ -39,6 +39,7 @@ class ManagerControllerTest {
         }
         assertTrue(html.contains("href=\"#main-content\""));
         assertTrue(html.contains("id=\"main-content\""));
+        assertTrue(html.contains("th:text=\"${role}\""));
     }
 
     @Test
