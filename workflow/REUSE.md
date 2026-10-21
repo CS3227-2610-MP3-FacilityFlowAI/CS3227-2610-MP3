@@ -318,3 +318,7 @@ evidence are **new** MP3 records; no MP2 material consulted or copied.
 script, health monitor, workflows, regression tests and Operations guide are
 **new** MP3 material; existing MP3 deployment workflow is **adapted**. No MP2
 source consulted/copied. PostgreSQL/GitHub documentation supplies platform usage.
+
+Codex review migration: AGENTS.md review rules, Developer Guide reference and
+review setup guide/log are new or adapted MP3 material; PR Agent workflow/config
+are removed. No MP2 source consulted; current MP3 review constraints retained.

@@ -39,6 +39,20 @@ authorization.
    `workflow/agents/README.md`; the model invokes `$facilityflow-handoff` to
    produce temporary context and a durable project handoff record.
 
+## Code Review Rules
+
+- Review against approved `workflow/specs/` behavior and cite stable requirement
+  IDs where applicable. Report introduced, actionable failures with file locations
+  and concrete scenarios; do not turn proposed behavior into requirements or
+  describe unexecuted checks as passed.
+- Check role and ownership authorization before loading AI context or writing data.
+  LLM output stays advisory and untrusted; deterministic services enforce writes,
+  transitions, typed validation, bounded resource use and manual fallbacks.
+- For deployment/database changes, preserve separate development/Production
+  credentials and databases, restricted grants/RLS, encrypted recoverable backups
+  and human promotion gates. Distinguish verified evidence from configured or
+  pending controls. AI reviews do not replace teammate approval or CI.
+
 ## Technician implementation workflow
 
 For Technician implementation, use `workflow/agents/technician-workflow.md` and
