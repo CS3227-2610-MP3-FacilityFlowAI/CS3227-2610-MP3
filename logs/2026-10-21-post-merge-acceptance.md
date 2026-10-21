@@ -61,3 +61,10 @@ executions were not yet observed. GitHub schedules are best-effort. The next own
 must inspect scheduled activity, backup artifacts/retention and alerts; measured
 restore time does not guarantee future recovery duration. Documentation-only
 acceptance records are separate from the already reviewed/released implementation.
+
+Merge integration follow-up: resolved master714326b into the acceptance branch.
+REUSE and TRACEABILITY conflicts were adjacent additions; retained both the final
+deployment evidence and Codex migration records. Updated migration status to its
+verified merged revision. Conflict-marker/preservation checks and diff whitespace
+checks passed. Application tests not repeated for this documentation-only conflict
+resolution; existing CI/application files were retained without manual changes.
