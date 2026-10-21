@@ -4,9 +4,10 @@ Backup/restore, health/alert exercises and final rollback procedure:
 [Operations.md](Operations.md). Execution evidence is required in addition to setup.
 
 This runbook implements the approved `NFR-DEP-001` and Technical Specification
-deployment flow. It configures automation; it does not claim that a hosted
-Production deployment, backup restore or external monitor has already been verified.
-Hosted Preview deployment and smoke evidence is recorded below.
+deployment flow. Hosted Production deployment, rollback/restoration, backup/restore,
+manual external-monitor exercises and Preview smoke have been verified as recorded
+below. The five-minute monitor schedule is enabled, but operational schedule
+acceptance remains pending until a timer-triggered execution is observed.
 
 ## What runs automatically
 
@@ -193,16 +194,22 @@ or output-quality assessment. Detailed results and limitations are in
 [the deployment log](../logs/2026-10-20-deployment-readiness.md) and
 [the hosted AI log](../logs/2026-10-20-hosted-ai-connectivity.md).
 
-## Still requiring hosted evidence
+## Verified deployment acceptance
 
-- a new Preview deployment smoke after correcting Preview's database configuration;
-- rollback rehearsal using an artifact configured for the isolated Production database;
-- five-minute external monitoring and alert exercise;
-- provider backup verification and database restore rehearsal.
+PR17 was teammate-approved and merged as `f56d15e`. The merged release passed
+CI, staged authenticated smoke and protected human promotion. A protected rollback
+to the prior isolated Production artifact succeeded, followed by protected
+restoration of the tested PR17 artifact. The live domain points to
+`facilityflow-7fiqyuutw-yooplo.vercel.app`; public health/login/access-control checks
+passed, and the user confirmed Manager, Requester and AI functionality.
 
-Production staging, authenticated smoke and protected promotion passed in
-[CI39437565941 attempt7](https://github.com/CS3227-2610-MP3-FacilityFlowAI/CS3227-2610-MP3/actions/runs/39437565941).
-The live domain maps to the promoted candidate. Automated public checks and
-Production/Preview configuration reads passed; the user confirmed live Manager,
-Requester and AI functionality. These checks do not establish recovery or load
-acceptance. See the 21 October evidence linked above.
+Fresh Preview smoke, encrypted backup/isolated restore, portable artifact checksum,
+external health checks and alert notification delivery are verified. Backup access
+is restricted to master. Both schedules are enabled; first timer-triggered runs
+were not yet observed. GitHub schedules can be delayed; this is not a guaranteed
+five-minute SLA or future recovery-time guarantee.
+
+See [post-merge acceptance](../logs/2026-10-21-post-merge-acceptance.md) for actual
+run/deployment/artifact IDs and [operations evidence](../logs/2026-10-21-operations-completion.md)
+for the preceding exercises. These checks do not establish load or general AI-quality
+acceptance. Keep reviewing backup artifacts and monitor workflow activity after handover.
