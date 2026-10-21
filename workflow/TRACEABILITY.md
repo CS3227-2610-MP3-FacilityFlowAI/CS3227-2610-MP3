@@ -393,3 +393,9 @@ from pending release gates. No live configuration change is implied by this fix.
 notes for NFR-DEP-001, NFR-REL-002 and NFR-OPS-001. See post-merge acceptance for
 source distinctions, approved release/rollback results and scheduling limitations.
 Unrelated role, security-quality and load acceptance claims remain unchanged.
+
+NFR-DOC-001 review-tool migration: replace API-backed PR Agent with
+Codex GitHub integration and AGENTS.md review rules. See docs/CodeReview.md and
+logs/2026-10-21-codex-review.md. Repository migration checks passed; actual hosted
+review5595582707 on PR29 verified connection and review activation. Its findings
+were corrected and freshly verified; PR29 merged as 714326b.
