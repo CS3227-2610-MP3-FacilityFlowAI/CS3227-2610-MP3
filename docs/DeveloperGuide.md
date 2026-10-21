@@ -66,9 +66,13 @@ pending. See README and AGENTS.md.
 ## Repository structure
 
 src/: application code/tests; workflow/: specs/process; docs/: guides/planning;
-logs/: summaries; .github/: PR-Agent/contribution template. The Gradle build
+logs/: summaries; .github/: CI/deployment workflows and contribution template. The Gradle build
 packages the application, Technician read/command modules and Manager workflow
 and administration modules alongside the Requester manual workflow and Smart Report UI.
+
+Codex GitHub review follows AGENTS.md. See [Code review setup](CodeReview.md) for
+account connection, automatic reviews and verification; hosted activation must
+be checked separately from repository configuration.
 
 ## Architecture
 
