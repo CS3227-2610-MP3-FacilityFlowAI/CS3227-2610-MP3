@@ -221,8 +221,14 @@ async function browserChecks() {
     await navigate('/requester'); await click('header button[type=submit]');
     await waitFor(`location.pathname==='/login'`);
     check('logout returns to login', true);
-    await loginAs('manager1', '/manager');
-    await navigate('/manager/overview'); await viewportChecks('Manager overview');
+    await loginAs('manager1', '/manager/overview');
+    await command('Page.navigate', { url: base + '/manager' });
+    await waitFor(`location.pathname==='/manager/overview'&&document.readyState==='complete'`);
+    check('Manager landing opens complete navigation (REQ-SH-001/012)', await evaluate(`
+        document.querySelector('nav[aria-label="Manager navigation"] a[href="/manager/accounts"]') &&
+        document.querySelector('nav[aria-label="Manager navigation"] a[href="/manager/categories"]') &&
+        document.querySelector('nav[aria-label="Manager navigation"] a[href="/manager/skills"]')`));
+    await viewportChecks('Manager overview');
     check('Manager overview shows status, priority and workload sections (REQ-MGR-010)', await evaluate(`document.querySelector('#status-heading')&&document.querySelector('#priority-heading')&&document.querySelector('#workload-heading')`));
     await navigate('/manager/requests?status=INVALID'); await labelsAndLayout('Manager invalid status filter');
     check('Manager invalid status shows its specific validation message (REQ-MGR-001)', await evaluate(`document.querySelector('main').textContent.includes('Choose a listed status.')`));

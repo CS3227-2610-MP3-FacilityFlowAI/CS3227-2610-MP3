@@ -11,7 +11,7 @@
     <strong th:text="${displayName}">Manager</strong>
     <span th:text="${username}">username</span>
     <nav aria-label="Manager navigation">
-        <a th:href="@{/manager}">Workspace</a>
+        <a th:href="@{/manager/overview}" aria-current="page">Overview</a>
         <a th:href="@{/manager/requests}">Requests</a>
         <a th:href="@{/manager/requests/new}">Record request</a>
         <a th:href="@{/manager/accounts}">Accounts</a>

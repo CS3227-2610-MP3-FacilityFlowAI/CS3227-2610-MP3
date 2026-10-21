@@ -25,18 +25,9 @@ public class DashboardController {
     }
 
     @GetMapping("/manager")
-    String manager(@AuthenticationPrincipal CurrentAccountPrincipal principal, Model model) {
-        addIdentity(model, principal, "Facilities Manager workspace");
-        return "dashboard";
-    }
-
-    private static void addIdentity(
-            Model model,
-            CurrentAccountPrincipal principal,
-            String title) {
-        model.addAttribute("title", title);
-        model.addAttribute("username", principal.username());
-        model.addAttribute("displayName", principal.displayName());
-        model.addAttribute("role", principal.role().name());
+    String manager() {
+        // REQ-SH-001/012: enter the complete Manager workspace instead of the
+        // legacy link list, so every Manager capability is immediately reachable.
+        return "redirect:/manager/overview";
     }
 }

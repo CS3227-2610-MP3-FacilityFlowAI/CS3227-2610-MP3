@@ -253,7 +253,9 @@ class SecurityIntegrationTest {
         mockMvc.perform(get("/technician").cookie(technician)).andExpect(status().isOk());
 
         Cookie manager = login("manager1", VALID_PASSWORD, "/manager");
-        mockMvc.perform(get("/manager").cookie(manager)).andExpect(status().isOk());
+        mockMvc.perform(get("/manager").cookie(manager))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/manager/overview"));
     }
 
     @Test
@@ -810,7 +812,10 @@ class SecurityIntegrationTest {
         String[][] roles = {{"requester1", "/requester"}, {"technician1", "/technician"}, {"manager1", "/manager"}};
         for (String[] role : roles) {
             Cookie session = login(role[0], VALID_PASSWORD, role[1]);
-            for (String page : new String[]{role[1], "/account/password", "/about"}) {
+            String[] pages = role[1].equals("/manager")
+                    ? new String[]{"/account/password", "/about"}
+                    : new String[]{role[1], "/account/password", "/about"};
+            for (String page : pages) {
                 String html = mockMvc.perform(get(page).cookie(session)).andExpect(status().isOk())
                         .andReturn().getResponse().getContentAsString();
                 assertThat(html).contains("href=\"" + role[1] + "\"", "href=\"/account/password\"",
@@ -912,7 +917,9 @@ class SecurityIntegrationTest {
                 REQUESTER_ID);
 
         mockMvc.perform(get("/requester").cookie(requester)).andExpect(status().isForbidden());
-        mockMvc.perform(get("/manager").cookie(requester)).andExpect(status().isOk());
+        mockMvc.perform(get("/manager").cookie(requester))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/manager/overview"));
     }
 
     @Test
