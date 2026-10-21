@@ -94,7 +94,7 @@ for the implementation sequence.
 
 | Additional path | Purpose |
 | --- | --- |
-| `.github/workflows/pr-agent.yml` | Existing PR-Agent automation |
+| `AGENTS.md`, `docs/CodeReview.md` | Hosted Codex GitHub review rules and setup |
 | `.github/workflows/ci-cd.yml` | Test, scan, container, Preview and protected Production pipeline |
 | `.github/workflows/rollback.yml` | Human-approved known-good Production rollback |
 | `.github/pull_request_template.md` | Requirements/security/evidence checklist |
@@ -121,5 +121,5 @@ Guides for scope and operating instructions.
 AI tools assist development/review; humans remain accountable for decisions,
 verification and approvals. Record actual use and accepted/rejected suggestions
 under logs/ without secrets or unnecessary personal data. Application AI must
-use the SoC LLM and remain advisory. PR-Agent development review is separate from
-application AI. See the reuse ledger for MP2 acknowledgements.
+use the SoC LLM and remain advisory. Codex GitHub development review is separate from
+application AI and does not replace teammate approval or CI. See the reuse ledger for MP2 acknowledgements.
