@@ -396,6 +396,7 @@ Unrelated role, security-quality and load acceptance claims remain unchanged.
 
 NFR-DOC-001 review-tool migration: replace API-backed PR Agent with
 Codex GitHub integration and AGENTS.md review rules. See docs/CodeReview.md and
-logs/2026-10-21-codex-review.md. Repository migration checks passed; actual hosted
-review5595582707 on PR29 verified connection and review activation. Its findings
-were corrected and freshly verified; PR29 merged as 714326b.
+logs/2026-10-21-codex-review.md. Repository migration checks passed; an actual
+hosted review5595582707 on PR #29 verified connection and review activation,
+followed by a teammate-approved merge as 714326b. Its findings were corrected
+and freshly verified.
