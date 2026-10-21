@@ -4,9 +4,10 @@ Backup/restore, health/alert exercises and final rollback procedure:
 [Operations.md](Operations.md). Execution evidence is required in addition to setup.
 
 This runbook implements the approved `NFR-DEP-001` and Technical Specification
-deployment flow. It configures automation; it does not claim that a hosted
-Production deployment, backup restore or external monitor has already been verified.
-Hosted Preview deployment and smoke evidence is recorded below.
+deployment flow. Hosted Production deployment, rollback/restoration, backup/restore,
+manual external-monitor exercises and Preview smoke have been verified as recorded
+below. The five-minute monitor schedule is enabled, but operational schedule
+acceptance remains pending until a timer-triggered execution is observed.
 
 ## What runs automatically
 

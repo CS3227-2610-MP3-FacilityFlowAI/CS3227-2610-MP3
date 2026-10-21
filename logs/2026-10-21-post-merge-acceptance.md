@@ -1,9 +1,11 @@
 # Post-merge deployment acceptance
 
-Deployment operational acceptance passed for PR17's released implementation.
-The desired PR17 artifact is live after an actual protected rollback/restoration
-rehearsal. This record covers deployment checks, not general load/security/AI
-quality acceptance or guaranteed future RPO/RTO and schedule timing.
+Deployment and manual operational exercises passed for PR17's released
+implementation. The desired PR17 artifact is live after an actual protected
+rollback/restoration rehearsal. NFR-OPS-001 schedule acceptance remains pending
+until a timer-triggered five-minute monitor execution is observed. This record
+covers deployment checks, not general load/security/AI quality acceptance or
+guaranteed future RPO/RTO and schedule timing.
 
 ## Reviewed source and current release
 
