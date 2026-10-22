@@ -165,7 +165,8 @@ jobs:
           push: false
           tags: facilityflow:${{ github.sha }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Cache availability must not block a successful container build.
+          cache-to: type=gha,mode=max,ignore-error=true
 
   preview:
     name: Deploy Preview and smoke test
