@@ -1,221 +1,217 @@
 # Reflections
 
-Updated: 20 October 2026 (Asia/Singapore).
+## AI Security
 
-This reflection covers AI-assisted development, Specification-Driven Development
-(SDD), and Basic Multi-Agent Software Engineering in FacilityFlow AI. It draws on
-the implemented Requester, Technician and Facilities Manager workflows, shared
-identity and AI services, responsive interface, and CI/CD automation. Linked
-records describe results at their own source revisions; they do not establish
-that every branch, deployment or acceptance criterion is complete.
+### Attack surfaces and prompt injections
 
-## AI Reflection
+We considered direct instructions asking the model to ignore its rules,
+indirect instructions stored in request descriptions or Requester Updates,
+and encoded, multilingual or delimiter-breaking instructions. Model responses,
+provider errors, logs and development-agent handoffs were also trust boundaries.
+We learned that prompt warnings alone are insufficient: application code must
+control what reaches the model and what happens to its response.
 
-### AI was useful when its output was reviewable
+### Security controls and testing
 
-We used development agents for implementation, test authoring, integration and
-documentation. Their useful output was a change that could be inspected and
-checked, rather than an assurance that it worked. Technician T5, for example,
-produced password-change services, shared pages and tests. Real-stack verification
-then found that a failed-login exception could retain an attempted credential in
-a JDBC session. The correction used a fixed credential-free failure redirect and
-cleared old exception attributes. Session-byte regressions checked the actual
-persistence boundary, and an independent reviewer examined the correction.
+The shared gateway authorises access before loading protected context, sends
+only allowlisted fields, validates typed responses, and checks for disclosure
+and unsafe Work Plan advice. Post-call checks reject results when relevant
+access, assignment or state changes. Diagnostics retain safe metadata rather
+than raw prompts, responses or credentials.
 
-We learned that generated security code needs tests against the framework and
-storage behavior it actually uses. A controller test with a service double would
-not have established that credentials stayed out of persisted sessions. AI can
-contribute useful implementation and mistakes in the same iteration; human
-accountability and independent review remain necessary. Evidence:
-[T5 report](../logs/technician/T5-REPORT.md), including NFR-SEC-002 and the
-distinction between automated verification and human merge approval.
+Tests exposed gaps beyond response formatting. A safety test found that
+`b y p a s s the interlock` escaped the initial matcher. T5 real-stack tests also
+found that failed-login exceptions could retain attempted credentials in JDBC
+sessions. The corrections were tested at their actual boundaries and reviewed
+independently. These examples taught us that valid JSON and passing controller
+tests do not establish security. Human acceptance of the existing Work Plan
+safety policy and regression examples was resolved on 22 October. That approval does not certify maintenance
+procedures or establish exhaustive attack coverage. Evidence:
+[safety correction](../logs/2026-10-17-soclaas-gateway-iteration-2n-safety-policy.md)
+and [T5 verification](../logs/technician/T5-REPORT.md).
 
-### We kept AI optional and authority in ordinary services
+### Limits applied to the AI
 
-This principle shaped all three application assistants:
+Application ceilings are 800 output tokens, 30 seconds per invocation, five
+global in-flight calls, and five calls per minute and 30 per hour for each
+account. At most one retry is permitted under defined conditions and within
+the original deadline. Provider quotas remain separate configuration concerns.
 
-- **Requester Smart Report:** users review suggestions and accept fields
-  individually into the ordinary form. Nothing is saved until normal submission,
-  which still checks ownership, OPEN state, version and fields (REQ-RQ-012–017).
-- **Technician Work Plan:** diagnostic steps, safety precautions and stop/escalation
-  conditions are read-only advice. Start, Work Log and completion actions require
-  separate manual submissions; a Technician cannot close a case
-  (REQ-TECH-004–008, REQ-TECH-012–017).
-- **Manager Triage:** the model suggests category, priority and skill tags.
-  `TriageCandidateRanker` filters active candidates by required skills and orders
-  them by optional matches, workload, username and Account ID. The Manager chooses
-  final values and a Technician, then submits an ordinary authorized operation
-  (REQ-MGR-020–025).
+Review found that a delegate could reset the deadline. Fixing it showed us
+that limits must hold throughout wrappers, readiness and retries, not just
+at the final provider call. Manual workflows remain available when AI fails.
+See the [deadline correction](../logs/2026-10-17-soclaas-gateway-deadline-delegate-fix.md).
 
-We learned that a review label alone is insufficient. The service boundary must
-make an AI response incapable of authorizing a write. Manager triage rechecks the
-Request and catalogue/Technician snapshot when the human submits, because a
-plausible recommendation may already be stale. Manual forms remain usable when
-AI fails. Evidence: [shared Requester runtime](https://github.com/CS3227-2610-MP3-FacilityFlowAI/CS3227-2610-MP3/blob/5fc005964d9f6851b6c375c1e6cc64c80cf3ddbd/logs/2026-10-19-requester-shared-runtime.md),
-[Work Plan implementation](../logs/technician/T4-REPORT.md), and
-[Manager lifecycle and administration](../logs/2026-10-18-manager-lifecycle-administration.md).
+### Approval gates and human oversight
 
-### Live behavior exposed a gap that local checks missed
+All three assistants remain advisory. Requesters review draft fields before
+normal submission; Technicians receive read-only plans; Managers review triage
+suggestions and deterministically ranked candidates before assigning work.
+Separate service operations repeat authorisation, state, version and validation
+checks. An AI response cannot authorise a business write.
 
-The 19 October Requester live smoke initially returned `AI_INVALID_OUTPUT` even
-though connectivity worked. Structural diagnostics showed a response exhausting
-the 800-token budget before final content. A control using the shared adapter's
-existing `reasoning_effort=none` produced a valid structured answer. Aligning the
-Requester transport with that contract, with an exact-payload regression,
-allowed ordinary, missing-detail and untrusted-instruction samples to succeed.
-An authenticated endpoint continuation checked login, CSRF and role rejection,
-metadata-only invocation records, and no business-record creation.
+Development also used human decision gates. Technician iterations required
+scope, agent, model and check previews before permission to proceed, followed
+by verified commits and contribution reports. Security fixes required fresh
+verification, and agent approval did not replace teammate review. Oversight
+worked best when tied to explicit actions and evidence.
 
-We learned to diagnose the boundary before increasing limits or weakening output
-validation. A successful injection sample establishes only that sample's result;
-it does not establish general injection resistance or safe maintenance advice.
-Those live checks exercised the then-separate Requester runtime. Subsequent
-consolidation routed the UI through the shared runtime and removed the duplicate
-gateway. Its automated verification passed; the later timeout-fix record notes a
-user-reported successful live retest rather than an independently executed one.
-Earlier live evidence cannot automatically certify new wiring. Evidence:
-[live smoke and corrections](../logs/2026-10-19-requester-live-ai-smoke.md),
-[consolidation](https://github.com/CS3227-2610-MP3-FacilityFlowAI/CS3227-2610-MP3/blob/5fc005964d9f6851b6c375c1e6cc64c80cf3ddbd/logs/2026-10-19-requester-shared-runtime.md), and
-[timeout correction](https://github.com/CS3227-2610-MP3-FacilityFlowAI/CS3227-2610-MP3/blob/4a569e365def4fc0004aa4174b6fc4270ceb28a3/logs/2026-10-20-smart-report-read-timeout.md).
+### Live testing challenged local assumptions
 
-### AI security needs several independent controls
+The Requester live smoke initially exhausted its token budget before producing
+final content. Aligning its transport with the shared adapter's existing
+`reasoning_effort=none` contract produced valid structured samples. We diagnosed
+the failure before increasing limits or weakening validation. A successful
+instruction-injection sample establishes only that sample's result, not general
+resistance. Later runtime consolidation also required new checks; earlier live
+results could not certify changed wiring. See the
+[live smoke record](../logs/2026-10-19-requester-live-ai-smoke.md).
 
-Prompts, Requester Updates and model responses are untrusted. The shared boundary
-uses authorization before protected context loading, allowlisted context, typed
-output validation, disclosure checks, server-side admission, deadlines and
-metadata-only telemetry. Post-call freshness checks withhold advice when relevant
-access or Request state changes. Browser code also discards late results after
-edits, manual submissions or navigation. These address different failure modes:
-valid JSON can still disclose sensitive text, and a valid plan can belong to an
-obsolete assignment (AI-SEC-001–005, 008–017, 021, 028–030).
+## Specification-Driven Development
 
-The lesson was to make failure safe and visible without losing manual drafts.
-Controls also need honest limits: the human-reviewed multilingual and
-obfuscation-aware Work Plan safety corpus required by AI-SEC-012 remains a
-recorded gap. Existing policy checks do not certify physical maintenance
-procedures. See the [AI security specification](../workflow/specs/AI-SECURITY-SPEC.md),
-[gateway remediation history](../logs/2026-10-17-soclaas-gateway-remediation-summary.md)
-and later [T4 evidence](../logs/technician/T4-REPORT.md).
+### Making requirements precise before implementation
 
-## Specification-Driven Development (SDD)
+Useful specifications identified actors, allowed and forbidden actions,
+validation, state changes, failure paths and acceptance criteria. Stable IDs
+connected implementation, tests and traceability. REQ-TECH-007/008, for example,
+separate Technician completion from Manager closure and require retained
+assignment and atomic history/audit writes.
 
-### Stable requirements gave implementation and review a common reference
+We checked precision by agreeing interfaces and expected results before coding.
+Technician T0 prepared backend, UI and test contracts. Gateway analysis exposed
+unresolved context, retry and quota rules. However, the intended standalone
+gateway scope still needed clarification after role integration was included.
+We learned to specify exclusions as well as required features. Evidence:
+[Technician contracts](../workflow/technician/CONTRACTS.md) and
+[gateway planning](../workflow/SOCLAAS-GATEWAY-PLAN.md).
 
-The approved specifications separated shared behavior, role workflows,
-integration contracts and security controls. Stable IDs let implementation,
-tests and [traceability](../workflow/TRACEABILITY.md) refer to the same behavior.
-REQ-TECH-007/008 distinguish Technician completion from Manager closure, while
-REQ-MGR-007/008 define review, return and reopening. This supported named
-operations and retained completion history instead of a generic operation that
-accepts arbitrary status changes. Manager writes lock and reread the Request,
-reject stale versions and commit state plus audit together.
+### Keeping changes and shared architecture consistent
 
-Specifications were most useful when they described forbidden outcomes and
-failure paths. Preventing a former Technician from writing after reassignment,
-preserving history after reopening, and requiring a replacement when removing a
-category guided service and persistence checks beyond the interface. Evidence:
-[approved baseline](../logs/2026-10-12-specification-approval.md),
-[Technician requirements](../workflow/specs/ROLE-TECHNICIAN.md), and
-[Manager implementation](../logs/2026-10-18-manager-lifecycle-administration.md).
+Requirement changes should receive approval, then flow through specifications,
+implementation, tests and traceability. The gateway compression experiment was
+reverted because its limits and security behaviour were outside the approved
+contract. A useful addition is not automatically agreed scope.
 
-### Integration showed that matching features is not enough
-
-Requester and Technician work both touched shared password, navigation and
-dashboard behavior. Integration retained one canonical password/About route and
-service, preserved role route ownership, and moved Requester password regressions
-into real PostgreSQL integration tests. This preserved intended behavior while
-removing overlapping web implementations (REQ-SH-002/004/006/010/012/014).
-
-The later Smart Report review found a similar issue: the UI worked through a
-separate gateway even though a shared runtime existed. Consolidation removed
-the duplication while retaining the form contract, combined-input limit,
-edit-version guard and shared authorization/admission/telemetry checks. A later
-review caught a lost five-second pre-admission transaction timeout; the fix
-restored it and tested rollback with no shared AI invocation on timeout.
-
-We learned that traceability must follow the actual caller through the service
-boundary. Individually tested paths can still violate the intended architecture
-or lose safeguards during consolidation. Shared interfaces and route ownership
-should be agreed before parallel implementation. Evidence:
-[role integration](../logs/2026-10-19-requester-technician-master-merge.md),
-[runtime correction](https://github.com/CS3227-2610-MP3-FacilityFlowAI/CS3227-2610-MP3/blob/5fc005964d9f6851b6c375c1e6cc64c80cf3ddbd/logs/2026-10-19-requester-shared-runtime.md), and
+Integration also exposed duplicate password routes and Requester AI wiring.
+Consolidation preserved the ordinary form and authorisation contracts, but a
+later review caught a lost pre-admission transaction timeout. We learned that
+traceability must follow the actual caller through shared services: individually
+tested features can still lose safeguards during integration. Evidence:
+[scope correction](../logs/2026-10-17-soclaas-gateway-compressed-scope.md),
+[role integration](../logs/2026-10-19-requester-technician-master-merge.md), and
 [timeout regression](https://github.com/CS3227-2610-MP3-FacilityFlowAI/CS3227-2610-MP3/blob/4a569e365def4fc0004aa4174b6fc4270ceb28a3/logs/2026-10-20-smart-report-read-timeout.md).
 
-### Acceptance criteria made incomplete results visible
+### Testing intent rather than matching wording
 
-The adaptive UI work mapped supplied MP2 UI concepts to MP3 web requirements and
-recorded provenance in [REUSE](../workflow/REUSE.md). Browser execution found
-that absent Manager error-map keys could break rendering. Later PR feedback
-identified missing field-error associations promised by UIX-006–008 and
-NFR-A11Y-001. The correction associated 35 controls with error IDs and scoped
-detail-page errors to the failed form. Its run passed 409 Chrome UI checks.
+Tests needed to challenge the required guarantees. During T3, review found that
+sequential replay tests did not prove concurrent completion safety and rollback
+checks compared too little data. Strengthening these tests checked whether
+failed or competing operations left the correct state, history and audit data.
+A requirement ID attached to a test does not prove adequate coverage. See the
+[T3 findings](../logs/technician/T3-REPORT.md).
 
-However, the same task failed its independent 50-user load target: p95 was
-1,018.64 ms against 1,000 ms, with zero errors. We retained that failure rather
-than reporting an overall pass or changing the threshold. An earlier shared-runtime
-revision had passed its local load run; that does not erase a later result on
-another candidate. We learned to report acceptance by criterion, revision and
-environment. Automated accessibility checks also do not establish full WCAG
-compliance. Evidence: [UI iteration](../logs/2026-10-19-responsive-ui.md) and
-[field-error correction](../logs/2026-10-20-manager-field-error-accessibility.md).
+### Reporting acceptance by criterion and revision
 
-The same distinction applies to deployment. CI/CD automation and a recorded
-GitHub container build exist, but Preview/Production deployment, promotion,
-rollback and hosted smoke acceptance remain unverified in the
-[CI/CD record](../logs/2026-10-18-ci-cd.md). Approved requirements, implemented
-features and verified releases are separate milestones.
+Accessibility feedback led to corrected field-error associations and a run with
+409 passing Chrome UI checks. The same task missed the 50-user load target:
+p95 was 1,018.64 ms against 1,000 ms, despite zero errors. We retained that failure
+rather than changing the threshold or reporting an overall pass. Earlier results
+on another revision did not erase it. A later 22 October run corrected stale
+focus/redirect assertions, then passed 411 Chrome checks and the unchanged
+50-user target at 149.86 ms p95 with pool 2. This was a fresh local result, not
+a controlled claim of faster application code; see [Acceptance](Acceptance.md).
+
+CI/CD automation initially needed hosted evidence. Production isolation,
+protected promotion and rollback/restoration were verified on 21 October;
+successful scheduled backup and monitor runs followed on 22 October. We learned
+to distinguish approved requirements,
+implemented features and verified releases, and to report each result against
+its candidate and environment. Evidence:
+[field-error correction](../logs/2026-10-20-manager-field-error-accessibility.md)
+and [CI/CD record](../logs/2026-10-18-ci-cd.md).
 
 ## Basic Multi-Agent Software Engineering
 
-### Explicit work boundaries made parallel authorship practical
+### Choosing specialised stages and concurrent tasks
 
-Development agents are separate from the three application assistants. We used
-bounded task packets and handoffs rather than installing an autonomous
-orchestration framework. Actual Technician T4 execution split backend context
-and freshness work, UI rendering/lifecycle work, and test authoring among three
-concurrent workers. The backend used gpt-6.1-sol/medium; UI and tester used
-gpt-6-luna/high. A coordinator owned integration, shared evidence and test
-execution; a separate gpt-6.1-sol/high reviewer checked the candidate.
+The gateway used the repository's staged workflow: Analyst and Architect work,
+security review, approved implementation, testing, fresh verification of fixes,
+and Spec/Docs verification. This suited unresolved shared security decisions.
+Passing configuration tests still missed unsafe key/model values and excessive
+public credential access; security review caught them and a different Tester
+verified the fixes. See the
+[gateway increment](../logs/2026-10-16-soclaas-gateway-configuration.md).
 
-Exclusive file ownership limited writer conflicts. Workers did not run builds,
-perform Git operations or delegate further. Test design found that Java UUID
-ordering could disagree with PostgreSQL for equal-time IDs across the high bit.
-The backend scope was explicitly extended to fix the ordering, and a real
-PostgreSQL regression checked it. This illustrates the value of a tester working
-from the requirement and storage behavior rather than repeating implementation
-assumptions. Evidence: [T4 dispatch](../logs/technician/T4-DISPATCH.md) and
-[T4 report](../logs/technician/T4-REPORT.md).
+The staged process felt slow and token-heavy, so the Technician work trialled
+an orchestrator–subagent workflow with independent generator–verifier checks.
+The trial began locally, then its configuration was committed specifically for
+the Technician slice, separately from implementation. The repository already
+allowed parallelism; the change made scheduling concrete.
 
-### Handoffs and fresh review mattered more than agent count
+Backend, UI and test authors worked concurrently with exclusive file ownership,
+while one coordinator integrated changes and ran builds. Up to three workers
+ran alongside the coordinator, with review using a freed slot. UI and testing
+used `gpt-6-luna` at high effort to try a lighter model without reducing the
+expected checks; backend and review used `gpt-6.1-sol`. See the
+[T4 assignments](../logs/technician/T4-REPORT.md).
 
-T5 was paused after authorship and later resumed. Handoffs preserved changed
-paths, authority, untested state and next steps; the pause was not reported as a
-verified implementation. After resumption, tests exposed fixture problems and
-the credential-retention issue described above. Independent review also requested
-documentation corrections where guides still described the historical pause
-after automated checks had passed.
+### Defining and evaluating agents
 
-We learned that a receiver needs exact requirements, file ownership, candidate
-identity, executed results and unresolved gates. A role definition does not prove
-that a role ran, and a read-only reviewer must not be credited with tests run by
-the coordinator. Source hashes and candidate/result records helped tie review to
-tested files. Agent approval does not replace teammate approval for a non-trivial
-merge. Evidence: [T5 report and handoffs](../logs/technician/T5-REPORT.md) and
-the [shared protocol](../workflow/agents/README.md) (AI-SEC-024–027).
+Agents received requirement IDs, interfaces, file ownership, expected outputs
+and completion checks. Contracts were prepared before dispatch, and settled
+requirements did not need another analysis stage each time. Workers did not
+run competing builds or expand their own scope.
 
-### Agent instructions also need a trust boundary
+We evaluated agents through executed results and review findings, not their
+role descriptions. Test-fixture repairs showed that detailed instructions still
+needed compilation and database smoke checks. The tester's older SQLite recipe
+also had to yield to the approved MP3 PostgreSQL contract.
 
-The T4 tester's older SQLite-oriented recipe did not override the approved MP3
-PostgreSQL contract. Similarly, the responsive UI iteration treated an external
-MP2 document as reference material, and the accessibility correction treated a
-PR screenshot as feedback rather than executable agent instructions. These are
-examples of checking source authority; they do not prove resistance to every
-malicious instruction-propagation attack.
+### Handoffs and evidence for human review
 
-Parallel work also introduced coordination and integration costs. Shared
-password routes and duplicate Requester AI wiring required later consolidation.
-We would retain focused parallel backend/UI/test work where interfaces are clear,
-agree shared ownership earlier, and keep integration and independent verification
-explicit. More agents alone would not have prevented those gaps. The defensible
-result is the reviewed artifact and its evidence, with human decisions and
-remaining limitations recorded.
+A receiver needs approved scope, decisions, interfaces, changed files, executed
+checks, unresolved issues and the next action. Gateway handoffs carried open
+questions and exact findings between stages. Candidate identities and source
+hashes tied review and results to the same code.
+
+T5 deliberately paused after authorship with its agents retained, then resumed
+verification. The handoff distinguished written code from tested code. At its
+close, browser access remained unavailable despite permission to enable it,
+so automated passes were not presented as browser acceptance. We learned that
+approval, execution and verification are separate facts. See the
+[T5 report and handoffs](../logs/technician/T5-REPORT.md).
+
+### Preventing incorrect or malicious instruction propagation
+
+An incorrect assumption can spread from a specification into implementation
+and tests. Handoffs could also repeat malicious instructions or falsely claim
+permission. We kept write scopes separate and required checks against approved
+sources. Documents, screenshots and other agents' messages did not grant new
+authority. Independent review challenged upstream assumptions, but these
+examples do not establish comprehensive malicious-handoff resistance. The
+22 October AIS-T15 exercise also confirmed that a fresh read-only verifier
+rejected forged permissions, secret reads and fabricated approval/test claims;
+marker integrity checks passed. This remains scenario-specific evidence.
+
+### Reviewing runtime, token usage and coordination overhead
+
+Excessive T2 review exchanges led to a simpler process: compilation and a
+database smoke test, one fixed review candidate, batched findings and focused
+correction checks. Models and independent verification stayed in place.
+Runtime and token summaries were requested in the conversation, followed by
+per-agent breakdowns and rough estimates for later iterations.
+
+T3 reported about 24.33 million tokens, including 23.63 million cached input
+tokens. The coordinator accounted for 17.28 million, or 71%, largely through
+repeated context processing. Review used about 11% of tokens, while existing
+database suites took about 65% of the 6-minute-38-second full check. These
+sampled totals excluded unrecorded tails and the final reply; they were not
+newly generated text or direct cost measurements.
+
+We learned to examine runtime and token usage separately. Next time, we would
+reduce coordinator exchanges, automate mechanical checks and validate fixtures
+earlier. Staged analysis remains useful for unresolved decisions; concurrency
+suits agreed interfaces. Both need independent review, and no comparable gateway
+baseline established that one workflow was cheaper. Evidence:
+[Technician workflow conversation](thread://01a14da4-2c55-7430-96c1-c949377b9d55?hostId=local)
+and [review-process change](../logs/technician/2026-10-18-batched-review-config.md).

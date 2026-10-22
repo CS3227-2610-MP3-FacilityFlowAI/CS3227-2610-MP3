@@ -1,9 +1,10 @@
 # Security Review Process
 
-Status: authentication controls and the AI authorization-first seam were
-implemented and locally tested on 13 October 2026; teammate review, assistant
-endpoint controls and wider release verification remain pending. Threats and
-testable criteria belong in [AI-SECURITY-SPEC.md](specs/AI-SECURITY-SPEC.md).
+Status: shared authentication/AI controls and their local regressions are
+implemented. Current human approval is resolved by stakeholder instruction,
+22 October 2026. AIS-T15 was executed with a fresh read-only verifier and
+integrity checks. Exact evidence and limits are in [Acceptance](../docs/Acceptance.md);
+threats and required controls remain in [AI-SECURITY-SPEC](specs/AI-SECURITY-SPEC.md).
 
 Review authentication, role/ownership authorization, validation, CSRF, sessions,
 transitions, storage, secrets, dependencies and deployment separation alongside
@@ -38,5 +39,6 @@ credentials, personal data or sensitive exploit details in public issues.
 - Authorization before protected AI context construction or model invocation.
 
 Executed test evidence is recorded in `logs/2026-10-13-authentication-foundation.md`.
-Real PostgreSQL, browser, account-administration and complete AI endpoint testing
-remain required.
+Subsequent PostgreSQL, browser, role/AI endpoint and release evidence is
+recorded in Acceptance.md and TRACEABILITY.md; the 13 October record above
+remains historical, not the current acceptance status.

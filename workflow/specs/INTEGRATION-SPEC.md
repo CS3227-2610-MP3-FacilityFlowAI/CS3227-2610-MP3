@@ -1,32 +1,15 @@
 # Integration Specification
 
-Status: approved baseline v0.1, 12 October 2026. Owner: ngkhengyang. Gateway
-revision candidate v0.2 received stakeholder approval on 16 October 2026;
-Security Reviewer, affected role-owner, and teammate review of the revision
-remains pending. This status is not an implementation or verification claim.
+Status: approved v0.2, 22 October 2026. Owner: ngkhengyang. Outstanding human
+approval of gateway contracts, role integration, readiness, retries, distributed
+admission and telemetry is resolved by explicit stakeholder instruction.
+See [current acceptance](../../docs/Acceptance.md).
+
 Business eligibility remains in role specifications; this document owns
-transport and typed contracts. Iteration 2A provider-core/readiness decisions
-received stakeholder direction and approval on 16 October 2026; specification
-Security Reviewer findings were incorporated on 16 October 2026; re-review and
-teammate review remain pending. The implementation Security Reviewer recorded
-a NO-GO for then-open remediation findings; subsequent commits provide local
-implementation/test evidence for selected controls, but security re-review and
-teammate approval remain pending.
-Iteration 2B HTTPS-adapter requirements were prepared against provider-core base
-commit `897937d`; the adapter, focused tests and fresh Security Reviewer approval
-are complete. Iteration 2C adds production lifecycle/readiness wiring and has a
-fresh Security Reviewer GO. Later candidate commits also implement retries,
-rate/lease controls and durable telemetry locally; these status notes do not
-replace the pending approved specification/review update, and compressed-response
-support remains deferred.
-Iteration 2D adds the first role-facing Technician Work Plan vertical slice;
-focused implementation tests pass, while teammate and fresh Security Reviewer
-review remain pending. Iteration 2E adds a shared process-local admission
-coordinator for configured in-flight and rolling per-account limits. Iteration
-2F adds PostgreSQL-time Account buckets and fenced global leases. The candidate
-includes later local retry and durable invocation telemetry evidence; the
-approved revision still requires synchronized review before those controls can
-be treated as approved scope.
+transport and typed contracts. Earlier v0.1/v0.2 planning and review records
+remain historical evidence. This approval does not invent tests, agent reviews
+or hosted results. Compressed responses remain deferred under the identity-only
+contract.
 
 ## SoCLaaS transport
 

@@ -1,20 +1,11 @@
 # Developer Guide
 
-Status: Shared database schema and explicit initialization supplied; V1 application
-and permissions evidenced by user screenshots. Hosted V2/V3/demo results are
-reported matching by the user; independent hosted verification remains pending.
-Technician assigned-work reads, start/log/completion commands and Work Plan
-browser controls, plus Manager lifecycle, administration and Triage Assistant
-workflows, are implemented in source as described below.
-Follow [DatabaseCompletion](DatabaseCompletion.md).
-
-Part 2b supplies the private identity/audit/session schema, restricted-role
-provisioning and isolated PostgreSQL migration tests. See
-[DatabaseMigrations](DatabaseMigrations.md) for applying the development schema
-with separate migration/runtime identities. User-reported connectivity succeeded;
-user screenshots confirm V1/table metadata and four permission restrictions;
-runtime connection succeeded as reported by the user. No independent hosted
-query was performed.
+Current status: all three role workflows and the shared AI runtime are
+implemented. Production isolation/release, rollback and scheduled operational
+execution are verified. Human sign-off for the current baseline is resolved by
+stakeholder instruction on 22 October 2026. [Acceptance](Acceptance.md) is the
+current source for exact results and technical qualifications. Dated increment
+sections below retain historical implementation context.
 
 ## Local scaffold (Part 1)
 
@@ -60,8 +51,8 @@ latest release rather than the intended design.
 FacilityFlow AI, CS3227 MP3. Shared authentication/password/navigation,
 Requester manual workflow and Smart Report review, Technician assigned-work
 start/log/completion and Work Plan review, and Manager lifecycle/administration
-and Triage review are implemented locally. Human and hosted release gates remain
-pending. See README and AGENTS.md.
+and Triage review are implemented. Current release/approval evidence is in
+Acceptance.md; future changes still follow AGENTS.md.
 
 ## Repository structure
 

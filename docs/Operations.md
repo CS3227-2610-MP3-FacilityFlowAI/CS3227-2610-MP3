@@ -1,5 +1,11 @@
 # Production operations and submission evidence
 
+Current acceptance, 22 October 2026: scheduled backup run 39725364898 and scheduled
+monitor run 39763250399 completed successfully on GitHub. Earlier first-run
+qualifications are resolved; [Acceptance](Acceptance.md) records exact sources
+and limitations. Future execution still needs routine observation.
+
+
 Requirements: NFR-REL-002, NFR-OPS-001/002, NFR-DEP-001. The live application and
 database cutover are verified separately; automation below is not accepted merely
 because the workflow files exist. Record actual run/issue/artifact IDs under logs/.

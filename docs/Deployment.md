@@ -6,8 +6,9 @@ Backup/restore, health/alert exercises and final rollback procedure:
 This runbook implements the approved `NFR-DEP-001` and Technical Specification
 deployment flow. Hosted Production deployment, rollback/restoration, backup/restore,
 manual external-monitor exercises and Preview smoke have been verified as recorded
-below. The five-minute monitor schedule is enabled, but operational schedule
-acceptance remains pending until a timer-triggered execution is observed.
+below. Successful timer-triggered backup and monitor executions were observed on
+22 October; see [current acceptance](Acceptance.md). Schedule cadence remains
+best-effort rather than a guaranteed five-minute SLA.
 
 ## What runs automatically
 
@@ -205,8 +206,7 @@ passed, and the user confirmed Manager, Requester and AI functionality.
 
 Fresh Preview smoke, encrypted backup/isolated restore, portable artifact checksum,
 external health checks and alert notification delivery are verified. Backup access
-is restricted to master. Both schedules are enabled; first timer-triggered runs
-were not yet observed. GitHub schedules can be delayed; this is not a guaranteed
+is restricted to master. Both schedules have successful timer-triggered runs as recorded in Acceptance.md. GitHub schedules can be delayed; this is not a guaranteed
 five-minute SLA or future recovery-time guarantee.
 
 See [post-merge acceptance](../logs/2026-10-21-post-merge-acceptance.md) for actual

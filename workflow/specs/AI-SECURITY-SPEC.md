@@ -1,32 +1,15 @@
 # AI Security Specification
 
-Status: approved baseline v0.1, 12 October 2026. Owner: Security Reviewer with
-ngkhengyang for gateway controls. Gateway revision candidate v0.2 received
-stakeholder approval on 16 October 2026; Security Reviewer, affected role-owner,
-teammate and fresh-reviewer review of the revision remains pending. This document
-defines required controls and planned tests; it does not claim they are
-implemented or verified. Iteration 2A provider-core/readiness decisions received
-stakeholder direction and approval on 16 October 2026; specification Security
-Reviewer findings were incorporated on 16 October 2026; re-review and teammate
-review remain pending. The implementation Security Reviewer recorded a NO-GO
-for then-open remediation findings; subsequent commits provide local
-implementation/test evidence for selected controls, but security re-review and
-teammate approval remain pending.
-Iteration 2B HTTPS-adapter requirements were prepared against provider-core base
-commit `897937d`; the adapter, focused tests and fresh Security Reviewer approval
-are complete. Iteration 2C adds startup-safe Spring lifecycle/readiness wiring;
-fresh Security Reviewer review is GO. Later candidate increments implement
-retries, rate/lease controls and telemetry locally, but the approved revision and
-human review have not yet been synchronized; role gateway/coordinator and
-compressed-response support remain separately scoped. Iteration 2D adds the first
-Technician Work Plan vertical slice;
-focused tests pass, but teammate and fresh Security Reviewer review remain
-pending. Iteration 2E adds a process-local shared admission coordinator and
-focused rolling-window/concurrency tests. Iteration 2F adds PostgreSQL-time
-Account buckets and owner/version-fenced global leases with renewal and
-stale-release tests. Retry and telemetry have local candidate evidence but remain
-pending synchronized specification/reviewer approval; compressed-response
-requirements remain deferred.
+Status: approved v0.2, 22 October 2026. Owner: Security Reviewer with ngkhengyang
+for gateway controls. The stakeholder resolved all outstanding human approvals
+for this baseline, including the existing work-plan-safety-v2 policy and
+regression examples. See [current acceptance](../../docs/Acceptance.md).
+
+The original v0.1 baseline was approved on 12 October; gateway direction was
+approved on 16 October. Historical findings and pending-review annotations
+remain in their dated records. Human acceptance does not imply additional
+agent verification, execution of the planned attack matrix, or professional
+safety certification. Compressed-response support remains deferred.
 
 ## Assets and trust seams
 
@@ -419,6 +402,11 @@ evidence of safety.
   context and require rejection if any canary is returned.
 
 ## Planned security test matrix
+
+Execution is scenario-specific. AIS-T15 was executed on 22 October with a fresh
+read-only verifier and coordinator integrity checks; see [Acceptance](../../docs/Acceptance.md).
+Other cases retain the scope of their cited test artifacts; this table alone
+is not an execution claim.
 
 | Case | Attack/control | Expected allowed result | Expected forbidden result |
 | --- | --- | --- | --- |

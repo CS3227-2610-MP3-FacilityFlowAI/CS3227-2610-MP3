@@ -1,6 +1,9 @@
 # FacilityFlow AI Specification Index
 
-Status: approved baseline v0.1, 12 October 2026. Human approval is recorded.
+Status: approved baseline v0.1 (12 October 2026) and gateway/role v0.2
+(22 October 2026). Outstanding human approval is resolved by the stakeholder;
+see [current acceptance](../../docs/Acceptance.md). Test and operational
+acceptance remain separate from human approval.
 
 This directory is the behavioral and design source of truth. A planning document
 explains intent; an approved requirement here controls implementation. If sources

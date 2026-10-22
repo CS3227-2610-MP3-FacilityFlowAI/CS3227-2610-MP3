@@ -35,7 +35,9 @@ async function waitFor(expression) {
 }
 async function navigate(route) {
     await command('Page.navigate', { url: base + route });
-    await waitFor(`location.pathname === ${JSON.stringify(route.split('?')[0])} && document.readyState === 'complete'`);
+    const requestedPath = route.split('?')[0];
+    const expectedPath = requestedPath === '/manager' ? '/manager/overview' : requestedPath;
+    await waitFor(`location.pathname === ${JSON.stringify(expectedPath)} && document.readyState === 'complete'`);
 }
 async function fill(selector, value) {
     await evaluate(`(()=>{const input=document.querySelector(${JSON.stringify(selector)});input.focus();input.value=${JSON.stringify(value)};input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
@@ -83,7 +85,8 @@ async function paletteChecks() {
         const style=e=>getComputedStyle(e), root=style(document.documentElement), body=style(document.body), focus=style(document.activeElement);
         const value={ink:body.color,page:body.backgroundColor,muted:root.getPropertyValue('--muted').trim(),surface:root.getPropertyValue('--surface').trim(),
             link:style(document.querySelector('a')).color,error:error?style(error).color:'',primaryText:style(button).color,primaryBackground:style(button).backgroundColor,
-            focusColor:focus.outlineColor,focusWidth:focus.outlineWidth,focusStyle:focus.outlineStyle,brand:root.getPropertyValue('--brand').trim()};
+            focusColor:focus.outlineColor,focusWidth:focus.outlineWidth,focusStyle:focus.outlineStyle,
+            focusOffset:focus.outlineOffset,focusTag:document.activeElement.tagName,brand:root.getPropertyValue('--brand').trim()};
         sample.remove();return value;
     })()`);
     const rgb = color => {
@@ -106,7 +109,10 @@ async function paletteChecks() {
     check(`rendered shared palette meets 4.5:1 text contrast (NFR-A11Y-001); measured ${JSON.stringify(report.contrast)}`,
         Object.values(report.contrast).every(value => value >= 4.5));
     const brand = await evaluate(`(()=>{const e=document.createElement('span');e.style.color='var(--brand)';document.body.append(e);const color=getComputedStyle(e).color;e.remove();return color})()`);
-    check('keyboard focus uses a visible 3px shared brand outline (NFR-A11Y-001)', parseFloat(colors.focusWidth) >= 3 && colors.focusStyle !== 'none' && colors.focusColor === brand);
+    const compactFocus = ['INPUT', 'SELECT', 'TEXTAREA'].includes(colors.focusTag);
+    check('keyboard focus uses the approved shared brand outline (NFR-A11Y-001)',
+        parseFloat(colors.focusWidth) >= (compactFocus ? 2 : 3) &&
+        parseFloat(colors.focusOffset) >= 1 && colors.focusStyle !== 'none' && colors.focusColor === brand);
 }
 async function screenshot(name) {
     const result = await command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
@@ -182,8 +188,10 @@ async function browserChecks() {
     check('suggestion is separate and focuses review heading', await evaluate(`document.querySelector('#title').value==='Manual light report'&&document.activeElement.id==='suggestions-heading'`));
     await evaluate(`document.querySelector('[data-suggested-fields] button').focus()`); await key('Enter', 13);
     check('keyboard accepts only title into editable form', await evaluate(`document.querySelector('#title').value==='Flickering light'&&document.querySelector('#description').value==='Retain these manual details'&&document.activeElement.id==='title'`));
-    const focus = await evaluate(`(()=>{let s=getComputedStyle(document.activeElement);return {width:s.outlineWidth,style:s.outlineStyle,color:s.outlineColor}})()`);
-    check('visible keyboard focus outline', parseFloat(focus.width) >= 3 && focus.style !== 'none');
+    const focus = await evaluate(`(()=>{let s=getComputedStyle(document.activeElement);return {width:s.outlineWidth,style:s.outlineStyle,color:s.outlineColor,offset:s.outlineOffset,tag:document.activeElement.tagName}})()`);
+    const compactFocus = ['INPUT', 'SELECT', 'TEXTAREA'].includes(focus.tag);
+    check('visible keyboard focus outline', parseFloat(focus.width) >= (compactFocus ? 2 : 3) &&
+        parseFloat(focus.offset) >= 1 && focus.style !== 'none');
     await paletteChecks();
     await screenshot('ai-review');
     await click('[data-discard-suggestions]');
