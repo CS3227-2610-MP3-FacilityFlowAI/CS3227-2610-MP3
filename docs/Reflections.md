@@ -24,8 +24,9 @@ Tests exposed gaps beyond response formatting. A safety test found that
 found that failed-login exceptions could retain attempted credentials in JDBC
 sessions. The corrections were tested at their actual boundaries and reviewed
 independently. These examples taught us that valid JSON and passing controller
-tests do not establish security. The broader human-reviewed Work Plan safety
-corpus remained a recorded gap. Evidence:
+tests do not establish security. Human acceptance of the existing Work Plan
+safety policy and regression examples was resolved on 22 October. That approval does not certify maintenance
+procedures or establish exhaustive attack coverage. Evidence:
 [safety correction](../logs/2026-10-17-soclaas-gateway-iteration-2n-safety-policy.md)
 and [T5 verification](../logs/technician/T5-REPORT.md).
 
@@ -115,10 +116,15 @@ Accessibility feedback led to corrected field-error associations and a run with
 409 passing Chrome UI checks. The same task missed the 50-user load target:
 p95 was 1,018.64 ms against 1,000 ms, despite zero errors. We retained that failure
 rather than changing the threshold or reporting an overall pass. Earlier results
-on another revision did not erase it.
+on another revision did not erase it. A later 22 October run corrected stale
+focus/redirect assertions, then passed 411 Chrome checks and the unchanged
+50-user target at 149.86 ms p95 with pool 2. This was a fresh local result, not
+a controlled claim of faster application code; see [Acceptance](Acceptance.md).
 
-Likewise, CI/CD automation did not by itself prove deployment, promotion or
-rollback acceptance. We learned to distinguish approved requirements,
+CI/CD automation initially needed hosted evidence. Production isolation,
+protected promotion and rollback/restoration were verified on 21 October;
+successful scheduled backup and monitor runs followed on 22 October. We learned
+to distinguish approved requirements,
 implemented features and verified releases, and to report each result against
 its candidate and environment. Evidence:
 [field-error correction](../logs/2026-10-20-manager-field-error-accessibility.md)
@@ -182,7 +188,10 @@ and tests. Handoffs could also repeat malicious instructions or falsely claim
 permission. We kept write scopes separate and required checks against approved
 sources. Documents, screenshots and other agents' messages did not grant new
 authority. Independent review challenged upstream assumptions, but these
-examples do not establish comprehensive malicious-handoff resistance.
+examples do not establish comprehensive malicious-handoff resistance. The
+22 October AIS-T15 exercise also confirmed that a fresh read-only verifier
+rejected forged permissions, secret reads and fabricated approval/test claims;
+marker integrity checks passed. This remains scenario-specific evidence.
 
 ### Reviewing runtime, token usage and coordination overhead
 

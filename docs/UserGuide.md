@@ -1,19 +1,11 @@
 # User Guide
 
-Status: authentication, shared password/navigation screens, Technician assigned
-work, start-work, Work Logs, completion and advisory Work Plan controls, and the
-Requester manual workflow and Smart Report review, and Facilities Manager request lifecycle, administration and Triage Assistant
-workflow are implemented locally. Teammate, real-browser and hosted application
-review remain pending. Requester browser evidence is in the Requester verification
-logs; historical synthetic live smoke passed against the retired Requester
-gateway. Shared-runtime consolidation checks are recorded separately.
-Live browser review remains pending. Local Technician evidence is in
-logs/technician/T1-REPORT.md
-through T5-REPORT.md; Manager evidence is in the Manager session logs.
-
-This guide must be updated continuously to match the deployed product exactly.
-It will document how Requesters, Technicians, and Facilities Managers access,
-test, and use every released feature, including AI fallbacks and limitations.
+The deployed application provides Requester, Technician and Facilities Manager
+workspaces with advisory SoCLaaS features and manual fallbacks. Production
+release/isolation and operational evidence are in [Acceptance](Acceptance.md).
+Human approval is resolved for the current baseline. Historical role reports
+retain their original verification scope; they do not override current release
+status. The live application is [FacilityFlow AI](https://facilityflow-ai.vercel.app).
 
 ## Introduction
 
@@ -52,7 +44,7 @@ for all three roles. Enter your current password and a new password containing
 8–24 Unicode characters; no composition rule applies. Confirm the new password
 exactly. Select **Change password**.
 Success keeps you signed in. Subsequent sign-ins use the new password. Password
-fields are cleared on errors; re-enter them to retry. Select **My workspace** to leave the form. Hosted availability and browser checks are pending.
+fields are cleared on errors; re-enter them to retry. Select **My workspace** to leave the form. Hosted availability is verified; browser coverage is scoped in Acceptance.md.
 
 ## Features
 
@@ -329,12 +321,13 @@ guidance and leaves the Request unchanged.
 
 ## Limitations
 
-AI drafts/recommends only; users perform authorized actions. Live provider,
-hosted/browser behavior and released deployment limits remain unverified.
+AI drafts/recommends only; users perform authorised actions. Recorded live
+smokes verify specific samples, not general advice quality or injection immunity.
+See Acceptance.md for the release and verification scope.
 
-The Manager slice has local automated evidence only; no hosted application or
-real-browser release claim is made yet. Teammate review remains required before
-merge.
+Manager controls have automated/browser evidence, and hosted Manager login
+and functionality were user-confirmed during release acceptance. Human approval
+of this baseline is resolved; normal review gates still apply to future changes.
 
 ## Troubleshooting
 
@@ -369,16 +362,15 @@ known values alone do not prove complete billing coverage.
 `Invalid username or password` intentionally covers an unknown username, wrong
 password and inactive Account. Retry the supplied credentials or contact a
 Facilities Manager; the message does not reveal whether an Account exists. If
-the session is no longer valid, sign in again. Deployment/support details remain
-TBD.
+the session is no longer valid, sign in again. For deployment and operational support, follow Deployment.md and Operations.md.
 
 
 ## Shared pages and password change (T5)
 
 T5 was paused after implementation and then resumed. Password/session/audit,
 shared-page rendering/security and client script checks now have passing local
-automated evidence. Browser/keyboard/accessibility and hosted release acceptance
-remain pending; see `logs/technician/T5-REPORT.md` for exact executed results.
+automated evidence. Later release and browser evidence supersedes those historical pending notes;
+see Acceptance.md and `logs/technician/T5-REPORT.md` for their distinct scopes.
 
 The authenticated header identifies your display name, username and role. Use
 My workspace to return to your role, Change password for your own account,
@@ -401,7 +393,6 @@ and Work Plan controls keep separate pending handling. The Work Plan clears
 obsolete pending text when invalidated and requires refresh after a manual
 submission; advice still cannot perform a business action.
 
-Browser keyboard/responsive/accessibility acceptance is pending because local
-browser use is disabled in Work settings. Final integrated result, independent
-review and local commit status are recorded in `logs/technician/T5-REPORT.md`.
-No hosted or live-provider verification is implied.
+The T5 report records an earlier browser-tool limitation. Later Chrome and
+hosted execution is tracked in Acceptance.md; coverage is limited to the cases
+actually exercised and does not establish full accessibility or AI-quality certification.

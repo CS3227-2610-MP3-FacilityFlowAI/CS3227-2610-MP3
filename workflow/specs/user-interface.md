@@ -1,7 +1,7 @@
 # MP3 user interface specification
 
-Status: presentation revision requested by the stakeholder on 19 October 2026;
-role-owner and teammate review pending. Existing approved MP3 behavior remains
+Status: presentation revision requested on 19 October 2026; outstanding human
+approval resolved by stakeholder instruction on 22 October 2026. Existing approved MP3 behavior remains
 authoritative. Test results belong in `logs/2026-10-19-responsive-ui.md`.
 
 This adapts the supplied MP2 `user-interface.md` (Draft v0.2, 12 September

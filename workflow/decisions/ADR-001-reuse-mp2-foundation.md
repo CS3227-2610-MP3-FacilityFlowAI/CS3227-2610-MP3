@@ -2,7 +2,7 @@
 
 - Decision ID: ADR-001
 - Date: 2026-10-10
-- Status: approved direction; reuse evidence pending
+- Status: approved; current comparison and provenance recorded in workflow/REUSE.md
 - Related artifacts: `workflow/REUSE.md`, `workflow/PLAN.md`
 
 ## Context
@@ -32,4 +32,4 @@ component in `workflow/REUSE.md` before merging it.
 ## Approval evidence
 
 The user reported the lecturer clarification and instructed Codex to update the
-repository on 10 October 2026. Teammate review of this record remains required.
+repository on 10 October 2026. Outstanding human approval was resolved by stakeholder instruction on 22 October 2026; see docs/Acceptance.md.

@@ -1,9 +1,9 @@
 # Technician Specification
 
-Status: approved baseline v0.1, 12 October 2026. Owner: ngkhengyang. Gateway
-revision candidate v0.2 received stakeholder approval on 16 October 2026;
-Technician role-owner and teammate review of the revision remains pending. This
-is not an implementation or verification claim. Shared rules are in
+Status: approved v0.2, 22 October 2026. Owner: ngkhengyang. Outstanding human
+approval, including the existing Work Plan safety policy and regression
+examples, is resolved. Execution evidence is separate from approval; see
+[current acceptance](../../docs/Acceptance.md). Shared rules are in
 [PRODUCT-SPEC](PRODUCT-SPEC.md).
 
 ## Objective and screens

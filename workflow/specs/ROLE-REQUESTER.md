@@ -1,10 +1,9 @@
 # Requester Specification
 
-Status: approved baseline v0.1, 12 October 2026. Owner: yooplo. Gateway revision
-candidate v0.2 received stakeholder approval on 16 October 2026; Requester
-role-owner and teammate review of the revision remains pending. This is not an
-implementation or verification claim. Shared fields, lifecycle, UI and quality
-rules are in [PRODUCT-SPEC](PRODUCT-SPEC.md) and are not repeated here.
+Status: approved v0.2, 22 October 2026. Owner: yooplo. Outstanding human
+approval is resolved; execution evidence is tracked separately in
+[current acceptance](../../docs/Acceptance.md). Shared fields, lifecycle,
+UI and quality rules are in [PRODUCT-SPEC](PRODUCT-SPEC.md).
 
 ## Objective and screens
 

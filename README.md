@@ -64,10 +64,12 @@ storage will not be reused. All reuse must be recorded in
 
 ## Status
 
-Planning baseline created on 4 October 2026. The reuse decision and three AI
-feature contracts were updated on 10 October 2026. Specification baseline v0.1
-was approved on 12 October 2026; implementation must follow the gates in
-`workflow/PLAN.md` and the approved requirement IDs.
+The three role workflows and advisory SoCLaaS features are implemented.
+Production deployment, database separation, protected promotion and rollback
+were verified on 21 October; successful scheduled backup and monitor executions
+were observed on 22 October. Current human approval is resolved by stakeholder
+instruction. See [Acceptance](docs/Acceptance.md) for exact evidence and the
+remaining technical qualifications; historical logs retain earlier statuses.
 
 ## Development workflow and setup
 
@@ -77,20 +79,11 @@ block coding. Stable IDs connect specs, code, tests, PRs and evidence. Teammate
 review precedes non-trivial merges; fresh verification follows failed-test or
 security fixes.
 
-Part 1 adds the Java 25/Spring Boot 4.1.1 build scaffold, Gradle 9.1.0 wrapper
-and a passing startup test. Part 2a adds Supabase JDBC configuration and a
-read-only connection checker; [Supabase setup](docs/SupabaseSetup.md) is required
-before a live check. Part 3 supplies the remaining shared schema and opt-in
-hashed account initialization; see [DatabaseCompletion](docs/DatabaseCompletion.md).
-V1 is evidenced on Supabase; the user reports matching hosted upgrade/demo
-initialization results. No independent hosted query was performed.
-Authentication from master is integrated with the private schema and existing
-seeded accounts. Role business features remain in separate branches. CI/CD and
-the Vercel container/promotion workflow are defined but remain disabled until
-the team supplies separated platform configuration and records hosted evidence.
-See the [Developer Guide](docs/DeveloperGuide.md)
-for local build/run commands and [Requester plan](workflow/REQUESTER-PLAN.md)
-for the implementation sequence.
+Use the [Developer Guide](docs/DeveloperGuide.md) for local build/run commands,
+[Deployment](docs/Deployment.md) for separate Preview/Production configuration,
+and [Operations](docs/Operations.md) for backup, recovery and monitoring.
+Source-controlled migrations and disposable tests remain separate from hosted
+data. The app is live at [FacilityFlow AI](https://facilityflow-ai.vercel.app).
 
 | Additional path | Purpose |
 | --- | --- |
@@ -111,9 +104,9 @@ lifecycle telemetry and structured, correlated diagnostics support all three
 assistants; no prompt or generated advice is retained. See the User and Developer
 Guides for scope and operating instructions.
 
-- [User Guide](docs/UserGuide.md): released behavior; currently placeholders.
-- [Developer Guide](docs/DeveloperGuide.md): design/process and implementation TBDs.
-- [Reflections](docs/Reflections.md): evidence prompts, not completed reflections.
+- [User Guide](docs/UserGuide.md): role workflows, AI review and manual fallback.
+- [Developer Guide](docs/DeveloperGuide.md): architecture, setup and verification.
+- [Reflections](docs/Reflections.md): team lessons on AI Security, SDD and Multi-Agent SE.
 - [AI logs](logs/README.md): sanitized summaries and actual review status.
 
 ## AI usage acknowledgement
