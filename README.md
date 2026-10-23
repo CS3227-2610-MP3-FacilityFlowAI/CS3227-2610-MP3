@@ -116,3 +116,17 @@ verification and approvals. Record actual use and accepted/rejected suggestions
 under logs/ without secrets or unnecessary personal data. Application AI must
 use the SoC LLM and remain advisory. Codex GitHub development review is separate from
 application AI and does not replace teammate approval or CI. See the reuse ledger for MP2 acknowledgements.
+
+## Test Accounts
+
+### Manager
+Username: manager1
+Password: Welcome123
+
+### Requester
+Username: requester1
+Password: Welcome123
+
+### Technician
+Username: technician1
+Password: Welcome123
