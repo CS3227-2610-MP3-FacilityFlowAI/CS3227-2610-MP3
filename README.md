@@ -11,6 +11,16 @@ database and deployment, includes the required LLM features, and documents the
 reused material. The clarification is recorded in
 [`ADR-001`](workflow/decisions/ADR-001-reuse-mp2-foundation.md).
 
+## Product website
+
+The [product website source](docs/site/index.html) introduces the three roles,
+maintenance lifecycle and advisory AI features, with links to the live app,
+guides and team. It is configured for GitHub Pages at
+<https://CS3227-2610-MP3-FacilityFlowAI.github.io/CS3227-2610-MP3/> once enabled
+and deployed from `master`. See [Product Website](docs/ProductWebsite.md) for
+publishing and local preview instructions. The application itself is live at
+[FacilityFlow AI](https://facilityflow-ai.vercel.app).
+
 ## Project direction
 
 - **Requester:** Smart Report Assistant for structured drafts, category and

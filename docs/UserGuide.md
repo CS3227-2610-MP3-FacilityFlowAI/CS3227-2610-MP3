@@ -26,9 +26,10 @@ optional Smart Report suggestions.
 
 ## Accessing the deployed application
 
-The deployed URL and support contact remain TBD. On a provisioned environment,
-open `/login`, enter the username and password supplied by a Facilities Manager,
-and select **Sign in**. The form works without JavaScript. The application sends
+Open [FacilityFlow AI](https://facilityflow-ai.vercel.app/login), enter the
+username and password supplied by a Facilities Manager, and select **Sign in**.
+Contact your Facilities Manager for account access or support. The form works
+without JavaScript. The application sends
 the Account directly to its role workspace.
 
 ## Roles
